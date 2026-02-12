@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply antialiased text-slate-700;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    /* Tabular numbers for data columns */
+    .tabular-nums {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Focus-visible: visible ring for keyboard, invisible for mouse */
+    :focus-visible {
+        @apply outline-none ring-2 ring-brand-500/40 ring-offset-2;
+    }
+    :focus:not(:focus-visible) {
+        @apply outline-none ring-0;
+    }
+
+    /* Smooth scrollbar */
+    ::-webkit-scrollbar {
+        @apply w-1.5;
+    }
+    ::-webkit-scrollbar-track {
+        @apply bg-transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        @apply rounded-full bg-slate-300;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-slate-400;
+    }
+
+    /* Selection color */
+    ::selection {
+        @apply bg-brand-500/15 text-brand-900;
+    }
+}
+
+@layer components {
+    /* Shared card style */
+    .card {
+        @apply rounded-2xl border border-slate-200/80 bg-white shadow-card;
+    }
+    .card-hover {
+        @apply transition-shadow duration-200 hover:shadow-card-hover;
+    }
+
+    /* POS-specific utilities */
+    .pos-grid-item {
+        @apply card card-hover cursor-pointer select-none p-3 text-left
+               active:scale-[0.97] active:shadow-card;
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Badge styles */
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
+    .badge-success { @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10; }
+    .badge-warning { @apply bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10; }
+    .badge-danger  { @apply bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10; }
+    .badge-info    { @apply bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/10; }
+    .badge-neutral { @apply bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10; }
+
+    /* Slide-in animation */
+    .slide-in {
+        animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Fade-in animation for staggered reveals */
+    .fade-in-up {
+        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Btn primary */
+    .btn-primary {
+        @apply flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5
+               text-[13px] font-semibold text-white shadow-sm
+               transition-colors duration-150
+               hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500/40;
+    }
+
+    /* Btn secondary */
+    .btn-secondary {
+        @apply flex items-center justify-center gap-1.5 rounded-xl border border-slate-200
+               bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-700 shadow-sm
+               transition-colors duration-150
+               hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-500/20;
+    }
+
+    /* Btn danger */
+    .btn-danger {
+        @apply flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5
+               text-[13px] font-semibold text-white shadow-sm
+               transition-colors duration-150
+               hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500/40;
+    }
+
+    /* Input field */
+    .input-field {
+        @apply w-full rounded-xl border-slate-200 py-2.5 px-3.5 text-sm placeholder-slate-400
+               transition-colors duration-150
+               focus:border-brand-500 focus:ring-brand-500/20;
+    }
+
+    /* Select field */
+    .select-field {
+        @apply rounded-xl border-slate-200 py-2.5 pl-3.5 pr-8 text-sm text-slate-600
+               transition-colors duration-150
+               focus:border-brand-500 focus:ring-brand-500/20;
+    }
+}
+
+@layer utilities {
+    /* Stagger delays for animation orchestration */
+    .delay-1 { animation-delay: 50ms; }
+    .delay-2 { animation-delay: 100ms; }
+    .delay-3 { animation-delay: 150ms; }
+    .delay-4 { animation-delay: 200ms; }
+    .delay-5 { animation-delay: 250ms; }
+    .delay-6 { animation-delay: 300ms; }
+}
+
+/* Keyframes */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

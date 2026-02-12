@@ -1,0 +1,25 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - app
+    excludePaths:
+        - app/Http/Middleware/HandleInertiaRequests.php
+        - app/Http/Controllers/Auth/VerifyEmailController.php
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # JsonResource magic property access is standard Laravel pattern
+        - '#Access to an undefined property App\\Http\\Resources\\.*::\$#'
+        # Generic types on HasFactory, relationships — noise at scale
+        - '#uses generic trait.*HasFactory.*does not specify its types#'
+        - '#return type with generic class.*does not specify its types#'
+        # Iterable value types on rules()/toArray() — standard Laravel
+        - '#return type has no value type specified in iterable type array#'
+        # Scope method signatures — Laravel convention
+        - '#Method App\\Models\\.*::scope.*has (no return type|parameter \$query with no type)#'
+        # ReportService scope calls through whereHas closures
+        - '#Call to an undefined method.*::completed\(\)#'
+        - '#Expression on left side of \?\? is not nullable#'
