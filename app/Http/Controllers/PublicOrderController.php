@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Services\OrderService;
 use App\Support\StoreContext;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -129,7 +130,7 @@ class PublicOrderController extends Controller
      */
     private function orderPayload(Order $order): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, OrderItem> $items */
+        /** @var Collection<int, OrderItem> $items */
         $items = $order->items;
 
         return [

@@ -9,9 +9,15 @@ use App\Exceptions\InvalidStockException;
 use App\Exceptions\ProductInactiveException;
 use App\Exceptions\ProductUnavailableException;
 use App\Exceptions\SaleAlreadyVoidedException;
+use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ResolvePublicStore;
+use App\Http\Middleware\ResolveStoreContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,15 +27,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\ResolveStoreContext::class,
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            ResolveStoreContext::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
-            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
-            'public.store' => \App\Http\Middleware\ResolvePublicStore::class,
+            'role' => CheckRole::class,
+            'active' => EnsureUserIsActive::class,
+            'public.store' => ResolvePublicStore::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

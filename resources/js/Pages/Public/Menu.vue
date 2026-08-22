@@ -137,7 +137,7 @@ const place = () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-50 pb-32">
+    <div class="mx-auto min-h-screen max-w-md bg-slate-50 pb-32 shadow-sm">
         <Head :title="`Order from ${store.name}`" />
 
         <!-- Store header -->
@@ -212,7 +212,7 @@ const place = () => {
         </main>
 
         <!-- Basket bar -->
-        <div v-if="basketCount > 0 && !showBasket" class="fixed inset-x-0 bottom-0 z-20 p-4">
+        <div v-if="basketCount > 0 && !showBasket" class="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md p-4">
             <button
                 class="flex w-full items-center gap-3 rounded-2xl bg-brand-600 px-5 py-4 text-white shadow-elevated"
                 @click="showBasket = true"
@@ -235,7 +235,7 @@ const place = () => {
                 aria-label="Your basket"
                 @click.self="showBasket = false"
             >
-                <div class="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5" style="overscroll-behavior: contain;">
+                <div class="mx-auto max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5" style="overscroll-behavior: contain;">
                     <div class="flex items-center justify-between">
                         <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
                             <ShoppingBagIcon class="h-5 w-5 text-brand-600" aria-hidden="true" />

@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidModifierException;
 use App\Exceptions\ProductUnavailableException;
+use App\Models\Category;
 use App\Models\Modifier;
 use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Sale;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\SaleService;
@@ -15,7 +18,7 @@ use App\Services\SaleService;
 /**
  * @param  array<string, mixed>  $line
  */
-function checkoutLine(User $cashier, array $line): App\Models\Sale
+function checkoutLine(User $cashier, array $line): Sale
 {
     return resolve(SaleService::class)->checkout([
         'items' => [$line],
@@ -204,7 +207,7 @@ it('still blocks an oversold product that does track stock', function () {
     $product = Product::factory()->active()->withStock(3)->create();
 
     expect(fn () => checkoutLine($cashier, ['product_id' => $product->id, 'quantity' => 4]))
-        ->toThrow(App\Exceptions\InsufficientStockException::class);
+        ->toThrow(InsufficientStockException::class);
 });
 
 it('does not restore stock on void for an untracked product', function () {
@@ -270,9 +273,9 @@ it('lets two stores use the same sku', function () {
 
 it('lets two stores use the same category name', function () {
     $other = Store::factory()->create();
-    asStore($other, fn () => App\Models\Category::factory()->create(['name' => 'Beverages']));
+    asStore($other, fn () => Category::factory()->create(['name' => 'Beverages']));
 
-    $mine = App\Models\Category::factory()->create(['name' => 'Beverages']);
+    $mine = Category::factory()->create(['name' => 'Beverages']);
 
     expect($mine->name)->toBe('Beverages');
 });
@@ -280,7 +283,7 @@ it('lets two stores use the same category name', function () {
 it('still rejects a duplicate sku inside one store', function () {
     Product::factory()->create(['sku' => 'COFFEE-01']);
     $admin = User::factory()->admin()->create();
-    $category = App\Models\Category::factory()->create();
+    $category = Category::factory()->create();
 
     $this->actingAs($admin)
         ->post(route('inventory.store'), [

@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Store;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -216,7 +217,7 @@ class OrderService
      */
     private function checkoutItems(Order $order): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, OrderItem> $items */
+        /** @var Collection<int, OrderItem> $items */
         $items = $order->items()->with('modifiers')->get();
 
         return $items->map(fn (OrderItem $item) => [

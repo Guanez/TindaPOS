@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Models\Store;
 use App\Support\StoreContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,8 +18,8 @@ use App\Support\StoreContext;
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->beforeEach(function () {
         app(StoreContext::class)->set(Store::factory()->create()->id);
     })

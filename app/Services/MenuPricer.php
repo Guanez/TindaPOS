@@ -12,6 +12,7 @@ use App\Models\Modifier;
 use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Turns a posted line — a product id, a size, some add-ons — into what may
@@ -112,7 +113,7 @@ class MenuPricer
      */
     private function resolveModifiers(Product $product, array $modifierIds): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, ModifierGroup> $groups */
+        /** @var Collection<int, ModifierGroup> $groups */
         $groups = $product->modifierGroups()->with('modifiers')->get();
 
         $selected = $modifierIds === []

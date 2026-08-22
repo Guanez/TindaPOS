@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\OrderStatus;
+use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Modifier;
 use App\Models\ModifierGroup;
@@ -10,6 +11,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Sale;
+use App\Models\Store;
 use App\Models\User;
 use App\Services\OrderService;
 
@@ -97,7 +99,7 @@ it('refuses to place an order for a sold out item', function () {
 
     expect(fn () => orders()->place(currentStore(), [
         'items' => [['product_id' => $product->id, 'quantity' => 5]],
-    ]))->toThrow(App\Exceptions\InsufficientStockException::class);
+    ]))->toThrow(InsufficientStockException::class);
 
     expect(Order::count())->toBe(0);
 });
@@ -254,7 +256,7 @@ it('leaves paid orders alone however long they sit', function () {
 });
 
 it('expires across every store at once', function () {
-    $other = App\Models\Store::factory()->create();
+    $other = Store::factory()->create();
     asStore($other, fn () => Order::factory()->placedAt(now()->subHour())->create());
     Order::factory()->placedAt(now()->subHour())->create();
 
@@ -269,7 +271,7 @@ it('expires across every store at once', function () {
 */
 
 it('hides another store orders', function () {
-    $other = App\Models\Store::factory()->create();
+    $other = Store::factory()->create();
     asStore($other, fn () => Order::factory()->count(3)->create());
     Order::factory()->create();
 
