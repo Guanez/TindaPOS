@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Models\Concerns\BelongsToStore;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,6 +13,7 @@ use Illuminate\Notifications\Notifiable;
 
 /**
  * @property int $id
+ * @property int|null $store_id
  * @property string $name
  * @property string $username
  * @property string|null $email
@@ -21,9 +23,10 @@ use Illuminate\Notifications\Notifiable;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use BelongsToStore, HasFactory, Notifiable;
 
     protected $fillable = [
+        'store_id',
         'name',
         'username',
         'email',
@@ -73,6 +76,15 @@ class User extends Authenticatable
     public function isManager(): bool
     {
         return $this->role->isManager();
+    }
+
+    /**
+     * A user with no store operates the platform itself rather than a shop,
+     * and is deliberately left unscoped.
+     */
+    public function isPlatformOwner(): bool
+    {
+        return $this->store_id === null;
     }
 
     public function hasRole(string ...$roles): bool

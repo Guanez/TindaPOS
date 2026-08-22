@@ -16,7 +16,34 @@ arch('all PHP files use strict types')
 arch('models extend Eloquent Model')
     ->expect('App\Models')
     ->toExtend('Illuminate\Database\Eloquent\Model')
-    ->ignoring('App\Models\User');
+    ->ignoring([
+        'App\Models\User',
+        'App\Models\Concerns',
+        'App\Models\Scopes',
+    ]);
+
+/*
+|--------------------------------------------------------------------------
+| Tenancy
+|--------------------------------------------------------------------------
+| Store scoping comes from exactly one trait. A tenant model that forgets it
+| would silently serve one cafe's data to another, so membership of this set
+| is asserted rather than trusted.
+*/
+
+arch('tenant models are scoped to a store')
+    ->expect([
+        'App\Models\Category',
+        'App\Models\Product',
+        'App\Models\Sale',
+        'App\Models\StockLog',
+        'App\Models\User',
+    ])
+    ->toUseTrait('App\Models\Concerns\BelongsToStore');
+
+arch('the store scope is applied through the trait, never per model')
+    ->expect('App\Models\Scopes\StoreScope')
+    ->toOnlyBeUsedIn('App\Models\Concerns\BelongsToStore');
 
 arch('controllers extend base Controller')
     ->expect('App\Http\Controllers')

@@ -4,22 +4,41 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Store;
+use App\Support\StoreContext;
 use Illuminate\Database\Seeder;
 
+/**
+ * Note: deliberately does NOT use WithoutModelEvents. Tenant models fill
+ * store_id from a `creating` hook, and suppressing model events makes every
+ * insert here fail the NOT NULL constraint.
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        $this->call([
-            UserSeeder::class,
-            CategorySeeder::class,
-            ProductSeeder::class,
-        ]);
+        $store = Store::query()->firstOrCreate(
+            ['slug' => 'main'],
+            [
+                'name' => 'TindaPOS Sari-Sari Store',
+                'type' => 'sari_sari',
+                'address' => 'Brgy. Sample, Quezon City, Metro Manila',
+                'phone' => '0917-123-4567',
+                'receipt_footer' => 'Salamat po! Please come again.',
+                'currency_symbol' => 'P',
+            ]
+        );
+
+        // Everything seeded below belongs to that store.
+        app(StoreContext::class)->runFor($store->id, function (): void {
+            $this->call([
+                UserSeeder::class,
+                CategorySeeder::class,
+                ProductSeeder::class,
+            ]);
+        });
     }
 }
