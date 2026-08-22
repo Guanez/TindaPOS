@@ -9,6 +9,7 @@ use App\Http\Controllers\ModifierGroupController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SalesController;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,24 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+// ─── Public: customer QR ordering ────────────────────
+// The only routes in the application without `auth`. The store is resolved
+// from the URL by middleware, which also 404s a store that has not switched
+// online ordering on — so the whole feature ships dark until a cafe opts in.
+Route::prefix('s/{storeSlug}')->middleware('public.store')->group(function () {
+    Route::get('/', [PublicOrderController::class, 'menu'])->name('public.menu');
+
+    Route::post('/orders', [PublicOrderController::class, 'place'])
+        ->middleware('throttle:10,1')
+        ->name('public.orders.place');
+});
+
+// Addressed by an unguessable token rather than an id, so one customer
+// cannot walk another's order.
+Route::get('/o/{token}', [PublicOrderController::class, 'status'])
+    ->middleware('throttle:120,1')
+    ->name('public.status');
 
 // ─── Authenticated Routes ────────────────────────────
 Route::middleware(['auth', 'active'])->group(function () {

@@ -38,7 +38,9 @@ class CafeSeeder extends Seeder
                 'receipt_footer' => 'Salamat! Balik ka ulit.',
                 'currency_symbol' => 'P',
                 'qr_token' => Str::random(32),
-                'online_ordering_enabled' => false,
+                // On for the demo cafe so the QR menu is reachable out of the
+                // box. A newly created store still defaults to off.
+                'online_ordering_enabled' => true,
             ]
         );
 
