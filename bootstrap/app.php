@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidModifierException;
+use App\Exceptions\InvalidOrderTransitionException;
 use App\Exceptions\InvalidStockException;
 use App\Exceptions\ProductInactiveException;
 use App\Exceptions\ProductUnavailableException;
@@ -46,6 +47,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->renderable(function (InvalidModifierException $e) {
             return back()->withErrors(['checkout' => $e->getMessage()]);
+        });
+
+        // Usually two taps on the same queue button.
+        $exceptions->renderable(function (InvalidOrderTransitionException $e) {
+            return back()->withErrors(['order' => $e->getMessage()]);
         });
 
         $exceptions->renderable(function (SaleAlreadyVoidedException $e) {

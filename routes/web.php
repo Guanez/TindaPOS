@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ModifierGroupController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -28,6 +29,13 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/pos/checkout', [PosController::class, 'checkout'])
         ->middleware('throttle:30,1')
         ->name('pos.checkout');
+
+    // Order queue (all roles — the cashier and the barista both work it)
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/{order}/settle', [OrderController::class, 'settle'])->name('orders.settle');
+    Route::post('/orders/{order}/reject', [OrderController::class, 'reject'])->name('orders.reject');
+    Route::post('/orders/{order}/ready', [OrderController::class, 'ready'])->name('orders.ready');
+    Route::post('/orders/{order}/collect', [OrderController::class, 'collect'])->name('orders.collect');
 
     // Sales History (all roles)
     Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');

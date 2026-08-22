@@ -11,6 +11,7 @@ import {
     XMarkIcon,
     ArrowRightStartOnRectangleIcon,
     ClockIcon,
+    QueueListIcon,
 } from '@heroicons/vue/24/outline'
 
 const page = usePage()
@@ -42,6 +43,7 @@ watch(
 const iconMap = {
     dashboard:         Squares2X2Icon,
     'pos.index':       ShoppingCartIcon,
+    'orders.index':    QueueListIcon,
     'sales.index':     ClipboardDocumentListIcon,
     'inventory.index': CubeIcon,
     'reports.index':   ChartBarIcon,
@@ -52,6 +54,7 @@ const navItems = computed(() => {
     const items = [
         { name: 'Dashboard',     href: 'dashboard',       roles: ['owner', 'admin', 'cashier'] },
         { name: 'POS Terminal',  href: 'pos.index',       roles: ['owner', 'admin', 'cashier'] },
+        { name: 'Order Queue',   href: 'orders.index',    roles: ['owner', 'admin', 'cashier'] },
         { name: 'Sales History', href: 'sales.index',     roles: ['owner', 'admin', 'cashier'] },
         { name: 'divider',       roles: ['owner', 'admin'] },
         { name: 'Inventory',     href: 'inventory.index', roles: ['owner', 'admin'] },

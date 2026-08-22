@@ -36,6 +36,7 @@ arch('tenant models are scoped to a store')
         'App\Models\Category',
         'App\Models\Modifier',
         'App\Models\ModifierGroup',
+        'App\Models\Order',
         'App\Models\Product',
         'App\Models\ProductVariant',
         'App\Models\Sale',

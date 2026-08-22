@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\Modifier;
 use App\Models\ModifierGroup;
+use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\OrderService;
 use App\Support\StoreContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -38,10 +42,11 @@ class CafeSeeder extends Seeder
             ]
         );
 
-        app(StoreContext::class)->runFor($store->id, function (): void {
+        app(StoreContext::class)->runFor($store->id, function () use ($store): void {
             $this->seedStaff();
             $groups = $this->seedModifierGroups();
             $this->seedMenu($groups);
+            $this->seedQueue($store);
         });
     }
 
@@ -65,6 +70,62 @@ class CafeSeeder extends Seeder
                 'password' => 'owner123',
                 'role' => 'cashier',
             ]
+        );
+    }
+
+    /**
+     * A few orders on the board, so the queue screen has something to show
+     * before the customer-facing page exists. Delete this method once real
+     * orders start arriving.
+     */
+    private function seedQueue(Store $store): void
+    {
+        if (Order::query()->count() > 0) {
+            return;
+        }
+
+        $latte = Product::query()->where('sku', 'LAT')->first();
+        $pastry = Product::query()->where('sku', 'ENS')->first();
+        $barista = User::query()->where('username', 'kape_barista')->first();
+
+        if ($latte === null || $pastry === null || $barista === null) {
+            return;
+        }
+
+        $large = ProductVariant::query()->where('product_id', $latte->id)->where('name', '16oz')->first();
+        $hot = Modifier::query()->where('name', 'Hot')->first();
+        $oat = Modifier::query()->where('name', 'Oat milk')->first();
+
+        $orders = app(OrderService::class);
+
+        $latteLine = fn (array $modifierIds) => [
+            'product_id' => $latte->id,
+            'quantity' => 1,
+            'variant_id' => $large?->id,
+            'modifier_ids' => array_values(array_filter($modifierIds)),
+        ];
+
+        // Waiting at the till.
+        $orders->place($store, [
+            'items' => [$latteLine([$hot?->id, $oat?->id])],
+            'customer_name' => 'Ana',
+            'note' => 'Less ice please',
+        ]);
+
+        // Paid, being made.
+        $second = $orders->place($store, [
+            'items' => [$latteLine([$hot?->id]), ['product_id' => $pastry->id, 'quantity' => 2]],
+            'customer_name' => 'Miguel',
+        ]);
+        $orders->settle($second, $barista, ['payment_method' => 'gcash']);
+
+        // Ready for pickup.
+        $third = $orders->place($store, [
+            'items' => [$latteLine([$hot?->id])],
+            'customer_name' => 'Joy',
+        ]);
+        $orders->markReady(
+            $orders->settle($third, $barista, ['payment_method' => 'cash', 'cash_received' => 500])
         );
     }
 
