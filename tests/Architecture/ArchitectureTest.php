@@ -34,7 +34,10 @@ arch('models extend Eloquent Model')
 arch('tenant models are scoped to a store')
     ->expect([
         'App\Models\Category',
+        'App\Models\Modifier',
+        'App\Models\ModifierGroup',
         'App\Models\Product',
+        'App\Models\ProductVariant',
         'App\Models\Sale',
         'App\Models\StockLog',
         'App\Models\User',

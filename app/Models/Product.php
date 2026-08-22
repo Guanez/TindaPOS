@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -26,8 +27,10 @@ class Product extends Model
         'selling_price',
         'stock_quantity',
         'low_stock_threshold',
+        'track_stock',
         'is_favorite',
         'is_active',
+        'is_available',
     ];
 
     protected function casts(): array
@@ -37,8 +40,10 @@ class Product extends Model
             'selling_price' => 'decimal:2',
             'stock_quantity' => 'integer',
             'low_stock_threshold' => 'integer',
+            'track_stock' => 'boolean',
             'is_favorite' => 'boolean',
             'is_active' => 'boolean',
+            'is_available' => 'boolean',
         ];
     }
 
@@ -52,6 +57,18 @@ class Product extends Model
     public function saleItems(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    public function modifierGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(ModifierGroup::class, 'product_modifier_group')
+            ->withPivot('sort_order')
+            ->orderBy('sort_order');
     }
 
     public function stockLogs(): HasMany
@@ -86,7 +103,23 @@ class Product extends Model
     public function scopeLowStock(Builder $query): Builder
     {
         return $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+            ->where('track_stock', true)
             ->where('is_active', true);
+    }
+
+    /**
+     * Sellable right now: active, not switched off mid-service, and either
+     * not stock-tracked or actually in stock.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeSellable(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->where('is_available', true)
+            ->where(fn (Builder $q) => $q->where('track_stock', false)
+                ->orWhere('stock_quantity', '>', 0));
     }
 
     /**
@@ -106,12 +139,17 @@ class Product extends Model
 
     public function isLowStock(): bool
     {
-        return $this->stock_quantity <= $this->low_stock_threshold;
+        return $this->track_stock && $this->stock_quantity <= $this->low_stock_threshold;
     }
 
     public function isOutOfStock(): bool
     {
-        return $this->stock_quantity <= 0;
+        return $this->track_stock && $this->stock_quantity <= 0;
+    }
+
+    public function hasVariants(): bool
+    {
+        return $this->variants()->exists();
     }
 
     public function profit(): float

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\ModifierGroupController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -52,6 +53,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    });
+
+    // Add-on groups (managers only)
+    Route::middleware('role:owner,admin')->group(function () {
+        Route::post('/modifier-groups', [ModifierGroupController::class, 'store'])->name('modifierGroups.store');
+        Route::put('/modifier-groups/{modifier_group}', [ModifierGroupController::class, 'update'])->name('modifierGroups.update');
+        Route::delete('/modifier-groups/{modifier_group}', [ModifierGroupController::class, 'destroy'])->name('modifierGroups.destroy');
     });
 
     // Reports (managers only)

@@ -40,5 +40,8 @@ class DatabaseSeeder extends Seeder
                 ProductSeeder::class,
             ]);
         });
+
+        // A second store, with its own staff, menu and add-ons.
+        $this->call(CafeSeeder::class);
     }
 }

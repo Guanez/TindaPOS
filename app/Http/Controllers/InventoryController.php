@@ -9,9 +9,11 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Category;
+use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\StockLog;
 use App\Services\InventoryService;
+use App\Services\MenuService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,7 +22,8 @@ use Inertia\Response;
 class InventoryController extends Controller
 {
     public function __construct(
-        private readonly InventoryService $inventoryService
+        private readonly InventoryService $inventoryService,
+        private readonly MenuService $menuService,
     ) {}
 
     /**
@@ -50,12 +53,15 @@ class InventoryController extends Controller
             };
         }
 
-        $products = $query->orderBy('name')->paginate(15)->withQueryString();
+        $products = $query->with(['variants', 'modifierGroups'])
+            ->orderBy('name')->paginate(15)->withQueryString();
+
         $categories = Category::active()->orderBy('name')->get();
 
         return Inertia::render('Inventory/Index', [
             'products' => ProductResource::collection($products),
             'categories' => $categories,
+            'modifierGroups' => ModifierGroup::with('modifiers')->orderBy('name')->get(),
             'filters' => $request->only(['search', 'category', 'stock']),
         ]);
     }
@@ -65,7 +71,9 @@ class InventoryController extends Controller
      */
     public function store(StoreProductRequest $request): RedirectResponse
     {
-        Product::create($request->validated());
+        $data = $request->validated();
+        $product = Product::create($data);
+        $this->saveMenu($product, $data);
 
         return redirect()->route('inventory.index')
             ->with('success', 'Product created successfully.');
@@ -76,10 +84,29 @@ class InventoryController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
-        $product->update($request->validated());
+        $data = $request->validated();
+        $product->update($data);
+        $this->saveMenu($product, $data);
 
         return redirect()->route('inventory.index')
             ->with('success', 'Product updated successfully.');
+    }
+
+    /**
+     * Sizes and add-ons are edited in the same modal as the product, so they
+     * are saved by the same request.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function saveMenu(Product $product, array $data): void
+    {
+        if (array_key_exists('variants', $data)) {
+            $this->menuService->syncVariants($product, $data['variants']);
+        }
+
+        if (array_key_exists('modifier_group_ids', $data)) {
+            $this->menuService->syncModifierGroups($product, $data['modifier_group_ids']);
+        }
     }
 
     /**

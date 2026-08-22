@@ -24,7 +24,7 @@ class PosController extends Controller
      */
     public function index(): Response
     {
-        $products = Product::with('category')
+        $products = Product::with(['category', 'variants', 'modifierGroups.modifiers'])
             ->active()
             ->orderBy('name')
             ->get();

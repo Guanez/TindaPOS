@@ -1,5 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { formatPeso } from '@/Composables/helpers';
@@ -78,39 +79,92 @@ const filteredProducts = computed(() => {
 });
 
 // Cart helpers
-const addToCart = (product) => {
-    if (product.stock_quantity <= 0) return;
-    const existing = cart.value.find(i => i.product_id === product.id);
-    if (existing) {
-        if (existing.quantity < product.stock_quantity) existing.quantity++;
-    } else {
-        cart.value.push({
-            product_id: product.id,
-            name: product.name,
-            selling_price: parseFloat(product.selling_price),
-            stock: product.stock_quantity,
-            quantity: 1,
-        });
+//
+// The same drink in two sizes is two different lines, so a line is identified
+// by product + variant + the add-ons chosen, not by product alone.
+const lineKey = (productId, variantId, modifierIds) =>
+    [productId, variantId ?? 0, [...modifierIds].sort((a, b) => a - b).join('.')].join(':');
+
+// A product with no sizes and no add-ons still goes straight in, which keeps
+// sari-sari ringing up as fast as it was.
+const hasOptions = (product) =>
+    (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
+
+// Stock only limits products that are counted; a cafe does not count lattes.
+const stockLimit = (product) =>
+    product.track_stock === false ? Infinity : product.stock_quantity;
+
+const isSoldOut = (product) =>
+    product.is_available === false || (product.track_stock !== false && product.stock_quantity <= 0);
+
+const optionsProduct = ref(null);
+
+const openProduct = (product) => {
+    if (isSoldOut(product)) return;
+
+    if (hasOptions(product)) {
+        optionsProduct.value = product;
+        return;
     }
+
+    addToCart(product, { variant: null, modifiers: [], unitPrice: parseFloat(product.selling_price) });
+};
+
+const addToCart = (product, { variant, modifiers, unitPrice }) => {
+    const modifierIds = modifiers.map(m => m.id);
+    const key = lineKey(product.id, variant?.id, modifierIds);
+    const limit = stockLimit(product);
+
+    const existing = cart.value.find(i => i.key === key);
+
+    if (existing) {
+        if (existing.quantity < limit) existing.quantity++;
+        return;
+    }
+
+    cart.value.push({
+        key,
+        product_id: product.id,
+        variant_id: variant?.id ?? null,
+        modifier_ids: modifierIds,
+        name: product.name,
+        variant_name: variant?.name ?? null,
+        modifier_names: modifiers.map(m => m.name),
+        selling_price: unitPrice,
+        stock: limit === Infinity ? null : limit,
+        quantity: 1,
+    });
+};
+
+const confirmOptions = (selection) => {
+    addToCart(optionsProduct.value, selection);
+    optionsProduct.value = null;
 };
 
 const decreaseFromCart = (product) => {
-    const index = cart.value.findIndex(i => i.product_id === product.id);
+    // Right-click decrements the most recent line for this product.
+    const index = cart.value.map(i => i.product_id).lastIndexOf(product.id);
     if (index === -1) return;
     if (cart.value[index].quantity > 1) cart.value[index].quantity--;
     else cart.value.splice(index, 1);
 };
 
+// How many of this product are in the cart, across all sizes and add-ons.
+const inCartCount = (product) =>
+    cart.value.filter(i => i.product_id === product.id).reduce((sum, i) => sum + i.quantity, 0);
+
 const removeFromCart = (index) => cart.value.splice(index, 1);
+
+const limitOf = (item) => item.stock ?? Infinity;
 
 const updateQuantity = (item, qty) => {
     const val = parseInt(qty);
     if (isNaN(val) || val < 1) item.quantity = 1;
-    else if (val > item.stock) item.quantity = item.stock;
+    else if (val > limitOf(item)) item.quantity = limitOf(item);
     else item.quantity = val;
 };
 
-const incrementQty = (item) => { if (item.quantity < item.stock) item.quantity++; };
+const incrementQty = (item) => { if (item.quantity < limitOf(item)) item.quantity++; };
 const decrementQty = (item) => { if (item.quantity > 1) item.quantity--; else removeFromCart(cart.value.indexOf(item)); };
 const clearCart = () => { cart.value = []; discount.value = 0; localStorage.removeItem(CART_KEY); };
 
@@ -140,7 +194,12 @@ const processCheckout = () => {
     processing.value = true;
 
     router.post(route('pos.checkout'), {
-        items: cart.value.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+        items: cart.value.map(i => ({
+            product_id: i.product_id,
+            quantity: i.quantity,
+            variant_id: i.variant_id ?? null,
+            modifier_ids: i.modifier_ids ?? [],
+        })),
         discount: discountAmount.value,
         payment_method: paymentMethod.value,
         cash_received: paymentMethod.value === 'cash' ? cashReceivedNum.value : null,
@@ -182,6 +241,7 @@ const handleKeydown = (e) => {
     // Escape: Close modals
     if (e.key === 'Escape') {
         if (showReceipt.value) closeReceipt();
+        else if (optionsProduct.value) optionsProduct.value = null;
         else if (showCheckout.value) showCheckout.value = false;
     }
 };
@@ -252,12 +312,12 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         <button
                             v-for="product in filteredProducts"
                             :key="product.id"
-                            @click="addToCart(product)"
+                            @click="openProduct(product)"
                             @contextmenu.prevent="decreaseFromCart(product)"
-                            :disabled="product.stock_quantity <= 0"
+                            :disabled="isSoldOut(product)"
                             :class="[
                                 'pos-grid-item relative',
-                                product.stock_quantity <= 0
+                                isSoldOut(product)
                                     ? 'cursor-not-allowed opacity-50'
                                     : 'hover:border-brand-200'
                             ]"
@@ -265,8 +325,24 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             <StarIcon v-if="product.is_favorite" class="absolute right-2 top-2 h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
 
                             <p class="text-[13px] font-semibold leading-tight text-slate-800">{{ product.name }}</p>
-                            <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-brand-600">{{ formatPeso(product.selling_price) }}</p>
+                            <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-brand-600">
+                                <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ formatPeso(product.selling_price) }}
+                            </p>
+
                             <p
+                                v-if="product.is_available === false"
+                                class="mt-1.5 text-[11px] font-medium text-red-500"
+                            >
+                                Sold out
+                            </p>
+                            <p
+                                v-else-if="product.track_stock === false"
+                                class="mt-1.5 text-[11px] font-medium text-slate-400"
+                            >
+                                {{ product.modifier_groups?.length ? 'Made to order' : 'Available' }}
+                            </p>
+                            <p
+                                v-else
                                 class="mt-1.5 text-[11px] font-medium"
                                 :class="product.stock_quantity <= 0 ? 'text-red-500' : product.stock_quantity <= product.low_stock_threshold ? 'text-amber-500' : 'text-slate-400'"
                             >
@@ -275,10 +351,10 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                             <!-- Cart quantity indicator -->
                             <span
-                                v-if="cart.find(i => i.product_id === product.id)"
+                                v-if="inCartCount(product) > 0"
                                 class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white shadow-sm"
                             >
-                                {{ cart.find(i => i.product_id === product.id)?.quantity }}
+                                {{ inCartCount(product) }}
                             </span>
                         </button>
                     </div>
@@ -317,9 +393,14 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                     </div>
 
                     <div v-else class="divide-y divide-slate-100 px-4">
-                        <div v-for="(item, index) in cart" :key="item.product_id" class="flex items-center gap-3 py-3">
+                        <div v-for="(item, index) in cart" :key="item.key ?? item.product_id" class="flex items-center gap-3 py-3">
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-[13px] font-semibold text-slate-800">{{ item.name }}</p>
+                                <p class="truncate text-[13px] font-semibold text-slate-800">
+                                    {{ item.name }}<span v-if="item.variant_name" class="text-slate-500"> ({{ item.variant_name }})</span>
+                                </p>
+                                <p v-if="item.modifier_names?.length" class="truncate text-[11px] text-brand-600">
+                                    + {{ item.modifier_names.join(', ') }}
+                                </p>
                                 <p class="text-[11px] text-slate-400">{{ formatPeso(item.selling_price) }} each</p>
                             </div>
 
@@ -331,10 +412,10 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 <input
                                     :value="item.quantity"
                                     @change="updateQuantity(item, $event.target.value)"
-                                    type="number" min="1" :max="item.stock"
+                                    type="number" min="1" :max="item.stock ?? undefined"
                                     class="h-7 w-9 rounded-lg border-slate-200 text-center text-[12px] font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 />
-                                <button @click="incrementQty(item)" :disabled="item.quantity >= item.stock" :aria-label="`Increase ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40" style="transition: background-color 0.15s;">
+                                <button @click="incrementQty(item)" :disabled="item.stock !== null && item.quantity >= item.stock" :aria-label="`Increase ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40" style="transition: background-color 0.15s;">
                                     <PlusIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
                             </div>
@@ -391,6 +472,14 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 </div>
             </div>
         </div>
+
+        <!-- PRODUCT OPTIONS -->
+        <ProductOptionsModal
+            :show="optionsProduct !== null"
+            :product="optionsProduct"
+            @close="optionsProduct = null"
+            @confirm="confirmOptions"
+        />
 
         <!-- CHECKOUT MODAL -->
         <Teleport to="body">

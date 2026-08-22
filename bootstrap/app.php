@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Exceptions\InsufficientStockException;
+use App\Exceptions\InvalidModifierException;
 use App\Exceptions\InvalidStockException;
 use App\Exceptions\ProductInactiveException;
+use App\Exceptions\ProductUnavailableException;
 use App\Exceptions\SaleAlreadyVoidedException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -35,6 +37,14 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->renderable(function (ProductInactiveException $e) {
+            return back()->withErrors(['checkout' => $e->getMessage()]);
+        });
+
+        $exceptions->renderable(function (ProductUnavailableException $e) {
+            return back()->withErrors(['checkout' => $e->getMessage()]);
+        });
+
+        $exceptions->renderable(function (InvalidModifierException $e) {
             return back()->withErrors(['checkout' => $e->getMessage()]);
         });
 

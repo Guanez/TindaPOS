@@ -19,6 +19,12 @@ class CheckoutRequest extends FormRequest
             'items' => ['required', 'array', 'min:1', 'max:100'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:9999'],
+            // Deliberately no `exists` rule on these two: an exists check runs
+            // unscoped and would confirm that another store's variant exists.
+            // SaleService resolves them against this store's menu instead.
+            'items.*.variant_id' => ['nullable', 'integer'],
+            'items.*.modifier_ids' => ['nullable', 'array', 'max:20'],
+            'items.*.modifier_ids.*' => ['integer'],
             'discount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'payment_method' => ['required', 'in:cash,gcash,maya,card,other'],
             'cash_received' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],

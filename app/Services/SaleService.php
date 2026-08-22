@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\InsufficientStockException;
+use App\Exceptions\InvalidModifierException;
 use App\Exceptions\ProductInactiveException;
+use App\Exceptions\ProductUnavailableException;
 use App\Exceptions\SaleAlreadyVoidedException;
+use App\Models\Modifier;
+use App\Models\ModifierGroup;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockLog;
@@ -70,25 +75,12 @@ class SaleService
             $resolvedItems = [];
 
             foreach ($items as $item) {
-                $product = Product::lockForUpdate()->findOrFail($item['product_id']);
+                $resolved = $this->resolveLine($item);
 
-                if (! $product->is_active) {
-                    throw new ProductInactiveException($product);
-                }
+                $subtotal += $resolved['line_total'];
+                $itemCount += $resolved['quantity'];
 
-                if ($product->stock_quantity < $item['quantity']) {
-                    throw new InsufficientStockException($product, $item['quantity']);
-                }
-
-                $lineTotal = $product->selling_price * $item['quantity'];
-                $subtotal += $lineTotal;
-                $itemCount += $item['quantity'];
-
-                $resolvedItems[] = [
-                    'product' => $product,
-                    'quantity' => $item['quantity'],
-                    'line_total' => $lineTotal,
-                ];
+                $resolvedItems[] = $resolved;
             }
 
             // 2. Calculate final total
@@ -118,12 +110,20 @@ class SaleService
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $product->id,
+                    'product_variant_id' => $ri['variant']?->id,
                     'product_name' => $product->name,
-                    'cost_price' => $product->cost_price,
-                    'selling_price' => $product->selling_price,
+                    'variant_name' => $ri['variant']?->name,
+                    'modifiers' => $ri['modifiers'] === [] ? null : $ri['modifiers'],
+                    'cost_price' => $ri['cost_price'],
+                    'selling_price' => $ri['unit_price'],
                     'quantity' => $ri['quantity'],
                     'line_total' => $ri['line_total'],
                 ]);
+
+                // A cafe does not count lattes, so only stocked goods move.
+                if (! $product->track_stock) {
+                    continue;
+                }
 
                 $stockBefore = $product->stock_quantity;
                 $product->decrement('stock_quantity', $ri['quantity']);
@@ -145,6 +145,128 @@ class SaleService
     }
 
     /**
+     * Turn one posted line into what will actually be charged and recorded.
+     *
+     * A line with no variant and no modifiers resolves to exactly the product's
+     * own price, which is why every pre-menu sale behaves identically.
+     *
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    private function resolveLine(array $item): array
+    {
+        $product = Product::lockForUpdate()->findOrFail($item['product_id']);
+
+        if (! $product->is_active) {
+            throw new ProductInactiveException($product);
+        }
+
+        if (! $product->is_available) {
+            throw new ProductUnavailableException($product);
+        }
+
+        $quantity = (int) $item['quantity'];
+
+        if ($product->track_stock && $product->stock_quantity < $quantity) {
+            throw new InsufficientStockException($product, $quantity);
+        }
+
+        $variant = $this->resolveVariant($product, $item['variant_id'] ?? null);
+        $modifiers = $this->resolveModifiers($product, $item['modifier_ids'] ?? []);
+
+        $basePrice = $variant !== null ? $variant->selling_price : $product->selling_price;
+        $baseCost = $variant !== null && $variant->cost_price !== null
+            ? $variant->cost_price
+            : $product->cost_price;
+
+        $unitPrice = (float) $basePrice + array_sum(array_column($modifiers, 'price_delta'));
+        $costPrice = (float) $baseCost;
+
+        return [
+            'product' => $product,
+            'variant' => $variant,
+            'modifiers' => $modifiers,
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'cost_price' => $costPrice,
+            'line_total' => $unitPrice * $quantity,
+        ];
+    }
+
+    /**
+     * The variant must belong to this product — and, through the store scope,
+     * to this store.
+     */
+    private function resolveVariant(Product $product, mixed $variantId): ?ProductVariant
+    {
+        if ($variantId === null) {
+            return null;
+        }
+
+        $variant = ProductVariant::query()
+            ->where('product_id', $product->id)
+            ->active()
+            ->find($variantId);
+
+        if ($variant === null) {
+            throw InvalidModifierException::notOnProduct($product->name);
+        }
+
+        return $variant;
+    }
+
+    /**
+     * Validate the add-on selection against the groups actually attached to the
+     * product, then snapshot the chosen options with the price charged for them.
+     *
+     * @param  array<int, mixed>  $modifierIds
+     * @return array<int, array{id: int, name: string, price_delta: float}>
+     */
+    private function resolveModifiers(Product $product, array $modifierIds): array
+    {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, ModifierGroup> $groups */
+        $groups = $product->modifierGroups()->with('modifiers')->get();
+
+        $selected = $modifierIds === []
+            ? collect()
+            : Modifier::query()->active()->whereIn('id', $modifierIds)->get();
+
+        if ($selected->count() !== count(array_unique($modifierIds))) {
+            throw InvalidModifierException::notOnProduct($product->name);
+        }
+
+        $allowed = $groups->pluck('id');
+
+        foreach ($selected as $modifier) {
+            if (! $allowed->contains($modifier->modifier_group_id)) {
+                throw InvalidModifierException::notOnProduct($product->name);
+            }
+        }
+
+        foreach ($groups as $group) {
+            $chosen = $selected->where('modifier_group_id', $group->id)->count();
+
+            if ($chosen > $group->max_select) {
+                throw InvalidModifierException::tooMany($group->name, $group->max_select);
+            }
+
+            if ($chosen < $group->min_select) {
+                throw InvalidModifierException::required($group->name, $group->min_select);
+            }
+        }
+
+        return $selected
+            ->sortBy('sort_order')
+            ->map(fn (Modifier $modifier) => [
+                'id' => $modifier->id,
+                'name' => $modifier->name,
+                'price_delta' => (float) $modifier->price_delta,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * Void a sale — restore stock and mark as voided.
      */
     public function voidSale(Sale $sale, User $user, string $reason): Sale
@@ -159,7 +281,7 @@ class SaleService
             foreach ($sale->items as $item) {
                 $product = Product::lockForUpdate()->find($item->product_id);
 
-                if ($product) {
+                if ($product && $product->track_stock) {
                     $stockBefore = $product->stock_quantity;
                     $product->increment('stock_quantity', $item->quantity);
 
