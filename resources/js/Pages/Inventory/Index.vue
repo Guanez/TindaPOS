@@ -2,7 +2,7 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StockBadge from '@/Components/StockBadge.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { formatPeso, debounce } from '@/Composables/helpers';
 import {
     MagnifyingGlassIcon,
@@ -20,6 +20,11 @@ const props = defineProps({
     categories: Array,
     filters: Object,
 });
+
+// ProductResource::collection() wraps the paginator as { data, links, meta },
+// so the paginator fields live under meta — not on the prop root.
+const productList = computed(() => props.products?.data ?? []);
+const pagination = computed(() => props.products?.meta ?? {});
 
 // Filters
 const search = ref(props.filters?.search ?? '');
@@ -169,7 +174,7 @@ const goToPage = (url) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="product in products.data" :key="product.id" class="transition-colors hover:bg-slate-50/50">
+                            <tr v-for="product in productList" :key="product.id" class="transition-colors hover:bg-slate-50/50">
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
                                         <StarIcon v-if="product.is_favorite" aria-hidden="true" class="h-3.5 w-3.5 shrink-0 text-amber-400" />
@@ -216,7 +221,7 @@ const goToPage = (url) => {
                 </div>
 
                 <!-- Empty State -->
-                <div v-if="products.data.length === 0" class="flex flex-col items-center justify-center py-14">
+                <div v-if="productList.length === 0" class="flex flex-col items-center justify-center py-14">
                     <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
                         <CubeIcon aria-hidden="true" class="h-7 w-7 text-slate-300" />
                     </div>
@@ -224,13 +229,13 @@ const goToPage = (url) => {
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="products.last_page > 1" class="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+                <div v-if="pagination.last_page > 1" class="flex items-center justify-between border-t border-slate-100 px-4 py-3">
                     <p class="text-[12px] text-slate-500">
-                        Showing {{ products.from }}&ndash;{{ products.to }} of {{ products.total }}
+                        Showing {{ pagination.from }}&ndash;{{ pagination.to }} of {{ pagination.total }}
                     </p>
                     <div class="flex gap-1">
                         <button
-                            v-for="link in products.links" :key="link.label"
+                            v-for="link in pagination.links" :key="link.label"
                             @click="goToPage(link.url)" :disabled="!link.url"
                             :class="[
                                 'rounded-lg px-3 py-1 text-[12px] font-medium transition-all',

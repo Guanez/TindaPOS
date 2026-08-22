@@ -7,7 +7,6 @@ parameters:
         - app
     excludePaths:
         - app/Http/Middleware/HandleInertiaRequests.php
-        - app/Http/Controllers/Auth/VerifyEmailController.php
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:

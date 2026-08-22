@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Sale;
 use App\Models\User;
 
 /*
@@ -29,7 +30,7 @@ it('denies cashier access to reports', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Reports — Daily (uses MySQL HOUR() — skipped in SQLite test env)
+| Reports — Daily
 |--------------------------------------------------------------------------
 */
 
@@ -38,8 +39,31 @@ it('returns daily report data', function () {
 
     $this->actingAs($admin)
         ->get(route('reports.daily', ['date' => today()->toDateString()]))
-        ->assertStatus(200);
-})->skip(fn () => config('database.default') === 'sqlite', 'HOUR() not supported in SQLite');
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('Reports/Index')
+            ->has('dailyReport.hourly', 24)
+        );
+});
+
+it('buckets daily revenue into the hour the sale happened', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sale::factory()->completed()->for($admin)->create([
+        'total' => 250,
+        'created_at' => today()->setTime(14, 30),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('reports.daily', ['date' => today()->toDateString()]))
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->where('dailyReport.transactions', 1)
+            ->where('dailyReport.hourly.14.transactions', 1)
+            ->where('dailyReport.hourly.14.revenue', 250)
+            ->where('dailyReport.hourly.13.transactions', 0)
+        );
+});
 
 it('validates daily report date', function () {
     $admin = User::factory()->admin()->create();

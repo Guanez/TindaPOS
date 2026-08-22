@@ -97,6 +97,36 @@ it('rejects checkout with invalid payment method', function () {
         ->assertSessionHasErrors('payment_method');
 });
 
+it('rejects checkout that exceeds available stock', function () {
+    // Arrange
+    $cashier = User::factory()->cashier()->create();
+    $product = Product::factory()->active()->withStock(2)->create();
+
+    // Act
+    $response = $this->actingAs($cashier)->post(route('pos.checkout'), [
+        'items' => [['product_id' => $product->id, 'quantity' => 5]],
+        'payment_method' => 'cash',
+    ]);
+
+    // Assert — handled by the domain exception handler, not a 500
+    $response->assertSessionHasErrors('checkout');
+    $this->assertDatabaseCount('sales', 0);
+    expect($product->fresh()->stock_quantity)->toBe(2);
+});
+
+it('rejects checkout of an inactive product', function () {
+    $cashier = User::factory()->cashier()->create();
+    $product = Product::factory()->withStock(10)->create(['is_active' => false]);
+
+    $response = $this->actingAs($cashier)->post(route('pos.checkout'), [
+        'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        'payment_method' => 'cash',
+    ]);
+
+    $response->assertSessionHasErrors('checkout');
+    $this->assertDatabaseCount('sales', 0);
+});
+
 it('requires authentication for POS', function () {
     $this->get(route('pos.index'))
         ->assertRedirect(route('login'));

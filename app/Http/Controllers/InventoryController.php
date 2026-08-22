@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\InvalidStockException;
 use App\Http\Requests\RestockRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
@@ -96,27 +95,26 @@ class InventoryController extends Controller
 
     /**
      * Restock a product.
+     *
+     * Invalid quantities are rendered by the domain exception handlers
+     * registered in bootstrap/app.php.
      */
     public function restock(RestockRequest $request): RedirectResponse
     {
-        try {
-            $this->inventoryService->restock(
-                $request->validated('product_id'),
-                $request->validated('quantity'),
-                $request->user(),
-                $request->validated('reason') ?? 'Restock'
-            );
+        $this->inventoryService->restock(
+            $request->validated('product_id'),
+            $request->validated('quantity'),
+            $request->user(),
+            $request->validated('reason') ?? 'Restock'
+        );
 
-            return redirect()->back()->with('success', 'Product restocked successfully.');
-        } catch (InvalidStockException $e) {
-            return redirect()->back()->withErrors(['restock' => $e->getMessage()]);
-        }
+        return redirect()->back()->with('success', 'Product restocked successfully.');
     }
 
     /**
      * Stock logs for audit trail.
      */
-    public function logs(Request $request): Response
+    public function logs(): Response
     {
         $logs = StockLog::with(['product', 'user'])
             ->latest()

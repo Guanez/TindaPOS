@@ -114,24 +114,24 @@ class Sale extends Model
     }
 
     /**
-     * Generate a unique receipt number: YYYYMMDD-XXXX (sequential daily counter).
-     * Uses a retry loop to handle the unlikely collision case.
+     * Next receipt number for today: YYYYMMDD-0001, -0002, and so on.
+     *
+     * Two terminals checking out at the same instant can read the same
+     * counter; the unique index on receipt_number is what actually prevents
+     * a duplicate, and SaleService retries the checkout when it fires.
      */
     public static function generateReceiptNumber(): string
     {
         $prefix = now()->format('Ymd');
-        $maxRetries = 5;
 
-        for ($i = 0; $i < $maxRetries; $i++) {
-            $random = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
-            $receipt = "{$prefix}-{$random}";
+        $last = static::where('receipt_number', 'like', $prefix.'-%')
+            ->orderByDesc('receipt_number')
+            ->value('receipt_number');
 
-            if (! static::where('receipt_number', $receipt)->exists()) {
-                return $receipt;
-            }
-        }
+        $sequence = $last === null
+            ? 1
+            : ((int) substr((string) $last, strlen($prefix) + 1)) + 1;
 
-        // Fallback: include timestamp for uniqueness
-        return $prefix.'-'.now()->format('His').'-'.str_pad((string) random_int(0, 99), 2, '0', STR_PAD_LEFT);
+        return sprintf('%s-%04d', $prefix, $sequence);
     }
 }

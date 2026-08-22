@@ -58,6 +58,30 @@ it('blocks inactive users from logging in', function () {
     $response->assertSessionHasErrors('username');
 });
 
+it('signs out a user deactivated mid-session', function () {
+    // Arrange — a cashier already signed in and working
+    $user = User::factory()->cashier()->create();
+    $this->actingAs($user)->get(route('pos.index'))->assertStatus(200);
+
+    // Act — the owner deactivates the account while the shift is running
+    $user->update(['is_active' => false]);
+
+    // Assert — the very next request ends the session
+    $this->get(route('pos.index'))
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors('username');
+
+    $this->assertGuest();
+});
+
+it('keeps active users signed in', function () {
+    $user = User::factory()->cashier()->create();
+
+    $this->actingAs($user)->get(route('pos.index'))->assertStatus(200);
+
+    $this->assertAuthenticated();
+});
+
 it('registration routes are disabled', function () {
     $this->get('/register')->assertStatus(404);
     $this->post('/register', [])->assertStatus(404);

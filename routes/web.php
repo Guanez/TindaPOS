@@ -17,7 +17,7 @@ Route::get('/', function () {
 });
 
 // ─── Authenticated Routes ────────────────────────────
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', DashboardController::class)->name('dashboard');

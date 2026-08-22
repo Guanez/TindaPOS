@@ -25,7 +25,7 @@ class SaleFactory extends Factory
         $total = max(0, $subtotal - $discount);
 
         return [
-            'receipt_number' => Sale::generateReceiptNumber(),
+            'receipt_number' => now()->format('Ymd').'-'.fake()->unique()->numerify('####'),
             'user_id' => User::factory(),
             'subtotal' => $subtotal,
             'discount' => $discount,

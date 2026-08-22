@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Exceptions\InvalidStockException;
 use App\Models\Product;
-use App\Models\StockLog;
 use App\Models\User;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

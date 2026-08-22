@@ -185,6 +185,20 @@ it('filters products by low stock', function () {
 |--------------------------------------------------------------------------
 */
 
+it('exposes paginator fields under meta for the resource collection', function () {
+    $admin = User::factory()->admin()->create();
+    Product::factory()->active()->count(20)->create();
+
+    $this->actingAs($admin)
+        ->get(route('inventory.index'))
+        ->assertInertia(fn ($page) => $page
+            ->has('products.data', 15)
+            ->where('products.meta.last_page', 2)
+            ->where('products.meta.total', 20)
+            ->has('products.meta.links')
+        );
+});
+
 it('shows stock logs page', function () {
     $admin = User::factory()->admin()->create();
 

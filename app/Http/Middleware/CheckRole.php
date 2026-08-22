@@ -13,13 +13,15 @@ class CheckRole
     /**
      * Handle an incoming request.
      * Usage in routes: ->middleware('role:owner,admin')
+     *
+     * Account status is handled separately by EnsureUserIsActive.
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();
 
-        if (! $user || ! $user->is_active) {
-            abort(403, 'Your account is deactivated.');
+        if (! $user) {
+            abort(403);
         }
 
         if (! empty($roles) && ! $user->hasRole(...$roles)) {

@@ -64,13 +64,15 @@ class ReportService
         $avgTransaction = $transactions > 0 ? $revenue / $transactions : 0;
 
         // Hourly breakdown
+        $hour = $this->hourExpression();
+
         $hourly = Sale::completed()
             ->whereDate('created_at', $date)
-            ->selectRaw('HOUR(created_at) as hour, COUNT(*) as transactions, SUM(total) as revenue')
-            ->groupByRaw('HOUR(created_at)')
+            ->selectRaw("{$hour} as hour, COUNT(*) as transactions, SUM(total) as revenue")
+            ->groupByRaw($hour)
             ->orderBy('hour')
             ->get()
-            ->keyBy('hour');
+            ->keyBy(fn (Sale $row) => (int) $row->getAttribute('hour'));
 
         $hourlyData = [];
         for ($h = 0; $h < 24; $h++) {
@@ -136,6 +138,19 @@ class ReportService
             'daily' => $daily,
             'payment_methods' => $payments,
         ];
+    }
+
+    /**
+     * SQL expression for the hour-of-day of a sale, per database driver.
+     * MySQL/MariaDB have HOUR(); SQLite and Postgres do not.
+     */
+    private function hourExpression(): string
+    {
+        return match ((new Sale)->getConnection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%H', created_at) AS INTEGER)",
+            'pgsql' => 'EXTRACT(HOUR FROM created_at)',
+            default => 'HOUR(created_at)',
+        };
     }
 
     /**

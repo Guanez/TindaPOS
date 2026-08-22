@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\InsufficientStockException;
-use App\Exceptions\ProductInactiveException;
 use App\Http\Requests\CheckoutRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Category;
@@ -43,21 +41,20 @@ class PosController extends Controller
 
     /**
      * Process checkout — the most critical endpoint.
+     *
+     * Stock and product-state failures are rendered by the domain exception
+     * handlers registered in bootstrap/app.php.
      */
     public function checkout(CheckoutRequest $request): RedirectResponse
     {
-        try {
-            $sale = $this->saleService->checkout(
-                $request->validated(),
-                $request->user()
-            );
+        $sale = $this->saleService->checkout(
+            $request->validated(),
+            $request->user()
+        );
 
-            return redirect()->back()->with([
-                'success' => 'Sale completed!',
-                'sale' => $sale->load('items')->toArray(),
-            ]);
-        } catch (InsufficientStockException|ProductInactiveException $e) {
-            return redirect()->back()->withErrors(['checkout' => $e->getMessage()]);
-        }
+        return redirect()->back()->with([
+            'success' => 'Sale completed!',
+            'sale' => $sale->load('items')->toArray(),
+        ]);
     }
 }

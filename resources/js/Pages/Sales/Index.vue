@@ -15,6 +15,7 @@ import {
 const props = defineProps({
     sales: Object,
     filters: Object,
+    saleDetail: { type: Object, default: null },
 });
 
 // Filters
@@ -34,20 +35,24 @@ const applyFilters = debounce(() => {
 
 watch([dateFrom, dateTo, statusFilter, paymentFilter], applyFilters);
 
-// Sale Detail Modal
-const showDetail = ref(false);
-const selectedSale = ref(null);
+// Sale Detail Modal — opens straight away when /sales/{id} is visited directly.
+const resolveDetail = (detail) => detail?.data ?? detail ?? null;
+
+const showDetail = ref(props.saleDetail !== null);
+const selectedSale = ref(resolveDetail(props.saleDetail));
 const loadingDetail = ref(false);
 
 const viewSale = (sale) => {
     loadingDetail.value = true;
     showDetail.value = true;
 
+    // Partial reload: only saleDetail comes back, so the list stays put.
     router.get(route('sales.show', sale.id), {}, {
+        only: ['saleDetail'],
         preserveState: true,
         preserveScroll: true,
         onSuccess: (page) => {
-            selectedSale.value = page.props.saleDetail?.data ?? page.props.saleDetail;
+            selectedSale.value = resolveDetail(page.props.saleDetail);
             loadingDetail.value = false;
         },
         onError: () => { loadingDetail.value = false; },

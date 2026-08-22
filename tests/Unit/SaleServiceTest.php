@@ -2,14 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Enums\UserRole;
 use App\Exceptions\InsufficientStockException;
 use App\Exceptions\ProductInactiveException;
 use App\Exceptions\SaleAlreadyVoidedException;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\StockLog;
 use App\Models\User;
 use App\Services\SaleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -183,7 +181,7 @@ it('calculates change amount for cash payments', function () {
         ->and((float) $sale->change_amount)->toBe(100.00);
 });
 
-it('generates unique receipt numbers', function () {
+it('numbers receipts sequentially within the day', function () {
     // Arrange
     $cashier = User::factory()->cashier()->create();
     $product = Product::factory()->active()->withStock(100)->create();
@@ -197,8 +195,30 @@ it('generates unique receipt numbers', function () {
         $receipts[] = $sale->receipt_number;
     }
 
-    // All unique
-    expect(array_unique($receipts))->toHaveCount(5);
+    $prefix = now()->format('Ymd');
+
+    expect($receipts)->toBe([
+        "{$prefix}-0001",
+        "{$prefix}-0002",
+        "{$prefix}-0003",
+        "{$prefix}-0004",
+        "{$prefix}-0005",
+    ]);
+});
+
+it('continues the sequence past an existing receipt', function () {
+    $cashier = User::factory()->cashier()->create();
+    $product = Product::factory()->active()->withStock(100)->create();
+    $prefix = now()->format('Ymd');
+
+    Sale::factory()->for($cashier)->create(['receipt_number' => "{$prefix}-0041"]);
+
+    $sale = resolve(SaleService::class)->checkout([
+        'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        'payment_method' => 'cash',
+    ], $cashier);
+
+    expect($sale->receipt_number)->toBe("{$prefix}-0042");
 });
 
 /*

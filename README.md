@@ -33,11 +33,13 @@ A modern, full-featured Point of Sale system built for Philippine **sari-sari st
 - **Date Range Report**: Multi-day aggregate with daily breakdown table and payment method distribution
 - **Top Products**: Ranked product performance by quantity sold
 
-### User & Role Management
+### Roles & Access Control
 - Three roles: **Owner**, **Admin**, **Cashier**
 - Role-based access control on routes and UI elements
 - Cashiers see POS + Sales; Managers see Inventory, Reports, full Dashboard
 - Cost price hidden from non-manager roles via API Resources
+- Accounts are provisioned by seeder or tinker — there is no in-app user
+  management screen yet (see [Roadmap](#roadmap))
 
 ---
 
@@ -51,7 +53,7 @@ A modern, full-featured Point of Sale system built for Philippine **sari-sari st
 | **Styling** | Tailwind CSS 3 with custom design tokens |
 | **Auth** | Laravel Breeze + Sanctum (session-based) |
 | **Build** | Vite 7 |
-| **Database** | MySQL 8+ |
+| **Database** | SQLite (default) — MySQL 8+ / PostgreSQL also supported |
 | **Icons** | Heroicons (Vue) |
 
 ---
@@ -61,7 +63,7 @@ A modern, full-featured Point of Sale system built for Philippine **sari-sari st
 - PHP 8.2+
 - Composer 2+
 - Node.js 18+ / npm 9+
-- MySQL 8.0+
+- SQLite (bundled with PHP) — or MySQL 8.0+ / PostgreSQL if you prefer
 
 ---
 
@@ -82,10 +84,12 @@ npm install
 cp .env.example .env
 php artisan key:generate
 
-# 5. Configure database in .env
-#    DB_DATABASE=tindapos
-#    DB_USERNAME=root
-#    DB_PASSWORD=
+# 5. Database — SQLite works out of the box:
+#    DB_CONNECTION=sqlite
+#    DB_DATABASE=database/database.sqlite
+#    (create the file with: touch database/database.sqlite)
+#
+#    For MySQL instead, set DB_CONNECTION=mysql plus DB_DATABASE/USERNAME/PASSWORD.
 
 # 6. Run migrations and seed demo data
 php artisan migrate --seed
@@ -105,11 +109,13 @@ Visit **http://localhost:8000** and log in.
 
 ## Default Accounts
 
-| Role | Email | Password |
-|------|-------|----------|
-| Owner | `owner@tindapos.com` | `password` |
-| Admin | `admin@tindapos.com` | `password` |
-| Cashier | `cashier@tindapos.com` | `password` |
+Sign in with the **username**, not the email address.
+
+| Role | Username | Password |
+|------|----------|----------|
+| Owner | `owner` | `owner123` |
+| Admin | `admin` | `owner123` |
+| Cashier | `cashier` | `owner123` |
 
 > **Change all default passwords before deploying to production.**
 
@@ -142,8 +148,9 @@ resources/js/
     └── Reports/
 
 database/
+├── factories/      # Model factories for tests and demo data
 ├── migrations/     # Schema definitions
-└── seeders/        # Demo data (categories, products, users, settings)
+└── seeders/        # Demo data (users, categories, products)
 ```
 
 ---
@@ -173,6 +180,18 @@ database/
 - [ ] Configure `SESSION_SECURE_COOKIE=true` in `.env`
 - [ ] Set up database backups (daily recommended)
 - [ ] Configure proper logging (`LOG_CHANNEL=daily` or external service)
+
+---
+
+## Roadmap
+
+Not built yet — tracked here rather than implied elsewhere in this README:
+
+- [ ] User management screen (create/deactivate cashiers, reset passwords)
+- [ ] Configurable store settings (store name, receipt footer, tax rate)
+- [ ] Receipt printing / PDF export
+- [ ] CSV export for sales and reports
+- [ ] Tablet-optimised POS layout
 
 ---
 

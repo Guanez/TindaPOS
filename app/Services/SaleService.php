@@ -12,10 +12,18 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockLog;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class SaleService
 {
+    /**
+     * How many times a checkout is retried when two terminals happen to
+     * claim the same receipt number.
+     */
+    private const RECEIPT_COLLISION_RETRIES = 3;
+
     /**
      * Process a checkout — the most critical business operation.
      * Uses a database transaction to ensure atomicity:
@@ -28,6 +36,27 @@ class SaleService
      * @param  array<string, mixed>  $data
      */
     public function checkout(array $data, User $cashier): Sale
+    {
+        for ($attempt = 1; $attempt <= self::RECEIPT_COLLISION_RETRIES; $attempt++) {
+            try {
+                return $this->attemptCheckout($data, $cashier);
+            } catch (UniqueConstraintViolationException $e) {
+                // The attempt rolled back, so the retry re-reads the counter.
+                if ($attempt === self::RECEIPT_COLLISION_RETRIES) {
+                    throw $e;
+                }
+            }
+        }
+
+        throw new LogicException('Unreachable: the loop above always returns or throws.');
+    }
+
+    /**
+     * A single checkout attempt — atomic from stock check to stock log.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function attemptCheckout(array $data, User $cashier): Sale
     {
         return DB::transaction(function () use ($data, $cashier) {
             $items = $data['items'];

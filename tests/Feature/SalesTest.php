@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
@@ -67,6 +68,39 @@ it('shows sale details', function () {
         );
 });
 
+it('keeps the sales list alongside the detail so the page renders standalone', function () {
+    $user = User::factory()->cashier()->create();
+    $sale = Sale::factory()->completed()->for($user)->create();
+
+    $this->actingAs($user)
+        ->get(route('sales.show', $sale))
+        ->assertInertia(fn ($page) => $page
+            ->component('Sales/Index')
+            ->has('saleDetail')
+            ->has('sales.data', 1)
+            ->has('filters')
+        );
+});
+
+it('returns only the detail on a partial reload', function () {
+    $user = User::factory()->cashier()->create();
+    $sale = Sale::factory()->completed()->for($user)->create();
+
+    $version = app(HandleInertiaRequests::class)->version(request());
+
+    $this->actingAs($user)
+        ->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => (string) $version,
+            'X-Inertia-Partial-Component' => 'Sales/Index',
+            'X-Inertia-Partial-Data' => 'saleDetail',
+        ])
+        ->get(route('sales.show', $sale))
+        ->assertStatus(200)
+        ->assertJsonPath('props.saleDetail.data.id', $sale->id)
+        ->assertJsonMissingPath('props.sales');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Void Sale — Role-Based Access
@@ -113,6 +147,20 @@ it('denies cashier from voiding a sale', function () {
     $this->actingAs($cashier)
         ->post(route('sales.void', $sale), ['reason' => 'test'])
         ->assertStatus(403);
+});
+
+it('rejects voiding a sale that is already voided', function () {
+    // Arrange
+    $owner = User::factory()->owner()->create();
+    $sale = Sale::factory()->voided()->for($owner)->create();
+
+    // Act
+    $response = $this->actingAs($owner)->post(route('sales.void', $sale), [
+        'reason' => 'Duplicate void attempt',
+    ]);
+
+    // Assert — handled by the domain exception handler, not a 500
+    $response->assertSessionHasErrors('void');
 });
 
 it('requires reason when voiding', function () {

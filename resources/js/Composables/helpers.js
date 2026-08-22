@@ -44,7 +44,10 @@ export function formatDateTime(dateStr) {
  * Get today's date in YYYY-MM-DD format.
  */
 export function today() {
-    return new Date().toISOString().split('T')[0]
+    const now = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    // Local date — toISOString() would return the UTC day and roll over early in PH.
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
 /**
