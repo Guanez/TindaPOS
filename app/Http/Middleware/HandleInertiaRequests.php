@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\Store;
+use App\Support\StoreContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -44,11 +46,40 @@ class HandleInertiaRequests extends Middleware
                     'is_owner' => $request->user()->isOwner(),
                 ] : null,
             ],
+            // The shop the signed-in user works for. Shared rather than passed
+            // per page because receipts, headings and the QR link all need it,
+            // and it never changes within a session.
+            'store' => fn () => $this->currentStore(),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'sale' => fn () => $request->session()->get('sale'),
             ],
+        ];
+    }
+
+    /**
+     * Null for a platform owner, who is not acting for any one shop.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function currentStore(): ?array
+    {
+        $storeId = app(StoreContext::class)->id();
+
+        if ($storeId === null) {
+            return null;
+        }
+
+        $store = Store::query()->find($storeId);
+
+        return $store === null ? null : [
+            'name' => $store->name,
+            'address' => $store->address,
+            'phone' => $store->phone,
+            'receipt_footer' => $store->receipt_footer,
+            'currency_symbol' => $store->currency_symbol,
+            'type' => $store->type,
         ];
     }
 }

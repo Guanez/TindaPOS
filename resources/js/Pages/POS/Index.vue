@@ -17,6 +17,7 @@ import {
     ArrowPathIcon,
     CheckCircleIcon,
     CubeIcon,
+    PrinterIcon,
 } from '@heroicons/vue/24/outline';
 import { StarIcon } from '@heroicons/vue/16/solid';
 
@@ -26,6 +27,13 @@ const props = defineProps({
 });
 
 const page = usePage();
+
+// Shared by HandleInertiaRequests: the shop this till belongs to.
+const store = computed(() => page.props.store ?? {});
+
+const receiptPrintedAt = ref('');
+
+const printReceipt = () => window.print();
 
 // Resolve products array from Resource collection (handles {data: [...]} or [...])
 const productList = computed(() => props.products?.data ?? props.products ?? []);
@@ -207,7 +215,14 @@ const processCheckout = () => {
         preserveScroll: true,
         onSuccess: () => {
             const flash = page.props.flash;
-            if (flash?.sale) { lastSale.value = flash.sale; showReceipt.value = true; }
+            if (flash?.sale) {
+                lastSale.value = flash.sale;
+                receiptPrintedAt.value = new Date().toLocaleString('en-PH', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                });
+                showReceipt.value = true;
+            }
             showCheckout.value = false;
             cart.value = []; discount.value = 0; cashReceived.value = '';
             localStorage.removeItem(CART_KEY);
@@ -591,14 +606,36 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
         <!-- RECEIPT MODAL -->
         <Teleport to="body">
             <div v-if="showReceipt && lastSale" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale complete">
-                <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
+                <div id="receipt" class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
                     <div class="text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 print:hidden">
                             <CheckCircleIcon class="h-7 w-7 text-emerald-600" aria-hidden="true" />
                         </div>
-                        <h3 class="mt-3 text-lg font-bold text-slate-900">Sale Complete</h3>
-                        <p class="mt-0.5 font-mono text-[13px] text-slate-500">{{ lastSale.receipt_number }}</p>
+                        <h3 class="mt-3 text-lg font-bold text-slate-900 print:mt-0 print:text-xl">
+                            {{ store.name || 'Sale Complete' }}
+                        </h3>
+                        <p v-if="store.address" class="text-[11px] leading-snug text-slate-500">{{ store.address }}</p>
+                        <p v-if="store.phone" class="text-[11px] text-slate-500">{{ store.phone }}</p>
+
+                        <p class="mt-2 font-mono text-[13px] text-slate-500">{{ lastSale.receipt_number }}</p>
+                        <p class="text-[11px] text-slate-400">
+                            {{ receiptPrintedAt }}<span v-if="page.props.auth?.user"> &middot; {{ page.props.auth.user.name }}</span>
+                        </p>
                     </div>
+
+                    <!-- What was actually sold -->
+                    <ul v-if="lastSale.items?.length" class="mt-4 space-y-1.5 border-t border-slate-100 pt-3">
+                        <li v-for="item in lastSale.items" :key="item.id" class="flex items-start gap-2 text-[12px]">
+                            <span class="font-semibold tabular-nums text-slate-400">{{ item.quantity }}&times;</span>
+                            <span class="min-w-0 flex-1 text-slate-700">
+                                {{ item.product_name }}<span v-if="item.variant_name" class="text-slate-500"> ({{ item.variant_name }})</span>
+                                <span v-if="item.modifiers?.length" class="block text-[11px] text-slate-400">
+                                    + {{ item.modifiers.map(m => m.name).join(', ') }}
+                                </span>
+                            </span>
+                            <span class="tabular-nums text-slate-600">{{ formatPeso(item.line_total) }}</span>
+                        </li>
+                    </ul>
 
                     <div class="mt-5 space-y-2 rounded-xl bg-slate-50 p-4 text-[13px]">
                         <div class="flex justify-between text-slate-500">
@@ -631,15 +668,46 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         </div>
                     </div>
 
-                    <button
-                        @click="closeReceipt"
-                        class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-all hover:bg-brand-700"
-                    >
-                        <PlusIcon class="h-4 w-4" />
-                        New Transaction
-                    </button>
+                    <p v-if="store.receipt_footer" class="mt-4 text-center text-[12px] italic text-slate-500">
+                        {{ store.receipt_footer }}
+                    </p>
+
+                    <div class="mt-5 flex gap-2 print:hidden">
+                        <button
+                            @click="printReceipt"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                            style="transition: background-color 0.15s;"
+                        >
+                            <PrinterIcon class="h-4 w-4" aria-hidden="true" />
+                            Print
+                        </button>
+                        <button
+                            @click="closeReceipt"
+                            class="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-all hover:bg-brand-700"
+                        >
+                            <PlusIcon class="h-4 w-4" />
+                            New Transaction
+                        </button>
+                    </div>
                 </div>
             </div>
         </Teleport>
     </AppLayout>
 </template>
+
+<style>
+/* Printing from the till should produce the receipt, nothing else. */
+@media print {
+    body * { visibility: hidden; }
+    #receipt, #receipt * { visibility: visible; }
+    #receipt {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        max-width: none;
+        box-shadow: none;
+        padding: 0;
+    }
+    @page { margin: 8mm; }
+}
+</style>

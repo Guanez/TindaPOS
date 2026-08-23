@@ -21,10 +21,13 @@ class ResolveStoreContext
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $storeId = $request->user()?->store_id;
+        $user = $request->user();
 
-        if ($storeId !== null) {
-            $this->context->set($storeId);
+        if ($user !== null) {
+            // Set unconditionally, null included: a platform owner has no shop
+            // and must end up unscoped by decision rather than by nothing
+            // having set a store earlier in the request.
+            $this->context->set($user->store_id);
         }
 
         return $next($request);
