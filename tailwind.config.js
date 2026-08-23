@@ -63,6 +63,7 @@ export default {
                 },
                 accent: {
                     DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+                    ink: 'rgb(var(--accent-ink) / <alpha-value>)',
                     hover: 'rgb(var(--accent-hover) / <alpha-value>)',
                     tint: 'rgb(var(--accent-tint) / <alpha-value>)',
                     line: 'rgb(var(--accent-line) / <alpha-value>)',
@@ -183,6 +184,7 @@ export default {
                 'fade-in-up': 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
                 'slide-in': 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
                 'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                'sheet-up': 'sheetUp 0.26s cubic-bezier(0.16, 1, 0.3, 1)',
                 'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
             },
             keyframes: {
@@ -201,6 +203,13 @@ export default {
                 scaleIn: {
                     from: { opacity: '0', transform: 'scale(0.95)' },
                     to: { opacity: '1', transform: 'scale(1)' },
+                },
+                // A sheet comes up from the edge it is attached to. Scaling it
+                // from the middle would read as a dialog wearing a sheet's
+                // shape.
+                sheetUp: {
+                    from: { transform: 'translateY(100%)' },
+                    to: { transform: 'translateY(0)' },
                 },
                 pulseSoft: {
                     '0%, 100%': { opacity: '1' },

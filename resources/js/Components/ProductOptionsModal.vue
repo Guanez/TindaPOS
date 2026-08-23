@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { useCurrency } from '@/Composables/currency';
 
 import { XMarkIcon, PlusIcon } from '@heroicons/vue/24/outline';
@@ -13,6 +14,14 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'confirm']);
+
+// This component is shared by the till and the customer's phone, and the two
+// want different things from a dialog. A centred box is right with a mouse;
+// on a phone it lands mid-screen with its actions furthest from the thumb.
+// The density prop already says which surface this is, so nothing here needs
+// a new flag — and the POS is untouched by the change.
+const page = usePage();
+const isSheet = computed(() => page.props.density === 'touch');
 
 const selectedVariantId = ref(null);
 const selectedModifierIds = ref([]);
@@ -97,13 +106,23 @@ const confirm = () => {
     <Teleport to="body">
         <div
             v-if="show && product"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
+            :class="[
+                'fixed inset-0 z-50 flex bg-ink-1/40 backdrop-blur-sm',
+                isSheet ? 'items-end' : 'items-center justify-center p-4',
+            ]"
             role="dialog"
             aria-modal="true"
             :aria-label="`Options for ${product.name}`"
             @click.self="emit('close')"
         >
-            <div class="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-card bg-surface-1 shadow-overlay animate-scale-in">
+            <div
+                :class="[
+                    'flex w-full max-w-md flex-col overflow-hidden bg-surface-1 shadow-overlay',
+                    isSheet
+                        ? 'mx-auto max-h-[88vh] rounded-t-sheet animate-sheet-up'
+                        : 'max-h-[90vh] rounded-card animate-scale-in',
+                ]"
+            >
                 <!-- Header -->
                 <div class="flex items-start justify-between border-b border-line px-6 py-4">
                     <div>

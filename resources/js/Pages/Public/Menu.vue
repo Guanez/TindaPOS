@@ -1,7 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
 import { useCurrency } from '@/Composables/currency';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import {
@@ -23,13 +23,65 @@ const props = defineProps({
 
 const menu = computed(() => props.products?.data ?? []);
 
-const selectedCategory = ref(null);
-
-const visible = computed(() =>
-    selectedCategory.value === null
-        ? menu.value
-        : menu.value.filter((p) => p.category_id === selectedCategory.value),
+// ── Sections ────────────────────────────────────────────────────────────
+// The rail used to filter the list, which meant reading the menu was a
+// series of decisions before you could see anything. Sections show the whole
+// menu and the rail moves you around it, which is how a paper menu works.
+const sections = computed(() =>
+    props.categories
+        .map((category) => ({
+            ...category,
+            products: menu.value.filter((p) => p.category_id === category.id),
+        }))
+        .filter((section) => section.products.length > 0),
 );
+
+const activeCategory = ref(null);
+const sectionEls = ref({});
+
+const setSectionEl = (id) => (el) => {
+    if (el) sectionEls.value[id] = el;
+    else delete sectionEls.value[id];
+};
+
+const goToSection = (id) => {
+    sectionEls.value[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+// Which section the customer is currently inside.
+//
+// The answer is the last heading to have passed under the rail, not the
+// topmost one still on screen — two sections overlap the top of the viewport
+// for most of a scroll, and picking the higher of them leaves the rail a
+// whole category behind what is being read.
+//
+// The observer is only a signal that a boundary was crossed; the answer is
+// read off the rects, which is exact and costs nothing at this size.
+const RAIL = 72;
+
+let spy = null;
+
+const syncActive = () => {
+    let current = sections.value[0]?.id ?? null;
+
+    for (const section of sections.value) {
+        const el = sectionEls.value[section.id];
+        if (el && el.getBoundingClientRect().top <= RAIL) current = section.id;
+    }
+
+    activeCategory.value = current;
+};
+
+const watchSections = () => {
+    spy?.disconnect();
+
+    spy = new IntersectionObserver(syncActive, {
+        rootMargin: `-${RAIL}px 0px 0px 0px`,
+        threshold: 0,
+    });
+
+    Object.values(sectionEls.value).forEach((el) => spy.observe(el));
+};
 
 // ── An order already in progress on this phone ──────────────────────────
 const TOKEN_KEY = 'tindapos_order_token';
@@ -39,13 +91,51 @@ onMounted(() => {
     try {
         activeToken.value = localStorage.getItem(TOKEN_KEY);
     } catch { /* private browsing */ }
+
+    restoreBasket();
+
+    nextTick(() => {
+        watchSections();
+        syncActive();
+    });
 });
+
+onUnmounted(() => spy?.disconnect());
 
 const openActiveOrder = () => router.visit(`/o/${activeToken.value}`);
 
 // ── Basket ──────────────────────────────────────────────────────────────
+// Kept on the phone, because the trip between choosing and paying involves
+// putting the phone away, and a basket that empties itself in a pocket is
+// worse than no basket at all. Keyed per shop: two cafes on one phone are
+// two different baskets.
+const basketKey = `tindapos_basket_${props.store.slug}`;
+
 const basket = ref([]);
 const chooser = ref(null);
+
+const restoreBasket = () => {
+    try {
+        const saved = JSON.parse(localStorage.getItem(basketKey) ?? '[]');
+        if (!Array.isArray(saved)) return;
+
+        // The menu may have moved on since this was saved — an item pulled,
+        // a shop closed for the night. Anything no longer sellable is
+        // dropped rather than carried to a checkout that would reject it.
+        const sellable = new Set(menu.value.map((p) => p.id));
+        basket.value = saved.filter((line) => sellable.has(line.product_id));
+    } catch { /* private browsing, or nothing saved */ }
+};
+
+watch(
+    basket,
+    (lines) => {
+        try {
+            localStorage.setItem(basketKey, JSON.stringify(lines));
+        } catch { /* storage full or unavailable */ }
+    },
+    { deep: true },
+);
 
 const lineKey = (productId, variantId, modifierIds) =>
     [productId, variantId ?? 0, [...modifierIds].sort((a, b) => a - b).join('.')].join(':');
@@ -128,8 +218,10 @@ const place = () => {
         },
         {
             onSuccess: (page) => {
+                basket.value = [];
                 try {
                     localStorage.setItem(TOKEN_KEY, page.props.order?.token ?? '');
+                    localStorage.removeItem(basketKey);
                 } catch { /* ignore */ }
             },
             onError: (e) => { errors.value = e; placing.value = false; },
@@ -176,69 +268,85 @@ const place = () => {
             <ArrowRightIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
         </button>
 
-        <!-- Categories -->
-        <div v-if="categories.length" class="sticky top-0 z-10 border-b border-line/70 bg-surface-2/95 px-5 py-3 backdrop-blur">
+        <!--
+            The rail moves you through the menu rather than filtering it. A
+            filter makes reading the menu a series of decisions before you can
+            see anything; a paper menu just has headings.
+        -->
+        <div v-if="sections.length" class="sticky top-0 z-20 border-b border-line/70 bg-surface-2/95 px-5 py-3 backdrop-blur">
             <div class="flex gap-1.5 overflow-x-auto pb-0.5">
                 <button
+                    v-for="section in sections"
+                    :key="section.id"
                     :class="[
                         'shrink-0 rounded-control px-3 py-1.5 text-meta font-semibold',
-                        selectedCategory === null ? 'bg-accent text-accent-fg' : 'bg-surface-1 text-ink-3',
+                        activeCategory === section.id ? 'bg-accent text-accent-fg' : 'bg-surface-1 text-ink-3',
                     ]"
-                    @click="selectedCategory = null"
-                >All</button>
-                <button
-                    v-for="category in categories"
-                    :key="category.id"
-                    :class="[
-                        'shrink-0 rounded-control px-3 py-1.5 text-meta font-semibold',
-                        selectedCategory === category.id ? 'bg-accent text-accent-fg' : 'bg-surface-1 text-ink-3',
-                    ]"
-                    @click="selectedCategory = category.id"
-                >{{ category.name }}</button>
+                    @click="goToSection(section.id)"
+                >{{ section.name }}</button>
             </div>
         </div>
 
         <!-- Menu -->
-        <main class="space-y-2 px-5 py-4">
-            <p v-if="visible.length === 0" class="py-16 text-center text-ui text-ink-3">
+        <main class="px-5 py-4">
+            <p v-if="sections.length === 0" class="py-16 text-center text-ui text-ink-3">
                 Nothing on the menu right now.
             </p>
 
-            <button
-                v-for="product in visible"
-                :key="product.id"
-                class="flex w-full items-start gap-3 rounded-card border border-line/80 bg-surface-1 p-4 text-left shadow-rest active:scale-[0.99]"
-                style="transition: transform var(--t-fast);"
-                @click="choose(product)"
+            <section
+                v-for="section in sections"
+                :key="section.id"
+                :ref="setSectionEl(section.id)"
+                :data-category="section.id"
+                class="scroll-mt-14"
             >
                 <!--
-                    Lazy, because a menu can be forty items long and the
-                    customer is on mobile data seconds after scanning a code
-                    at the counter. Decorative: the name is right beside it,
-                    so a screen reader announcing the filename would only
-                    repeat what it is about to read.
+                    Sticks directly beneath the rail, so the heading you are
+                    reading under is always on screen. z-10 keeps it under the
+                    rail rather than sliding over it.
                 -->
-                <img
-                    v-if="product.image_url"
-                    :src="product.image_url"
-                    alt=""
-                    loading="lazy"
-                    class="h-[76px] w-[76px] shrink-0 rounded-control bg-surface-2 object-cover"
-                />
+                <h2 class="sticky top-14 z-10 -mx-5 bg-surface-2/95 px-5 py-2 text-label font-bold uppercase tracking-widest text-ink-3 backdrop-blur">
+                    {{ section.name }}
+                </h2>
 
-                <span class="min-w-0 flex-1">
-                    <span class="block text-body font-semibold text-ink-1">{{ product.name }}</span>
-                    <span v-if="product.description" class="mt-0.5 block text-meta leading-snug text-ink-3">
-                        {{ product.description }}
+                <div class="space-y-2 pb-4 pt-1">
+                <button
+                    v-for="product in section.products"
+                    :key="product.id"
+                    class="flex w-full items-start gap-3 rounded-card border border-line/80 bg-surface-1 p-4 text-left shadow-rest active:scale-[0.99]"
+                    style="transition: transform var(--t-fast);"
+                    @click="choose(product)"
+                >
+                    <!--
+                        Lazy, because a menu can be forty items long and the
+                        customer is on mobile data seconds after scanning a code
+                        at the counter. Decorative: the name is right beside it,
+                        so a screen reader announcing the filename would only
+                        repeat what it is about to read.
+                    -->
+                    <img
+                        v-if="product.image_url"
+                        :src="product.image_url"
+                        alt=""
+                        loading="lazy"
+                        class="h-[76px] w-[76px] shrink-0 rounded-control bg-surface-2 object-cover"
+                    />
+
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-body font-semibold text-ink-1">{{ product.name }}</span>
+                        <span v-if="product.description" class="mt-0.5 block text-meta leading-snug text-ink-3">
+                            {{ product.description }}
+                        </span>
+                        <span class="mt-1.5 block text-body font-bold tabular-nums text-ink-1">
+                            <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.price_from) }}
+                        </span>
                     </span>
-                    <span class="mt-1.5 block text-body font-bold tabular-nums text-ink-1">
-                        <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.price_from) }}
+                    <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
+                        <PlusIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
                     </span>
-                </span>
-                <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
-                    <PlusIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
-                </span>
-            </button>
+                </button>
+                </div>
+            </section>
         </main>
 
         <!-- Basket bar -->
