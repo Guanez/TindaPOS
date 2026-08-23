@@ -44,7 +44,6 @@ class StoreFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'type' => 'cafe',
             'online_ordering_enabled' => true,
-            'qr_token' => Str::random(32),
         ]);
     }
 }

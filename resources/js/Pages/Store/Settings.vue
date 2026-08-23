@@ -24,6 +24,29 @@ const save = () => form.put(route('store.update'), { preserveScroll: true });
 
 const copied = ref(false);
 
+// ── Retiring the ordering address ───────────────────────────────────────
+// Separate from the settings form on purpose: saving a phone number must
+// never be able to invalidate a wall full of printed cards.
+const changingAddress = ref(false);
+
+const addressForm = useForm({
+    slug: props.store.slug,
+    confirm: false,
+});
+
+const openAddressChange = () => {
+    addressForm.reset();
+    addressForm.clearErrors();
+    changingAddress.value = true;
+};
+
+const saveAddress = () => {
+    addressForm.put(route('store.address'), {
+        preserveScroll: true,
+        onSuccess: () => { changingAddress.value = false; },
+    });
+};
+
 const copyLink = async () => {
     try {
         await navigator.clipboard.writeText(props.orderUrl);
@@ -145,6 +168,73 @@ const copyLink = async () => {
                         class="mt-3 w-full rounded-lg bg-amber-50 px-3 py-2 text-left text-[11px] font-medium text-amber-800">
                         Ordering is currently off, so this code will not work for customers yet.
                     </p>
+
+                    <!-- Recovery for a code that has been misused. -->
+                    <div class="mt-4 w-full border-t border-slate-100 pt-4 text-left">
+                        <button
+                            v-if="!changingAddress"
+                            type="button"
+                            class="text-[12px] font-semibold text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-slate-700"
+                            @click="openAddressChange"
+                        >
+                            Change ordering address
+                        </button>
+
+                        <form v-else class="space-y-3" @submit.prevent="saveAddress">
+                            <div>
+                                <label for="slug" class="block text-[12px] font-semibold text-slate-700">
+                                    New ordering address
+                                </label>
+                                <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                                    Use this if your code has been shared somewhere you did not intend. The old
+                                    address stops working immediately and can never be reused by anyone.
+                                </p>
+                                <div class="mt-1.5 flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 focus-within:border-brand-500">
+                                    <span class="shrink-0 font-mono text-[12px] text-slate-400">/s/</span>
+                                    <input
+                                        id="slug"
+                                        v-model="addressForm.slug"
+                                        type="text"
+                                        class="w-full border-0 p-0 font-mono text-[13px] focus:ring-0"
+                                    />
+                                </div>
+                                <p v-if="addressForm.errors.slug" class="mt-1 text-[11px] text-red-600">
+                                    {{ addressForm.errors.slug }}
+                                </p>
+                            </div>
+
+                            <label class="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-2.5">
+                                <input
+                                    v-model="addressForm.confirm"
+                                    type="checkbox"
+                                    class="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                                />
+                                <span class="text-[11px] leading-relaxed text-amber-900">
+                                    I understand every printed card showing
+                                    <span class="font-mono font-semibold">/s/{{ store.slug }}</span>
+                                    will stop working, and I will print new ones.
+                                </span>
+                            </label>
+                            <p v-if="addressForm.errors.confirm" class="text-[11px] text-red-600">
+                                {{ addressForm.errors.confirm }}
+                            </p>
+
+                            <div class="flex gap-2">
+                                <button
+                                    type="button"
+                                    class="btn-secondary flex-1 justify-center !py-2 text-[12px]"
+                                    @click="changingAddress = false"
+                                >Cancel</button>
+                                <button
+                                    type="submit"
+                                    :disabled="addressForm.processing"
+                                    class="btn-danger flex-1 justify-center !py-2 text-[12px] disabled:opacity-50"
+                                >
+                                    {{ addressForm.processing ? 'Changing…' : 'Change address' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </section>
             </div>
         </div>

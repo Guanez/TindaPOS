@@ -16,7 +16,6 @@ use App\Services\OrderService;
 use App\Services\StoreStarterKit;
 use App\Support\StoreContext;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 /**
  * A second store, so multi-tenancy is exercised by real use and not only by
@@ -38,7 +37,6 @@ class CafeSeeder extends Seeder
                 'phone' => '0917-555-0123',
                 'receipt_footer' => 'Salamat! Balik ka ulit.',
                 'currency_symbol' => 'P',
-                'qr_token' => Str::random(32),
                 // On for the demo cafe so the QR menu is reachable out of the
                 // box. A newly created store still defaults to off.
                 'online_ordering_enabled' => true,

@@ -130,6 +130,10 @@ Route::middleware(['auth', 'active', 'store.active', 'store.selected'])->group(f
         Route::get('/store/settings', [StoreController::class, 'edit'])->name('store.edit');
         Route::put('/store/settings', [StoreController::class, 'update'])->name('store.update');
         Route::get('/store/qr', [StoreController::class, 'qr'])->name('store.qr');
+
+        // Retiring the ordering address kills every printed code, so it is its
+        // own route rather than a field on the settings form.
+        Route::put('/store/address', [StoreController::class, 'updateAddress'])->name('store.address');
     });
 
     // Reports (managers only)
