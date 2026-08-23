@@ -140,15 +140,15 @@ const place = () => {
 </script>
 
 <template>
-    <div class="mx-auto min-h-screen max-w-md bg-slate-50 pb-32 shadow-sm">
+    <div class="mx-auto min-h-screen max-w-md bg-surface-2 pb-32 shadow-rest">
         <Head :title="`Order from ${store.name}`" />
 
         <!-- Store header -->
-        <header class="bg-white px-5 pb-5 pt-8 shadow-card">
-            <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-600">Order ahead</p>
-            <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">{{ store.name }}</h1>
-            <p v-if="store.address" class="mt-0.5 text-[13px] text-slate-500">{{ store.address }}</p>
-            <p class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[12px] font-medium text-amber-800">
+        <header class="bg-surface-1 px-5 pb-5 pt-8 shadow-rest">
+            <p class="text-label font-semibold uppercase tracking-widest text-accent">Order ahead</p>
+            <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
+            <p v-if="store.address" class="mt-0.5 text-ui text-ink-3">{{ store.address }}</p>
+            <p class="mt-3 rounded-control bg-wait-tint px-3 py-2 text-meta font-medium text-wait-ink">
                 Order here, then pay at the counter. We start making it once you&rsquo;ve paid.
             </p>
         </header>
@@ -156,21 +156,21 @@ const place = () => {
         <!-- Resume an order in progress -->
         <button
             v-if="activeToken"
-            class="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-left"
+            class="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-2 rounded-control border border-accent-line bg-accent-tint px-4 py-3 text-left"
             @click="openActiveOrder"
         >
-            <ClockIcon class="h-4 w-4 shrink-0 text-brand-600" aria-hidden="true" />
-            <span class="flex-1 text-[13px] font-semibold text-brand-800">You have an order in progress</span>
-            <ArrowRightIcon class="h-4 w-4 text-brand-600" aria-hidden="true" />
+            <ClockIcon class="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+            <span class="flex-1 text-ui font-semibold text-accent">You have an order in progress</span>
+            <ArrowRightIcon class="h-4 w-4 text-accent" aria-hidden="true" />
         </button>
 
         <!-- Categories -->
-        <div v-if="categories.length" class="sticky top-0 z-10 border-b border-slate-200/70 bg-slate-50/95 px-5 py-3 backdrop-blur">
+        <div v-if="categories.length" class="sticky top-0 z-10 border-b border-line/70 bg-surface-2/95 px-5 py-3 backdrop-blur">
             <div class="flex gap-1.5 overflow-x-auto pb-0.5">
                 <button
                     :class="[
-                        'shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-semibold',
-                        selectedCategory === null ? 'bg-brand-600 text-white' : 'bg-white text-slate-500',
+                        'shrink-0 rounded-control px-3 py-1.5 text-meta font-semibold',
+                        selectedCategory === null ? 'bg-accent text-white' : 'bg-surface-1 text-ink-3',
                     ]"
                     @click="selectedCategory = null"
                 >All</button>
@@ -178,8 +178,8 @@ const place = () => {
                     v-for="category in categories"
                     :key="category.id"
                     :class="[
-                        'shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-semibold',
-                        selectedCategory === category.id ? 'bg-brand-600 text-white' : 'bg-white text-slate-500',
+                        'shrink-0 rounded-control px-3 py-1.5 text-meta font-semibold',
+                        selectedCategory === category.id ? 'bg-accent text-white' : 'bg-surface-1 text-ink-3',
                     ]"
                     @click="selectedCategory = category.id"
                 >{{ category.name }}</button>
@@ -188,28 +188,28 @@ const place = () => {
 
         <!-- Menu -->
         <main class="space-y-2 px-5 py-4">
-            <p v-if="visible.length === 0" class="py-16 text-center text-[13px] text-slate-400">
+            <p v-if="visible.length === 0" class="py-16 text-center text-ui text-ink-3">
                 Nothing on the menu right now.
             </p>
 
             <button
                 v-for="product in visible"
                 :key="product.id"
-                class="flex w-full items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-card active:scale-[0.99]"
-                style="transition: transform 0.1s;"
+                class="flex w-full items-start gap-3 rounded-card border border-line/80 bg-surface-1 p-4 text-left shadow-rest active:scale-[0.99]"
+                style="transition: transform var(--t-fast);"
                 @click="choose(product)"
             >
                 <span class="min-w-0 flex-1">
-                    <span class="block text-[15px] font-semibold text-slate-900">{{ product.name }}</span>
-                    <span v-if="product.description" class="mt-0.5 block text-[12px] leading-snug text-slate-500">
+                    <span class="block text-body font-semibold text-ink-1">{{ product.name }}</span>
+                    <span v-if="product.description" class="mt-0.5 block text-meta leading-snug text-ink-3">
                         {{ product.description }}
                     </span>
-                    <span class="mt-1.5 block text-[15px] font-bold tabular-nums text-brand-600">
-                        <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ money(product.price_from) }}
+                    <span class="mt-1.5 block text-body font-bold tabular-nums text-ink-1">
+                        <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.price_from) }}
                     </span>
                 </span>
-                <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50">
-                    <PlusIcon class="h-4 w-4 text-brand-600" aria-hidden="true" />
+                <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
+                    <PlusIcon class="h-4 w-4 text-accent" aria-hidden="true" />
                 </span>
             </button>
         </main>
@@ -217,14 +217,14 @@ const place = () => {
         <!-- Basket bar -->
         <div v-if="basketCount > 0 && !showBasket" class="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md p-4">
             <button
-                class="flex w-full items-center gap-3 rounded-2xl bg-brand-600 px-5 py-4 text-white shadow-elevated"
+                class="flex w-full items-center gap-3 rounded-card bg-accent px-5 py-4 text-white shadow-overlay"
                 @click="showBasket = true"
             >
-                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-[13px] font-bold tabular-nums">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-1/20 text-ui font-bold tabular-nums">
                     {{ basketCount }}
                 </span>
-                <span class="flex-1 text-left text-[15px] font-bold">View basket</span>
-                <span class="text-[15px] font-bold tabular-nums">{{ money(basketTotal) }}</span>
+                <span class="flex-1 text-left text-body font-bold">View basket</span>
+                <span class="text-body font-bold tabular-nums">{{ money(basketTotal) }}</span>
             </button>
         </div>
 
@@ -232,42 +232,42 @@ const place = () => {
         <Teleport to="body">
             <div
                 v-if="showBasket"
-                class="fixed inset-0 z-50 flex items-end bg-slate-900/40 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-end bg-ink-1/40 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Your basket"
                 @click.self="showBasket = false"
             >
-                <div class="mx-auto max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5" style="overscroll-behavior: contain;">
+                <div class="mx-auto max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-sheet bg-surface-1 p-5" style="overscroll-behavior: contain;">
                     <div class="flex items-center justify-between">
-                        <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
-                            <ShoppingBagIcon class="h-5 w-5 text-brand-600" aria-hidden="true" />
+                        <h2 class="flex items-center gap-2 text-lg font-bold text-ink-1">
+                            <ShoppingBagIcon class="h-5 w-5 text-accent" aria-hidden="true" />
                             Your basket
                         </h2>
-                        <button class="rounded-lg p-1 text-slate-400" aria-label="Close" @click="showBasket = false">
+                        <button class="rounded-control p-1 text-ink-3" aria-label="Close" @click="showBasket = false">
                             <XMarkIcon class="h-5 w-5" aria-hidden="true" />
                         </button>
                     </div>
 
-                    <ul class="mt-4 divide-y divide-slate-100">
+                    <ul class="mt-4 divide-y divide-line">
                         <li v-for="line in basket" :key="line.key" class="flex items-start gap-3 py-3">
                             <div class="min-w-0 flex-1">
-                                <p class="text-[14px] font-semibold text-slate-800">
-                                    {{ line.name }}<span v-if="line.variant_name" class="text-slate-500"> ({{ line.variant_name }})</span>
+                                <p class="text-body font-semibold text-ink-1">
+                                    {{ line.name }}<span v-if="line.variant_name" class="text-ink-3"> ({{ line.variant_name }})</span>
                                 </p>
-                                <p v-if="line.modifier_names.length" class="text-[12px] text-brand-600">
+                                <p v-if="line.modifier_names.length" class="text-meta text-accent">
                                     + {{ line.modifier_names.join(', ') }}
                                 </p>
-                                <p class="text-[12px] tabular-nums text-slate-400">{{ money(line.unit_price) }} each</p>
+                                <p class="text-meta tabular-nums text-ink-3">{{ money(line.unit_price) }} each</p>
                             </div>
 
                             <div class="flex items-center gap-1">
-                                <button class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500"
+                                <button class="flex h-8 w-8 items-center justify-center rounded-control border border-line text-ink-3"
                                     :aria-label="`One fewer ${line.name}`" @click="decrement(line)">
                                     <MinusIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
-                                <span class="w-6 text-center text-[13px] font-bold tabular-nums">{{ line.quantity }}</span>
-                                <button class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500"
+                                <span class="w-6 text-center text-ui font-bold tabular-nums">{{ line.quantity }}</span>
+                                <button class="flex h-8 w-8 items-center justify-center rounded-control border border-line text-ink-3"
                                     :aria-label="`One more ${line.name}`" @click="increment(line)">
                                     <PlusIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
@@ -277,32 +277,32 @@ const place = () => {
 
                     <div class="mt-4 space-y-3">
                         <div>
-                            <label class="block text-[13px] font-semibold text-slate-700" for="name">Your name</label>
+                            <label class="block text-ui font-semibold text-ink-2" for="name">Your name</label>
                             <input id="name" v-model="customerName" type="text" maxlength="60"
                                 class="input-field mt-1.5 w-full" placeholder="So we can call you" />
                         </div>
                         <div>
-                            <label class="block text-[13px] font-semibold text-slate-700" for="note">Anything else?</label>
+                            <label class="block text-ui font-semibold text-ink-2" for="note">Anything else?</label>
                             <input id="note" v-model="note" type="text" maxlength="255"
                                 class="input-field mt-1.5 w-full" placeholder="e.g. less ice" />
                         </div>
                     </div>
 
-                    <p v-if="errors.items" class="mt-3 text-[12px] text-red-500">{{ errors.items }}</p>
+                    <p v-if="errors.items" class="mt-3 text-meta text-stop-ink">{{ errors.items }}</p>
 
-                    <div class="mt-5 flex items-baseline justify-between border-t border-slate-100 pt-4">
-                        <span class="text-[15px] font-semibold text-slate-500">Total</span>
-                        <span class="text-2xl font-bold tabular-nums text-slate-900">{{ money(basketTotal) }}</span>
+                    <div class="mt-5 flex items-baseline justify-between border-t border-line pt-4">
+                        <span class="text-body font-semibold text-ink-3">Total</span>
+                        <span class="text-2xl font-bold tabular-nums text-ink-1">{{ money(basketTotal) }}</span>
                     </div>
 
                     <button
                         :disabled="placing"
-                        class="mt-4 w-full rounded-2xl bg-brand-600 py-4 text-[15px] font-bold text-white shadow-sm disabled:opacity-50"
+                        class="mt-4 w-full rounded-card bg-accent py-4 text-body font-bold text-white shadow-rest disabled:opacity-50"
                         @click="place"
                     >
                         {{ placing ? 'Sending…' : 'Place order' }}
                     </button>
-                    <p class="mt-2 text-center text-[11px] text-slate-400">
+                    <p class="mt-2 text-center text-meta text-ink-3">
                         You&rsquo;ll pay at the counter. Nothing is charged now.
                     </p>
                 </div>

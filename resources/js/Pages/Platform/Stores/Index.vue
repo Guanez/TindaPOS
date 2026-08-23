@@ -41,15 +41,15 @@ const confirmSuspension = () => {
             <!-- Header -->
             <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h2 class="text-xl font-bold tracking-tight text-slate-900">Client stores</h2>
-                    <p class="mt-0.5 text-[13px] text-slate-500">
+                    <h2 class="text-xl font-bold tracking-tight text-ink-1">Client stores</h2>
+                    <p class="mt-0.5 text-ui text-ink-3">
                         Every shop running on TindaPOS.
                     </p>
                 </div>
                 <Link
                     :href="route('platform.stores.create')"
-                    class="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-slate-800"
-                    style="transition: background-color 0.15s;"
+                    class="flex items-center gap-2 rounded-control bg-ink-1 px-4 py-2.5 text-ui font-semibold text-white shadow-rest hover:bg-ink-1"
+                    style="transition: background-color var(--t-fast);"
                 >
                     <PlusIcon class="h-4 w-4" aria-hidden="true" />
                     New store
@@ -58,21 +58,21 @@ const confirmSuspension = () => {
 
             <!-- Totals -->
             <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div class="rounded-2xl bg-white p-4 shadow-card">
-                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Stores</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ totals.stores ?? 0 }}</p>
+                <div class="rounded-card bg-surface-1 p-4 shadow-rest">
+                    <p class="text-label font-bold uppercase tracking-widest text-ink-3">Stores</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-ink-1">{{ totals.stores ?? 0 }}</p>
                 </div>
-                <div class="rounded-2xl bg-white p-4 shadow-card">
-                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Active</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-emerald-600">{{ totals.active ?? 0 }}</p>
+                <div class="rounded-card bg-surface-1 p-4 shadow-rest">
+                    <p class="text-label font-bold uppercase tracking-widest text-ink-3">Active</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-ready-ink">{{ totals.active ?? 0 }}</p>
                 </div>
-                <div class="rounded-2xl bg-white p-4 shadow-card">
-                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Staff</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ totals.staff ?? 0 }}</p>
+                <div class="rounded-card bg-surface-1 p-4 shadow-rest">
+                    <p class="text-label font-bold uppercase tracking-widest text-ink-3">Staff</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-ink-1">{{ totals.staff ?? 0 }}</p>
                 </div>
-                <div class="rounded-2xl bg-white p-4 shadow-card">
-                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Revenue MTD</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ formatWith('₱', totals.revenue_month) }}</p>
+                <div class="rounded-card bg-surface-1 p-4 shadow-rest">
+                    <p class="text-label font-bold uppercase tracking-widest text-ink-3">Revenue MTD</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-ink-1">{{ formatWith('₱', totals.revenue_month) }}</p>
                 </div>
             </div>
 
@@ -81,40 +81,40 @@ const confirmSuspension = () => {
                 <div
                     v-for="store in stores"
                     :key="store.id"
-                    class="rounded-2xl bg-white p-4 shadow-card"
+                    class="rounded-card bg-surface-1 p-4 shadow-rest"
                     :class="store.is_active ? '' : 'opacity-70'"
                 >
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-[15px] font-bold text-slate-900">{{ store.name }}</h3>
-                                <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500">
+                                <h3 class="text-body font-bold text-ink-1">{{ store.name }}</h3>
+                                <span class="rounded-control bg-surface-3 px-1.5 py-0.5 text-meta font-semibold text-ink-3">
                                     {{ store.type === 'cafe' ? 'Cafe' : 'Sari-Sari' }}
                                 </span>
                                 <span
-                                    class="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+                                    class="flex items-center gap-1 rounded-control px-1.5 py-0.5 text-meta font-semibold"
                                     :class="store.is_active
-                                        ? 'bg-emerald-50 text-emerald-700'
-                                        : 'bg-red-50 text-red-700'"
+                                        ? 'bg-ready-tint text-ready-ink'
+                                        : 'bg-stop-tint text-stop-ink'"
                                 >
                                     <span
                                         class="h-1.5 w-1.5 rounded-full"
-                                        :class="store.is_active ? 'bg-emerald-500' : 'bg-red-500'"
+                                        :class="store.is_active ? 'bg-emerald-500' : 'bg-stop-mark'"
                                     />
                                     {{ store.is_active ? 'Active' : 'Suspended' }}
                                 </span>
                                 <span
                                     v-if="store.online_ordering_enabled"
-                                    class="rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700"
+                                    class="rounded-control bg-accent-tint px-1.5 py-0.5 text-meta font-semibold text-accent"
                                 >
                                     QR ordering
                                 </span>
                             </div>
-                            <p class="mt-1 text-[12px] text-slate-500">
+                            <p class="mt-1 text-meta text-ink-3">
                                 <span class="font-mono">/s/{{ store.slug }}</span>
                                 <span v-if="store.address"> &middot; {{ store.address }}</span>
                             </p>
-                            <p class="mt-1.5 text-[13px] text-slate-600">
+                            <p class="mt-1.5 text-ui text-ink-2">
                                 <span class="font-semibold tabular-nums">{{ store.staff_count }}</span> staff
                                 &middot;
                                 <span class="font-semibold tabular-nums">{{ peso(store, store.revenue_month) }}</span>
@@ -126,8 +126,8 @@ const confirmSuspension = () => {
                             <button
                                 v-if="store.is_active"
                                 @click="enter(store)"
-                                class="flex items-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2 text-[13px] font-semibold text-white hover:bg-brand-700"
-                                style="transition: background-color 0.15s;"
+                                class="flex items-center gap-1.5 rounded-control bg-accent px-3 py-2 text-ui font-semibold text-white hover:bg-accent-hover"
+                                style="transition: background-color var(--t-fast);"
                             >
                                 <ArrowRightOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
                                 Enter store
@@ -135,8 +135,8 @@ const confirmSuspension = () => {
 
                             <Link
                                 :href="route('platform.stores.edit', store.id)"
-                                class="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
-                                style="transition: background-color 0.15s;"
+                                class="flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-ui font-medium text-ink-2 hover:bg-surface-2"
+                                style="transition: background-color var(--t-fast);"
                             >
                                 <PencilSquareIcon class="h-4 w-4" aria-hidden="true" />
                                 Edit
@@ -144,11 +144,11 @@ const confirmSuspension = () => {
 
                             <button
                                 @click="pendingSuspend = store"
-                                class="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] font-medium"
+                                class="flex items-center gap-1.5 rounded-control border px-3 py-2 text-ui font-medium"
                                 :class="store.is_active
-                                    ? 'border-slate-200 text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
-                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'"
-                                style="transition: background-color 0.15s, color 0.15s, border-color 0.15s;"
+                                    ? 'border-line text-ink-2 hover:border-stop-tint hover:bg-stop-tint hover:text-stop-ink'
+                                    : 'border-ready-tint bg-ready-tint text-ready-ink hover:bg-ready-tint'"
+                                style="transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);"
                             >
                                 <component
                                     :is="store.is_active ? PauseCircleIcon : PlayCircleIcon"
@@ -162,9 +162,9 @@ const confirmSuspension = () => {
                 </div>
             </div>
 
-            <div v-else class="rounded-2xl bg-white p-12 text-center shadow-card">
-                <p class="text-[15px] font-semibold text-slate-900">No stores yet</p>
-                <p class="mt-1 text-[13px] text-slate-500">Add your first client to get started.</p>
+            <div v-else class="rounded-card bg-surface-1 p-12 text-center shadow-rest">
+                <p class="text-body font-semibold text-ink-1">No stores yet</p>
+                <p class="mt-1 text-ui text-ink-3">Add your first client to get started.</p>
             </div>
         </div>
 
@@ -172,34 +172,34 @@ const confirmSuspension = () => {
         <Teleport to="body">
             <div
                 v-if="pendingSuspend"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
                 @click.self="pendingSuspend = null"
             >
-                <div role="dialog" aria-modal="true" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
-                    <h3 class="text-[15px] font-bold text-slate-900">
+                <div role="dialog" aria-modal="true" class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
+                    <h3 class="text-body font-bold text-ink-1">
                         {{ pendingSuspend.is_active ? 'Suspend' : 'Reactivate' }} {{ pendingSuspend.name }}?
                     </h3>
-                    <p v-if="pendingSuspend.is_active" class="mt-2 text-[13px] leading-relaxed text-slate-600">
+                    <p v-if="pendingSuspend.is_active" class="mt-2 text-ui leading-relaxed text-ink-2">
                         Their {{ pendingSuspend.staff_count }} staff will be signed out on their next action
                         and cannot sign back in. Their QR menu will stop working. Sales history is kept.
                     </p>
-                    <p v-else class="mt-2 text-[13px] leading-relaxed text-slate-600">
+                    <p v-else class="mt-2 text-ui leading-relaxed text-ink-2">
                         Their staff will be able to sign in again immediately.
                     </p>
 
                     <div class="mt-5 flex justify-end gap-2">
                         <button
                             @click="pendingSuspend = null"
-                            class="rounded-xl border border-slate-200 px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
+                            class="rounded-control border border-line px-4 py-2 text-ui font-medium text-ink-2 hover:bg-surface-2"
                         >
                             Cancel
                         </button>
                         <button
                             @click="confirmSuspension"
-                            class="rounded-xl px-4 py-2 text-[13px] font-semibold text-white"
+                            class="rounded-control px-4 py-2 text-ui font-semibold text-white"
                             :class="pendingSuspend.is_active
-                                ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-emerald-600 hover:bg-emerald-700'"
+                                ? 'bg-stop-mark hover:bg-stop-ink'
+                                : 'bg-ready-ink hover:bg-ready-ink'"
                         >
                             {{ pendingSuspend.is_active ? 'Suspend store' : 'Reactivate store' }}
                         </button>

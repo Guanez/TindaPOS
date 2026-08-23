@@ -23,12 +23,12 @@ const typeLabel = (type) => {
 
 const typeBadgeClass = (type) => {
     const classes = {
-        restock: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-        sale: 'bg-blue-50 text-blue-700 ring-blue-600/20',
-        void: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-        adjustment: 'bg-slate-50 text-slate-700 ring-slate-600/20',
+        restock: 'bg-ready-tint text-ready-ink ring-emerald-600/20',
+        sale: 'bg-accent-tint text-accent ring-accent/20',
+        void: 'bg-wait-tint text-wait-ink ring-amber-600/20',
+        adjustment: 'bg-surface-2 text-ink-2 ring-ink-2/20',
     };
-    return classes[type] || 'bg-slate-50 text-slate-700 ring-slate-600/20';
+    return classes[type] || 'bg-surface-2 text-ink-2 ring-ink-2/20';
 };
 
 const formatDate = (date) => {
@@ -56,13 +56,13 @@ const goToPage = (url) => {
                         <Link
                             :href="route('inventory.index')"
                             aria-label="Back to inventory"
-                            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" style="transition: background-color 0.15s, color 0.15s;"
+                            class="rounded-control p-1.5 text-ink-3 hover:bg-surface-3 hover:text-ink-2" style="transition: background-color var(--t-fast), color var(--t-fast);"
                         >
                             <ArrowLeftIcon aria-hidden="true" class="h-4 w-4" />
                         </Link>
                         <div>
-                            <h1 class="text-xl font-bold tracking-tight text-slate-900">Stock Logs</h1>
-                            <p class="mt-0.5 text-[13px] text-slate-500">Audit trail of all stock movements</p>
+                            <h1 class="text-xl font-bold tracking-tight text-ink-1">Stock Logs</h1>
+                            <p class="mt-0.5 text-ui text-ink-3">Audit trail of all stock movements</p>
                         </div>
                     </div>
                 </div>
@@ -71,57 +71,57 @@ const goToPage = (url) => {
             <!-- Logs Table -->
             <div class="card overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50/80">
+                    <table class="min-w-full divide-y divide-line">
+                        <thead class="bg-surface-2/80">
                             <tr>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Date</th>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Product</th>
-                                <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">Type</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Change</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Before</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">After</th>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">User</th>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Reason</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Date</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Product</th>
+                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Type</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Change</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Before</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">After</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">User</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Reason</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody class="divide-y divide-line">
                             <tr v-if="!logs.data.length">
                                 <td colspan="8" class="px-4 py-12 text-center">
-                                    <ClockIcon aria-hidden="true" class="mx-auto h-10 w-10 text-slate-300" />
-                                    <p class="mt-2 text-sm font-medium text-slate-500">No stock logs yet</p>
-                                    <p class="mt-1 text-[13px] text-slate-400">Stock movements will appear here</p>
+                                    <ClockIcon aria-hidden="true" class="mx-auto h-10 w-10 text-ink-3" />
+                                    <p class="mt-2 text-sm font-medium text-ink-3">No stock logs yet</p>
+                                    <p class="mt-1 text-ui text-ink-3">Stock movements will appear here</p>
                                 </td>
                             </tr>
-                            <tr v-for="log in logs.data" :key="log.id" class="transition-colors hover:bg-slate-50/50">
-                                <td class="whitespace-nowrap px-4 py-3 text-[13px] text-slate-500">
+                            <tr v-for="log in logs.data" :key="log.id" class="transition-colors hover:bg-surface-2/50">
+                                <td class="whitespace-nowrap px-4 py-3 text-ui text-ink-3">
                                     {{ formatDate(log.created_at) }}
                                 </td>
-                                <td class="px-4 py-3 text-[13px] font-semibold text-slate-800">
+                                <td class="px-4 py-3 text-ui font-semibold text-ink-1">
                                     {{ log.product?.name ?? '—' }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <span
                                         :class="typeBadgeClass(log.type)"
-                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset"
+                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-meta font-semibold ring-1 ring-inset"
                                     >
                                         {{ typeLabel(log.type) }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-right text-[13px] font-semibold tabular-nums"
-                                    :class="log.quantity_change > 0 ? 'text-emerald-600' : 'text-red-600'"
+                                <td class="px-4 py-3 text-right text-ui font-semibold tabular-nums"
+                                    :class="log.quantity_change > 0 ? 'text-ready-ink' : 'text-stop-ink'"
                                 >
                                     {{ log.quantity_change > 0 ? '+' : '' }}{{ log.quantity_change }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-[13px] tabular-nums text-slate-500">
+                                <td class="px-4 py-3 text-right text-ui tabular-nums text-ink-3">
                                     {{ log.stock_before }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-[13px] tabular-nums text-slate-500">
+                                <td class="px-4 py-3 text-right text-ui tabular-nums text-ink-3">
                                     {{ log.stock_after }}
                                 </td>
-                                <td class="px-4 py-3 text-[13px] text-slate-500">
+                                <td class="px-4 py-3 text-ui text-ink-3">
                                     {{ log.user?.name ?? '—' }}
                                 </td>
-                                <td class="max-w-[200px] truncate px-4 py-3 text-[13px] text-slate-400">
+                                <td class="max-w-[200px] truncate px-4 py-3 text-ui text-ink-3">
                                     {{ log.reason || '—' }}
                                 </td>
                             </tr>
@@ -130,8 +130,8 @@ const goToPage = (url) => {
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="logs.last_page > 1" class="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-                    <p class="text-[13px] text-slate-500">
+                <div v-if="logs.last_page > 1" class="flex items-center justify-between border-t border-line px-4 py-3">
+                    <p class="text-ui text-ink-3">
                         Showing {{ logs.from }}–{{ logs.to }} of {{ logs.total }}
                     </p>
                     <div class="flex gap-1">
@@ -140,12 +140,12 @@ const goToPage = (url) => {
                             @click="goToPage(link.url)"
                             :disabled="!link.url"
                             :class="[
-                                'rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all',
+                                'rounded-control px-3 py-1.5 text-meta font-medium transition-all',
                                 link.active
-                                    ? 'bg-brand-600 text-white shadow-sm'
+                                    ? 'bg-accent text-white shadow-rest'
                                     : link.url
-                                        ? 'text-slate-600 hover:bg-slate-100'
-                                        : 'cursor-not-allowed text-slate-300',
+                                        ? 'text-ink-2 hover:bg-surface-3'
+                                        : 'cursor-not-allowed text-ink-3',
                             ]"
                             v-html="link.label"
                         />

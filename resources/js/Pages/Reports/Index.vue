@@ -114,8 +114,8 @@ watch(currentTab, (tab) => {
         <div class="space-y-5">
             <!-- Header -->
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-900">Reports</h1>
-                <p class="mt-0.5 text-[13px] text-slate-500">Sales analytics and performance insights</p>
+                <h1 class="text-xl font-bold tracking-tight text-ink-1">Reports</h1>
+                <p class="mt-0.5 text-ui text-ink-3">Sales analytics and performance insights</p>
             </div>
 
             <!-- Tab Navigation -->
@@ -124,10 +124,10 @@ watch(currentTab, (tab) => {
                     v-for="tab in tabs" :key="tab.id"
                     @click="currentTab = tab.id"
                     :class="[
-                        'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-semibold transition-all',
+                        'flex flex-1 items-center justify-center gap-1.5 rounded-control py-2.5 text-ui font-semibold transition-all',
                         currentTab === tab.id
-                            ? 'bg-brand-600 text-white shadow-sm'
-                            : 'text-slate-500 hover:bg-slate-50'
+                            ? 'bg-accent text-white shadow-rest'
+                            : 'text-ink-3 hover:bg-surface-2'
                     ]"
                 >
                     <component :is="tab.icon" class="h-4 w-4" aria-hidden="true" />
@@ -139,18 +139,18 @@ watch(currentTab, (tab) => {
             <div v-show="currentTab === 'daily'" class="space-y-5">
                 <div class="card flex items-end gap-3 p-4">
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Select Date</label>
+                        <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">Select Date</label>
                         <input v-model="dailyDate" type="date"
-                            class="mt-1 rounded-xl border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500/20" />
+                            class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
                     </div>
                     <button @click="dailyDate = today()"
-                        class="rounded-xl border border-slate-200 px-3 py-2 text-[13px] font-semibold text-slate-600 transition-all hover:bg-slate-50">
+                        class="rounded-control border border-line px-3 py-2 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
                         Today
                     </button>
                 </div>
 
                 <div v-if="dailyLoading" class="flex items-center justify-center py-14">
-                    <svg class="h-8 w-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <svg class="h-8 w-8 animate-spin text-accent" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 </div>
 
                 <template v-else-if="dailyData">
@@ -163,8 +163,8 @@ watch(currentTab, (tab) => {
 
                     <!-- Hourly Chart -->
                     <div class="card p-6">
-                        <h3 class="text-[15px] font-bold text-slate-900">Hourly Sales</h3>
-                        <p class="text-[12px] text-slate-400">Revenue per hour for {{ formatDate(dailyDate) }}</p>
+                        <h3 class="text-body font-bold text-ink-1">Hourly Sales</h3>
+                        <p class="text-meta text-ink-3">Revenue per hour for {{ formatDate(dailyDate) }}</p>
 
                         <div class="mt-4 flex items-end gap-1" style="height: 200px;">
                             <div
@@ -173,21 +173,21 @@ watch(currentTab, (tab) => {
                                 :title="`${h.hour}:00 — ${money(h.revenue)} (${h.transactions} txn)`"
                             >
                                 <div
-                                    class="absolute bottom-0 w-full rounded-t bg-brand-500 transition-all hover:bg-brand-600"
+                                    class="absolute bottom-0 w-full rounded-t bg-accent transition-all hover:bg-accent-hover"
                                     :style="{ height: `${Math.max((parseFloat(h.revenue) / maxHourlyRevenue) * 100, 2)}%` }"
                                 />
                                 <span v-if="h.hour % 3 === 0"
-                                    class="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-400">
+                                    class="absolute -bottom-5 left-1/2 -translate-x-1/2 text-label text-ink-3">
                                     {{ h.hour }}
                                 </span>
-                                <div class="pointer-events-none absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-800 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+                                <div class="pointer-events-none absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-control bg-ink-1 px-2 py-1 text-meta text-white shadow-overlay group-hover:block">
                                     <p class="font-bold">{{ h.hour }}:00</p>
                                     <p>{{ money(h.revenue) }}</p>
                                     <p>{{ h.transactions }} txn</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="mt-6 flex justify-between text-[10px] text-slate-400">
+                        <div class="mt-6 flex justify-between text-label text-ink-3">
                             <span>12 AM</span>
                             <span>12 PM</span>
                             <span>11 PM</span>
@@ -200,23 +200,23 @@ watch(currentTab, (tab) => {
             <div v-show="currentTab === 'range'" class="space-y-5">
                 <div class="card flex flex-wrap items-end gap-3 p-4">
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">From</label>
+                        <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">From</label>
                         <input v-model="rangeFrom" type="date"
-                            class="mt-1 rounded-xl border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500/20" />
+                            class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">To</label>
+                        <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">To</label>
                         <input v-model="rangeTo" type="date"
-                            class="mt-1 rounded-xl border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500/20" />
+                            class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
                     </div>
                     <button @click="fetchRange"
-                        class="rounded-xl bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-brand-700">
+                        class="rounded-control bg-accent px-4 py-2 text-ui font-semibold text-white shadow-rest transition-all hover:bg-accent-hover">
                         Generate Report
                     </button>
                 </div>
 
                 <div v-if="rangeLoading" class="flex items-center justify-center py-14">
-                    <svg class="h-8 w-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <svg class="h-8 w-8 animate-spin text-accent" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 </div>
 
                 <template v-else-if="rangeData">
@@ -229,39 +229,39 @@ watch(currentTab, (tab) => {
 
                     <!-- Payment Methods -->
                     <div v-if="rangeData.payment_methods" class="card p-6">
-                        <h3 class="text-[15px] font-bold text-slate-900">Payment Methods</h3>
+                        <h3 class="text-body font-bold text-ink-1">Payment Methods</h3>
                         <div class="mt-4 space-y-3">
                             <div v-for="pm in rangeData.payment_methods" :key="pm.payment_method" class="flex items-center gap-3">
-                                <span class="w-16 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ pm.payment_method }}</span>
-                                <div class="h-6 flex-1 overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-brand-500 transition-all"
+                                <span class="w-16 text-label font-semibold uppercase tracking-wider text-ink-3">{{ pm.payment_method }}</span>
+                                <div class="h-6 flex-1 overflow-hidden rounded-full bg-surface-3">
+                                    <div class="h-full rounded-full bg-accent transition-all"
                                         :style="{ width: `${(pm.count / (rangeData.transactions || 1)) * 100}%` }" />
                                 </div>
-                                <span class="w-20 text-right text-[13px] font-semibold tabular-nums text-slate-700">{{ money(pm.revenue) }}</span>
-                                <span class="w-12 text-right text-[11px] tabular-nums text-slate-400">{{ pm.count }} txn</span>
+                                <span class="w-20 text-right text-ui font-semibold tabular-nums text-ink-2">{{ money(pm.revenue) }}</span>
+                                <span class="w-12 text-right text-meta tabular-nums text-ink-3">{{ pm.count }} txn</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Daily Breakdown Table -->
                     <div v-if="rangeData.daily?.length" class="card overflow-hidden">
-                        <table class="min-w-full divide-y divide-slate-200">
-                            <thead class="bg-slate-50/80">
+                        <table class="min-w-full divide-y divide-line">
+                            <thead class="bg-surface-2/80">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Date</th>
-                                    <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Revenue</th>
-                                    <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Profit</th>
-                                    <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">Txns</th>
-                                    <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Discounts</th>
+                                    <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Date</th>
+                                    <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Revenue</th>
+                                    <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Profit</th>
+                                    <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Txns</th>
+                                    <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Discounts</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr v-for="day in rangeData.daily" :key="day.date" class="transition-colors hover:bg-slate-50/50">
-                                    <td class="px-4 py-2.5 text-[13px] font-semibold text-slate-800">{{ formatDate(day.date) }}</td>
-                                    <td class="px-4 py-2.5 text-right text-[13px] tabular-nums text-slate-800">{{ money(day.revenue) }}</td>
-                                    <td class="px-4 py-2.5 text-right text-[13px] font-semibold tabular-nums text-emerald-600">{{ money(day.profit) }}</td>
-                                    <td class="px-4 py-2.5 text-center text-[13px] tabular-nums text-slate-500">{{ day.transactions }}</td>
-                                    <td class="px-4 py-2.5 text-right text-[13px] text-slate-500">{{ money(day.discounts) }}</td>
+                            <tbody class="divide-y divide-line">
+                                <tr v-for="day in rangeData.daily" :key="day.date" class="transition-colors hover:bg-surface-2/50">
+                                    <td class="px-4 py-2.5 text-ui font-semibold text-ink-1">{{ formatDate(day.date) }}</td>
+                                    <td class="px-4 py-2.5 text-right text-ui tabular-nums text-ink-1">{{ money(day.revenue) }}</td>
+                                    <td class="px-4 py-2.5 text-right text-ui font-semibold tabular-nums text-ready-ink">{{ money(day.profit) }}</td>
+                                    <td class="px-4 py-2.5 text-center text-ui tabular-nums text-ink-3">{{ day.transactions }}</td>
+                                    <td class="px-4 py-2.5 text-right text-ui text-ink-3">{{ money(day.discounts) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -273,19 +273,19 @@ watch(currentTab, (tab) => {
             <div v-show="currentTab === 'top'" class="space-y-5">
                 <div class="card flex flex-wrap items-end gap-3 p-4">
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">From</label>
+                        <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">From</label>
                         <input v-model="topFrom" type="date"
-                            class="mt-1 rounded-xl border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500/20" />
+                            class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">To</label>
+                        <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">To</label>
                         <input v-model="topTo" type="date"
-                            class="mt-1 rounded-xl border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500/20" />
+                            class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Top</label>
+                        <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">Top</label>
                         <select v-model="topLimit"
-                            class="mt-1 rounded-xl border-slate-200 py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:ring-brand-500/20">
+                            class="mt-1 rounded-control border-line py-2 pl-3 pr-8 text-sm focus:border-accent focus:ring-accent/20">
                             <option :value="5">5</option>
                             <option :value="10">10</option>
                             <option :value="20">20</option>
@@ -293,53 +293,53 @@ watch(currentTab, (tab) => {
                         </select>
                     </div>
                     <button @click="fetchTop"
-                        class="rounded-xl bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-brand-700">
+                        class="rounded-control bg-accent px-4 py-2 text-ui font-semibold text-white shadow-rest transition-all hover:bg-accent-hover">
                         Generate
                     </button>
                 </div>
 
                 <div v-if="topLoading" class="flex items-center justify-center py-14">
-                    <svg class="h-8 w-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <svg class="h-8 w-8 animate-spin text-accent" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 </div>
 
                 <div v-else-if="topData?.length" class="card overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50/80">
+                    <table class="min-w-full divide-y divide-line">
+                        <thead class="bg-surface-2/80">
                             <tr>
-                                <th class="w-12 px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">#</th>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Product</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Qty Sold</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Revenue</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Orders</th>
+                                <th class="w-12 px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">#</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Product</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Qty Sold</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Revenue</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Orders</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <tr v-for="(product, i) in topData" :key="product.product_id" class="transition-colors hover:bg-slate-50/50">
+                        <tbody class="divide-y divide-line">
+                            <tr v-for="(product, i) in topData" :key="product.product_id" class="transition-colors hover:bg-surface-2/50">
                                 <td class="px-4 py-3 text-center">
                                     <span :class="[
-                                        'inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold',
-                                        i === 0 ? 'bg-amber-100 text-amber-700' :
-                                        i === 1 ? 'bg-slate-100 text-slate-600' :
-                                        i === 2 ? 'bg-orange-100 text-orange-700' :
-                                        'text-slate-400'
+                                        'inline-flex h-6 w-6 items-center justify-center rounded-full text-meta font-bold',
+                                        i === 0 ? 'bg-wait-tint text-wait-ink' :
+                                        i === 1 ? 'bg-surface-3 text-ink-2' :
+                                        i === 2 ? 'bg-wait-tint text-wait-ink' :
+                                        'text-ink-3'
                                     ]">
                                         {{ i + 1 }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-[13px] font-semibold text-slate-800">{{ product.product_name }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] font-bold text-slate-800">{{ product.total_quantity }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] text-slate-800">{{ money(product.total_revenue) }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] text-slate-500">{{ product.order_count }}</td>
+                                <td class="px-4 py-3 text-ui font-semibold text-ink-1">{{ product.product_name }}</td>
+                                <td class="px-4 py-3 text-right text-ui font-bold text-ink-1">{{ product.total_quantity }}</td>
+                                <td class="px-4 py-3 text-right text-ui text-ink-1">{{ money(product.total_revenue) }}</td>
+                                <td class="px-4 py-3 text-right text-ui text-ink-3">{{ product.order_count }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div v-else-if="topData && topData.length === 0" class="flex flex-col items-center justify-center py-14">
-                    <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
-                        <TrophyIcon class="h-7 w-7 text-slate-300" />
+                    <div class="flex h-14 w-14 items-center justify-center rounded-card bg-surface-2">
+                        <TrophyIcon class="h-7 w-7 text-ink-3" />
                     </div>
-                    <p class="mt-3 text-sm font-medium text-slate-400">No sales data for selected period</p>
+                    <p class="mt-3 text-sm font-medium text-ink-3">No sales data for selected period</p>
                 </div>
             </div>
         </div>

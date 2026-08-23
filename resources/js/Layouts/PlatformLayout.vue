@@ -52,30 +52,30 @@ onUnmounted(() => clearInterval(clockInterval))
 </script>
 
 <template>
-    <div class="flex min-h-screen flex-col bg-slate-100">
-        <header class="border-b border-slate-800 bg-slate-900">
+    <div class="flex min-h-screen flex-col bg-surface-3">
+        <header class="border-b border-ink-1 bg-ink-1">
             <div class="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 lg:px-6">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                <div class="flex h-9 w-9 items-center justify-center rounded-control bg-surface-1/10">
                     <BuildingStorefrontIcon class="h-5 w-5 text-white" aria-hidden="true" />
                 </div>
                 <div class="min-w-0">
-                    <h1 class="text-[15px] font-bold tracking-tight text-white">TindaPOS</h1>
-                    <p class="text-[11px] font-medium text-slate-400">Platform Console</p>
+                    <h1 class="text-body font-bold tracking-tight text-white">TindaPOS</h1>
+                    <p class="text-meta font-medium text-ink-3">Platform Console</p>
                 </div>
 
                 <div class="ml-auto flex items-center gap-4">
-                    <span class="hidden text-[13px] font-medium tabular-nums text-slate-500 sm:inline">
+                    <span class="hidden text-ui font-medium tabular-nums text-ink-3 sm:inline">
                         {{ clock }}
                     </span>
                     <div class="hidden text-right sm:block">
-                        <p class="text-[13px] font-semibold text-white">{{ user?.name }}</p>
-                        <p class="text-[11px] font-medium text-slate-400">Platform Admin</p>
+                        <p class="text-ui font-semibold text-white">{{ user?.name }}</p>
+                        <p class="text-meta font-medium text-ink-3">Platform Admin</p>
                     </div>
                     <button
                         @click="logout"
                         aria-label="Sign out"
-                        class="rounded-xl border border-slate-700 px-3 py-2 text-[13px] font-medium text-slate-300 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300"
-                        style="transition: background-color 0.15s, color 0.15s, border-color 0.15s;"
+                        class="rounded-control border border-ink-1 px-3 py-2 text-ui font-medium text-ink-3 hover:border-stop-mark/40 hover:bg-stop-mark/10 hover:text-stop-ink"
+                        style="transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);"
                     >
                         <ArrowRightStartOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -100,13 +100,13 @@ onUnmounted(() => clearInterval(clockInterval))
                     <div
                         v-if="showToast"
                         role="status"
-                        class="flex items-center gap-2.5 rounded-xl px-4 py-3 text-[13px] font-medium text-white shadow-elevated"
-                        :class="toastType === 'success' ? 'bg-emerald-600' : 'bg-red-600'"
+                        class="flex items-center gap-2.5 rounded-control px-4 py-3 text-ui font-medium text-white shadow-overlay"
+                        :class="toastType === 'success' ? 'bg-ready-ink' : 'bg-stop-mark'"
                     >
                         {{ toastMessage }}
                         <button
                             @click="showToast = false"
-                            class="ml-1 rounded-md p-0.5 hover:bg-white/20"
+                            class="ml-1 rounded-control p-0.5 hover:bg-surface-1/20"
                             aria-label="Dismiss notification"
                         >
                             <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />

@@ -28,17 +28,17 @@ const submit = () => {
     <GuestLayout>
         <Head title="Sign In" />
 
-        <div v-if="status" class="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+        <div v-if="status" class="mb-4 rounded-control bg-ready-tint px-4 py-3 text-sm font-medium text-ready-ink">
             {{ status }}
         </div>
 
         <form @submit.prevent="submit" class="space-y-5">
             <!-- Username -->
             <div>
-                <label for="username" class="block text-[13px] font-semibold text-slate-700">Username</label>
+                <label for="username" class="block text-ui font-semibold text-ink-2">Username</label>
                 <div class="relative mt-1.5">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <UserIcon class="h-4 w-4 text-slate-400" aria-hidden="true" />
+                        <UserIcon class="h-4 w-4 text-ink-3" aria-hidden="true" />
                     </div>
                     <input
                         id="username"
@@ -57,10 +57,10 @@ const submit = () => {
 
             <!-- Password -->
             <div>
-                <label for="password" class="block text-[13px] font-semibold text-slate-700">Password</label>
+                <label for="password" class="block text-ui font-semibold text-ink-2">Password</label>
                 <div class="relative mt-1.5">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <LockClosedIcon class="h-4 w-4 text-slate-400" aria-hidden="true" />
+                        <LockClosedIcon class="h-4 w-4 text-ink-3" aria-hidden="true" />
                     </div>
                     <input
                         id="password"
@@ -74,7 +74,7 @@ const submit = () => {
                     <button
                         type="button"
                         @click="showPassword = !showPassword"
-                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-ink-3 hover:text-ink-2"
                         :aria-label="showPassword ? 'Hide password' : 'Show password'"
                     >
                         <EyeSlashIcon v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
@@ -98,9 +98,9 @@ const submit = () => {
             </button>
 
             <!-- Demo credentials -->
-            <div class="rounded-xl bg-slate-50 p-3 text-center">
-                <p class="text-[11px] font-medium text-slate-400">Demo credentials</p>
-                <p class="mt-0.5 font-mono text-xs text-slate-500">owner / owner123</p>
+            <div class="rounded-control bg-surface-2 p-3 text-center">
+                <p class="text-meta font-medium text-ink-3">Demo credentials</p>
+                <p class="mt-0.5 font-mono text-xs text-ink-3">owner / owner123</p>
             </div>
         </form>
     </GuestLayout>

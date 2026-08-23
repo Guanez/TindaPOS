@@ -2,6 +2,125 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * ─── Design tokens ──────────────────────────────────────────────────────
+ *
+ * One place to change any colour, size, radius or duration in the product.
+ *
+ * Type is expressed as roles rather than sizes. `--fs-ui` is "the workhorse
+ * size for a control", not "13px" — which is what stops the next screen from
+ * inventing text-[14px] because 13 looked a touch small that day.
+ *
+ * Each role carries two values because the same components render on a
+ * counter terminal and on a customer's phone, and 13px is right on one and
+ * cramped on the other. One attribute on <html> switches the whole set; no
+ * component ever asks which side of the counter it is on.
+ *
+ * Colours are stored as space-separated RGB channels rather than hex so that
+ * Tailwind's opacity modifiers keep working: `bg-ink-1/40` is a modal scrim,
+ * and a hex custom property cannot produce one.
+ */
+:root {
+    /* Type — counter density (staff terminals, mouse and keyboard) */
+    --fs-label:   11px; --lh-label:   14px;
+    --fs-meta:    12px; --lh-meta:    16px;
+    --fs-ui:      13px; --lh-ui:      18px;
+    --fs-body:    15px; --lh-body:    22px;
+    --fs-title:   18px; --lh-title:   24px;
+    --fs-heading: 22px; --lh-heading: 28px;
+    --fs-figure:  28px; --lh-figure:  32px;
+    --fs-hero:    56px; --lh-hero:    56px;
+
+    /*
+     * Ash — one neutral family, biased toward violet so it sits with the
+     * accent instead of reading as a different system. Replaces slate and
+     * gray, which were both in use for the same job.
+     */
+    --surface-1: 255 255 255;
+    --surface-2: 246 245 249;
+    --surface-3: 235 232 241;
+    --line: 228 225 236;
+    --line-strong: 216 212 226;
+
+    /*
+     * Three ink levels, and the lightest one still passes AA on white.
+     * The old text-slate-400 carried stock counts and timestamps at 2.56:1;
+     * --ink-3 is 5.59:1 and still reads as clearly secondary.
+     *
+     * Note this is ash-500, not the ash-400 the design proposal named —
+     * ash-400 measures 3.42:1 on white, which fails AA for body text. The
+     * proposal was wrong; the contrast requirement wins.
+     */
+    --ink-1: 21 18 28;
+    --ink-2: 74 68 89;
+    --ink-3: 107 100 128;
+
+    /*
+     * Action is separate from accent on purpose. The order queue spends
+     * amber, emerald and red on order state, and those are signals a barista
+     * reads across a counter — so a primary button that is also a hue
+     * competes with them. Ink competes with nothing, and survives the glare
+     * of a shop that is half outdoors.
+     */
+    --action-bg: 31 26 43;
+    --action-bg-hover: 21 18 28;
+    --action-fg: 255 255 255;
+
+    /*
+     * Ube — spent only on focus and selection, where it means "the system is
+     * pointing at this". On the customer menu this is the one token a shop
+     * overrides to make the page its own.
+     */
+    --accent: 91 63 217;
+    --accent-hover: 74 47 184;
+    --accent-tint: 243 239 254;
+    --accent-line: 207 192 251;
+    --on-accent: 255 255 255;
+
+    /* Kapé — identity only. Never an interactive colour. */
+    --identity: 42 28 23;
+    --identity-tint: 247 241 236;
+
+    /* Order state. Reserved — no store, no theme may repurpose these. */
+    --wait-ink: 180 83 9;   --wait-mark: 245 158 11;  --wait-tint: 254 243 199;
+    --ready-ink: 4 120 87;  --ready-mark: 16 185 129; --ready-tint: 209 250 229;
+    --stop-ink: 185 28 28;  --stop-mark: 239 68 68;   --stop-tint: 254 226 226;
+
+    /* Form. Three radii named for what they wrap, not how round they are. */
+    --r-control: 0.625rem;
+    --r-card: 1rem;
+    --r-sheet: 1.5rem;
+
+    /*
+     * Hairline-first: a border does most of the elevation work, because a
+     * soft shadow simply vanishes on a bright counter screen.
+     */
+    --e-rest: 0 1px 2px 0 rgb(21 18 28 / 0.06);
+    --e-raised: 0 4px 12px -2px rgb(21 18 28 / 0.10), 0 1px 2px rgb(21 18 28 / 0.04);
+    --e-overlay: 0 24px 48px -12px rgb(21 18 28 / 0.22);
+
+    /* Motion */
+    --t-fast: 150ms;
+    --t-base: 200ms;
+    --t-slow: 320ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+ * Touch density — the customer's phone. Not yet applied by any layout; the
+ * attribute arrives in phase 4, and until then this block is inert.
+ */
+[data-density='touch'] {
+    --fs-label:   12px; --lh-label:   16px;
+    --fs-meta:    13px; --lh-meta:    18px;
+    --fs-ui:      15px; --lh-ui:      22px;
+    --fs-body:    16px; --lh-body:    24px;
+    --fs-title:   20px; --lh-title:   28px;
+    --fs-heading: 24px; --lh-heading: 32px;
+    --fs-figure:  32px; --lh-figure:  36px;
+    --fs-hero:    80px; --lh-hero:    80px;
+}
+
 @layer base {
     html {
         touch-action: manipulation;
@@ -10,7 +129,7 @@
     }
 
     body {
-        @apply antialiased text-slate-700;
+        @apply antialiased bg-surface-2 text-ink-2;
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
 
@@ -21,7 +140,7 @@
 
     /* Focus-visible: visible ring for keyboard, invisible for mouse */
     :focus-visible {
-        @apply outline-none ring-2 ring-brand-500/40 ring-offset-2;
+        @apply outline-none ring-2 ring-accent/60 ring-offset-2;
     }
     :focus:not(:focus-visible) {
         @apply outline-none ring-0;
@@ -35,91 +154,95 @@
         @apply bg-transparent;
     }
     ::-webkit-scrollbar-thumb {
-        @apply rounded-full bg-slate-300;
+        @apply rounded-full bg-line-strong;
     }
     ::-webkit-scrollbar-thumb:hover {
-        @apply bg-slate-400;
+        @apply bg-ink-3;
     }
 
     /* Selection color */
     ::selection {
-        @apply bg-brand-500/15 text-brand-900;
+        @apply bg-accent/15 text-ink-1;
     }
 }
 
 @layer components {
     /* Shared card style */
     .card {
-        @apply rounded-2xl border border-slate-200/80 bg-white shadow-card;
+        @apply rounded-card border border-line bg-surface-1 shadow-rest;
     }
     .card-hover {
-        @apply transition-shadow duration-200 hover:shadow-card-hover;
+        @apply transition-shadow duration-base hover:shadow-raised;
     }
 
     /* POS-specific utilities */
     .pos-grid-item {
         @apply card card-hover cursor-pointer select-none p-3 text-left
-               active:scale-[0.97] active:shadow-card;
-        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+               active:scale-[0.97] active:shadow-rest;
+        transition: transform var(--t-fast) var(--ease-out),
+                    box-shadow var(--t-base) var(--ease-out);
     }
 
     /* Badge styles */
     .badge {
-        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-label font-bold uppercase tracking-wider;
     }
-    .badge-success { @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10; }
-    .badge-warning { @apply bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10; }
-    .badge-danger  { @apply bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10; }
-    .badge-info    { @apply bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/10; }
-    .badge-neutral { @apply bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10; }
+    .badge-success { @apply bg-ready-tint text-ready-ink; }
+    .badge-warning { @apply bg-wait-tint text-wait-ink; }
+    .badge-danger  { @apply bg-stop-tint text-stop-ink; }
+    .badge-info    { @apply bg-accent-tint text-accent; }
+    .badge-neutral { @apply bg-surface-3 text-ink-2; }
 
     /* Slide-in animation */
     .slide-in {
-        animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: slideIn var(--t-slow) var(--ease-out) both;
     }
 
     /* Fade-in animation for staggered reveals */
     .fade-in-up {
-        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: fadeInUp 0.4s var(--ease-out) both;
     }
 
-    /* Btn primary */
+    /*
+     * Primary action. Ink rather than a hue, so it never competes with the
+     * order-state colours it sits beside on the queue board.
+     */
     .btn-primary {
-        @apply flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5
-               text-[13px] font-semibold text-white shadow-sm
-               transition-colors duration-150
-               hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500/40;
+        @apply flex items-center justify-center gap-1.5 rounded-control bg-action px-4 py-2.5
+               text-ui font-bold text-action-fg shadow-rest
+               transition-colors duration-fast
+               hover:bg-action-hover;
     }
 
     /* Btn secondary */
     .btn-secondary {
-        @apply flex items-center justify-center gap-1.5 rounded-xl border border-slate-200
-               bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-700 shadow-sm
-               transition-colors duration-150
-               hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-500/20;
+        @apply flex items-center justify-center gap-1.5 rounded-control border border-line-strong
+               bg-surface-1 px-4 py-2.5 text-ui font-bold text-ink-1 shadow-rest
+               transition-colors duration-fast
+               hover:bg-surface-2;
     }
 
     /* Btn danger */
     .btn-danger {
-        @apply flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5
-               text-[13px] font-semibold text-white shadow-sm
-               transition-colors duration-150
-               hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500/40;
+        @apply flex items-center justify-center gap-1.5 rounded-control bg-stop-mark px-4 py-2.5
+               text-ui font-bold text-white shadow-rest
+               transition-colors duration-fast
+               hover:bg-stop-ink;
     }
 
     /* Input field */
     .input-field {
-        @apply w-full rounded-xl border-slate-200 py-2.5 px-3.5 text-sm placeholder-slate-400
-               transition-colors duration-150
-               focus:border-brand-500 focus:ring-brand-500/20;
+        @apply w-full rounded-control border-line-strong py-2.5 px-3.5 text-body text-ink-1
+               placeholder-ink-3
+               transition-colors duration-fast
+               focus:border-accent focus:ring-accent/25;
     }
 
     /* Select field */
     .select-field {
-        @apply rounded-xl border-slate-200 py-2.5 pl-3.5 pr-8 text-sm text-slate-600
-               transition-colors duration-150
-               focus:border-brand-500 focus:ring-brand-500/20;
+        @apply rounded-control border-line-strong py-2.5 pl-3.5 pr-8 text-body text-ink-2
+               transition-colors duration-fast
+               focus:border-accent focus:ring-accent/25;
     }
 }
 

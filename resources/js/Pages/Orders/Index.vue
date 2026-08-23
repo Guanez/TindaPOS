@@ -155,19 +155,19 @@ const waitingSince = (order) => {
             <!-- Header -->
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Order Queue</h1>
-                    <p class="mt-0.5 text-[13px] text-slate-500">
+                    <h1 class="text-xl font-bold tracking-tight text-ink-1">Order Queue</h1>
+                    <p class="mt-0.5 text-ui text-ink-3">
                         Orders customers placed from the QR menu, updating live
                     </p>
                 </div>
 
                 <button
-                    class="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
-                    style="transition: background-color 0.15s;"
+                    class="flex items-center gap-2 rounded-control border border-line px-3 py-2 text-meta font-semibold text-ink-2 hover:bg-surface-2"
+                    style="transition: background-color var(--t-fast);"
                     :aria-pressed="soundOn"
                     @click="soundOn = !soundOn"
                 >
-                    <BellAlertIcon class="h-4 w-4" :class="soundOn ? 'text-brand-600' : 'text-slate-300'" aria-hidden="true" />
+                    <BellAlertIcon class="h-4 w-4" :class="soundOn ? 'text-accent' : 'text-ink-3'" aria-hidden="true" />
                     {{ soundOn ? 'Sound on' : 'Sound off' }}
                 </button>
             </div>
@@ -176,54 +176,54 @@ const waitingSince = (order) => {
             <div class="grid gap-4 lg:grid-cols-3">
                 <!-- Awaiting payment -->
                 <section class="card flex flex-col overflow-hidden">
-                    <header class="flex items-center justify-between border-b border-slate-100 bg-amber-50/60 px-4 py-3">
-                        <h2 class="text-[13px] font-bold text-amber-800">Awaiting payment</h2>
+                    <header class="flex items-center justify-between border-b border-line bg-wait-tint/60 px-4 py-3">
+                        <h2 class="text-ui font-bold text-wait-ink">Awaiting payment</h2>
                         <span class="badge badge-warning tabular-nums">{{ awaitingPayment.length }}</span>
                     </header>
 
                     <div class="flex-1 space-y-2 p-3">
-                        <p v-if="awaitingPayment.length === 0" class="py-8 text-center text-[13px] text-slate-400">
+                        <p v-if="awaitingPayment.length === 0" class="py-8 text-center text-ui text-ink-3">
                             Nothing waiting
                         </p>
 
                         <article
                             v-for="order in awaitingPayment"
                             :key="order.id"
-                            class="rounded-xl border border-amber-200 bg-white p-3 shadow-card"
+                            class="rounded-control border border-amber-200 bg-surface-1 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
-                                <span class="text-lg font-bold tabular-nums text-slate-900">#{{ order.queue_number }}</span>
-                                <span class="text-[11px] text-slate-400">
+                                <span class="text-lg font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
+                                <span class="text-meta text-ink-3">
                                     <ClockIcon class="mr-0.5 inline h-3 w-3" aria-hidden="true" />{{ waitingSince(order) }}
                                 </span>
                             </div>
 
-                            <p v-if="order.customer_name" class="text-[12px] font-medium text-slate-600">{{ order.customer_name }}</p>
+                            <p v-if="order.customer_name" class="text-meta font-medium text-ink-2">{{ order.customer_name }}</p>
 
                             <ul class="mt-2 space-y-1">
-                                <li v-for="item in order.items" :key="item.id" class="text-[12px] text-slate-600">
+                                <li v-for="item in order.items" :key="item.id" class="text-meta text-ink-2">
                                     <span class="font-semibold tabular-nums">{{ item.quantity }}&times;</span>
-                                    {{ item.product_name }}<span v-if="item.variant_name" class="text-slate-400"> ({{ item.variant_name }})</span>
-                                    <span v-if="item.modifiers?.length" class="block pl-5 text-[11px] text-brand-600">
+                                    {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
+                                    <span v-if="item.modifiers?.length" class="block pl-5 text-meta text-accent">
                                         + {{ item.modifiers.map(m => m.name).join(', ') }}
                                     </span>
                                 </li>
                             </ul>
 
-                            <p v-if="order.note" class="mt-2 rounded-lg bg-slate-50 px-2 py-1 text-[11px] italic text-slate-500">
+                            <p v-if="order.note" class="mt-2 rounded-control bg-surface-2 px-2 py-1 text-meta italic text-ink-3">
                                 &ldquo;{{ order.note }}&rdquo;
                             </p>
 
-                            <p class="mt-2 text-right text-[15px] font-bold tabular-nums text-slate-900">
+                            <p class="mt-2 text-right text-body font-bold tabular-nums text-ink-1">
                                 {{ money(order.total) }}
                             </p>
 
                             <div class="mt-3 flex gap-2">
-                                <button class="btn-secondary flex-1 justify-center !py-2 text-[12px]" @click="openReject(order)">
+                                <button class="btn-secondary flex-1 justify-center !py-2 text-meta" @click="openReject(order)">
                                     <NoSymbolIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                     Reject
                                 </button>
-                                <button class="btn-primary flex-1 justify-center !py-2 text-[12px]" @click="openSettle(order)">
+                                <button class="btn-primary flex-1 justify-center !py-2 text-meta" @click="openSettle(order)">
                                     <BanknotesIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                     Take payment
                                 </button>
@@ -234,37 +234,37 @@ const waitingSince = (order) => {
 
                 <!-- Preparing -->
                 <section class="card flex flex-col overflow-hidden">
-                    <header class="flex items-center justify-between border-b border-slate-100 bg-brand-50/60 px-4 py-3">
-                        <h2 class="text-[13px] font-bold text-brand-800">Preparing</h2>
+                    <header class="flex items-center justify-between border-b border-line bg-accent-tint/60 px-4 py-3">
+                        <h2 class="text-ui font-bold text-accent">Preparing</h2>
                         <span class="badge badge-info tabular-nums">{{ preparing.length }}</span>
                     </header>
 
                     <div class="flex-1 space-y-2 p-3">
-                        <p v-if="preparing.length === 0" class="py-8 text-center text-[13px] text-slate-400">
+                        <p v-if="preparing.length === 0" class="py-8 text-center text-ui text-ink-3">
                             Nothing being made
                         </p>
 
                         <article
                             v-for="order in preparing"
                             :key="order.id"
-                            class="rounded-xl border border-slate-200 bg-white p-3 shadow-card"
+                            class="rounded-control border border-line bg-surface-1 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
-                                <span class="text-lg font-bold tabular-nums text-slate-900">#{{ order.queue_number }}</span>
+                                <span class="text-lg font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
                                 <span class="badge badge-success">Paid</span>
                             </div>
 
                             <ul class="mt-2 space-y-1">
-                                <li v-for="item in order.items" :key="item.id" class="text-[12px] text-slate-600">
+                                <li v-for="item in order.items" :key="item.id" class="text-meta text-ink-2">
                                     <span class="font-semibold tabular-nums">{{ item.quantity }}&times;</span>
-                                    {{ item.product_name }}<span v-if="item.variant_name" class="text-slate-400"> ({{ item.variant_name }})</span>
-                                    <span v-if="item.modifiers?.length" class="block pl-5 text-[11px] text-brand-600">
+                                    {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
+                                    <span v-if="item.modifiers?.length" class="block pl-5 text-meta text-accent">
                                         + {{ item.modifiers.map(m => m.name).join(', ') }}
                                     </span>
                                 </li>
                             </ul>
 
-                            <button class="btn-primary mt-3 w-full justify-center !py-2 text-[12px]" @click="advance(order, 'ready')">
+                            <button class="btn-primary mt-3 w-full justify-center !py-2 text-meta" @click="advance(order, 'ready')">
                                 <CheckCircleIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                 Mark ready
                             </button>
@@ -274,27 +274,27 @@ const waitingSince = (order) => {
 
                 <!-- Ready -->
                 <section class="card flex flex-col overflow-hidden">
-                    <header class="flex items-center justify-between border-b border-slate-100 bg-emerald-50/60 px-4 py-3">
-                        <h2 class="text-[13px] font-bold text-emerald-800">Ready for pickup</h2>
+                    <header class="flex items-center justify-between border-b border-line bg-ready-tint/60 px-4 py-3">
+                        <h2 class="text-ui font-bold text-ready-ink">Ready for pickup</h2>
                         <span class="badge badge-success tabular-nums">{{ ready.length }}</span>
                     </header>
 
                     <div class="flex-1 space-y-2 p-3">
-                        <p v-if="ready.length === 0" class="py-8 text-center text-[13px] text-slate-400">
+                        <p v-if="ready.length === 0" class="py-8 text-center text-ui text-ink-3">
                             Nothing waiting to be collected
                         </p>
 
                         <article
                             v-for="order in ready"
                             :key="order.id"
-                            class="rounded-xl border border-emerald-200 bg-emerald-50/30 p-3 shadow-card"
+                            class="rounded-control border border-ready-tint bg-ready-tint/30 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
-                                <span class="text-2xl font-bold tabular-nums text-emerald-700">#{{ order.queue_number }}</span>
-                                <span v-if="order.customer_name" class="text-[12px] font-medium text-slate-600">{{ order.customer_name }}</span>
+                                <span class="text-2xl font-bold tabular-nums text-ready-ink">#{{ order.queue_number }}</span>
+                                <span v-if="order.customer_name" class="text-meta font-medium text-ink-2">{{ order.customer_name }}</span>
                             </div>
 
-                            <button class="btn-secondary mt-3 w-full justify-center !py-2 text-[12px]" @click="advance(order, 'collect')">
+                            <button class="btn-secondary mt-3 w-full justify-center !py-2 text-meta" @click="advance(order, 'collect')">
                                 Collected
                             </button>
                         </article>
@@ -304,7 +304,7 @@ const waitingSince = (order) => {
 
             <!-- Recently finished -->
             <section v-if="recentlyFinished.length" class="card p-4">
-                <h2 class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Finished today</h2>
+                <h2 class="text-label font-semibold uppercase tracking-wider text-ink-3">Finished today</h2>
                 <div class="mt-3 flex flex-wrap gap-2">
                     <span
                         v-for="order in recentlyFinished"
@@ -323,34 +323,34 @@ const waitingSince = (order) => {
         <Teleport to="body">
             <div
                 v-if="settling"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Take payment"
             >
-                <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
+                <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="flex items-center gap-2">
-                        <BanknotesIcon class="h-5 w-5 text-brand-600" aria-hidden="true" />
-                        <h3 class="text-lg font-bold text-slate-900">Order #{{ settling.queue_number }}</h3>
+                        <BanknotesIcon class="h-5 w-5 text-accent" aria-hidden="true" />
+                        <h3 class="text-lg font-bold text-ink-1">Order #{{ settling.queue_number }}</h3>
                     </div>
 
-                    <p class="mt-4 flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3">
-                        <span class="text-[13px] text-slate-500">Total</span>
-                        <span class="text-2xl font-bold tabular-nums text-slate-900">{{ money(settling.total) }}</span>
+                    <p class="mt-4 flex items-baseline justify-between rounded-control bg-surface-2 px-4 py-3">
+                        <span class="text-ui text-ink-3">Total</span>
+                        <span class="text-2xl font-bold tabular-nums text-ink-1">{{ money(settling.total) }}</span>
                     </p>
 
                     <div class="mt-5">
-                        <label class="text-[13px] font-semibold text-slate-700">Payment method</label>
+                        <label class="text-ui font-semibold text-ink-2">Payment method</label>
                         <div class="mt-2 grid grid-cols-5 gap-1.5">
                             <button
                                 v-for="method in ['cash', 'gcash', 'maya', 'card', 'other']"
                                 :key="method"
                                 type="button"
                                 :class="[
-                                    'rounded-xl border py-2 text-[11px] font-semibold capitalize transition-all',
+                                    'rounded-control border py-2 text-meta font-semibold capitalize transition-all',
                                     settleForm.payment_method === method
-                                        ? 'border-brand-500 bg-brand-50 text-brand-700'
-                                        : 'border-slate-200 text-slate-500 hover:bg-slate-50',
+                                        ? 'border-accent bg-accent-tint text-accent'
+                                        : 'border-line text-ink-3 hover:bg-surface-2',
                                 ]"
                                 @click="settleForm.payment_method = method"
                             >
@@ -360,21 +360,21 @@ const waitingSince = (order) => {
                     </div>
 
                     <div v-if="settleForm.payment_method === 'cash'" class="mt-5">
-                        <label class="text-[13px] font-semibold text-slate-700">Cash received</label>
+                        <label class="text-ui font-semibold text-ink-2">Cash received</label>
                         <input
                             v-model="settleForm.cash_received"
                             type="number" step="0.01" min="0"
                             class="input-field mt-1.5 w-full text-right text-lg font-bold tabular-nums"
                             :placeholder="`Min: ${money(settleTotal)}`"
                         />
-                        <div v-if="cashReceived >= settleTotal" class="mt-3 rounded-xl bg-emerald-50 p-3 text-center">
-                            <p class="text-[12px] font-medium text-emerald-600">Change</p>
-                            <p class="text-2xl font-bold tabular-nums text-emerald-700">{{ money(change) }}</p>
+                        <div v-if="cashReceived >= settleTotal" class="mt-3 rounded-control bg-ready-tint p-3 text-center">
+                            <p class="text-meta font-medium text-ready-ink">Change</p>
+                            <p class="text-2xl font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>
                         </div>
                     </div>
 
-                    <p v-if="settleForm.errors.order" class="mt-3 text-[12px] text-red-500">{{ settleForm.errors.order }}</p>
-                    <p v-if="settleForm.errors.checkout" class="mt-3 text-[12px] text-red-500">{{ settleForm.errors.checkout }}</p>
+                    <p v-if="settleForm.errors.order" class="mt-3 text-meta text-stop-ink">{{ settleForm.errors.order }}</p>
+                    <p v-if="settleForm.errors.checkout" class="mt-3 text-meta text-stop-ink">{{ settleForm.errors.checkout }}</p>
 
                     <div class="mt-6 flex gap-3">
                         <button type="button" class="btn-secondary flex-1 justify-center" @click="closeSettle">Cancel</button>
@@ -395,20 +395,20 @@ const waitingSince = (order) => {
         <Teleport to="body">
             <div
                 v-if="rejecting"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Reject order"
             >
-                <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
+                <div class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-slate-900">Reject #{{ rejecting.queue_number }}</h3>
-                        <button class="text-slate-300 hover:text-slate-500" aria-label="Close" @click="closeReject">
+                        <h3 class="text-lg font-bold text-ink-1">Reject #{{ rejecting.queue_number }}</h3>
+                        <button class="text-ink-3 hover:text-ink-3" aria-label="Close" @click="closeReject">
                             <XMarkIcon class="h-5 w-5" aria-hidden="true" />
                         </button>
                     </div>
 
-                    <p class="mt-1 text-[13px] text-slate-500">The customer sees this on their phone.</p>
+                    <p class="mt-1 text-ui text-ink-3">The customer sees this on their phone.</p>
 
                     <input
                         v-model="rejectForm.reason"
@@ -417,7 +417,7 @@ const waitingSince = (order) => {
                         placeholder="e.g. Sold out of oat milk"
                         @keyup.enter="submitReject"
                     />
-                    <p v-if="rejectForm.errors.reason" class="mt-1 text-[12px] text-red-500">{{ rejectForm.errors.reason }}</p>
+                    <p v-if="rejectForm.errors.reason" class="mt-1 text-meta text-stop-ink">{{ rejectForm.errors.reason }}</p>
 
                     <div class="mt-5 flex gap-3">
                         <button type="button" class="btn-secondary flex-1 justify-center" @click="closeReject">Cancel</button>
