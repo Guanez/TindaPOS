@@ -25,6 +25,28 @@ class QrCodeService
         return route('public.menu', $store->slug);
     }
 
+    /**
+     * Whether the generated code points somewhere only this machine can reach.
+     *
+     * route() builds from APP_URL, which is http://localhost in development.
+     * A code built there encodes an address no phone can resolve — and it
+     * fails silently: the SVG renders, prints, and looks perfectly correct
+     * right up until a customer is standing at the counter with a dead scan.
+     * Cheap to detect, so the screens that show a code say so.
+     */
+    public function isUnreachable(Store $store): bool
+    {
+        $host = parse_url($this->urlFor($store), PHP_URL_HOST);
+
+        if (! is_string($host)) {
+            return true;
+        }
+
+        return in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0'], true)
+            || str_ends_with($host, '.localhost')
+            || str_ends_with($host, '.test');
+    }
+
     public function svgFor(Store $store, int $size = 320): string
     {
         return (new Builder(

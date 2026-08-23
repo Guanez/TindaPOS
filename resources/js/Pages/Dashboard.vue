@@ -1,9 +1,10 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/Composables/currency';
 import StatCard from '@/Components/StatCard.vue';
 import StockBadge from '@/Components/StockBadge.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { formatPeso, formatDateTime } from '@/Composables/helpers';
+import { formatDateTime } from '@/Composables/helpers';
 import { useVocabulary } from '@/Composables/vocabulary';
 import {
     BanknotesIcon,
@@ -19,6 +20,9 @@ import {
 } from '@heroicons/vue/24/outline';
 
 import { computed } from 'vue';
+
+const { money } = useCurrency();
+
 
 const props = defineProps({
     stats: Object,
@@ -47,10 +51,10 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
 
             <!-- Stat Cards Grid — staggered entrance -->
             <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-                <div class="fade-in-up delay-1"><StatCard label="Revenue Today" :value="formatPeso(stats.revenue)" :icon="BanknotesIcon" color="success" /></div>
+                <div class="fade-in-up delay-1"><StatCard label="Revenue Today" :value="money(stats.revenue)" :icon="BanknotesIcon" color="success" /></div>
                 <div class="fade-in-up delay-2"><StatCard label="Transactions" :value="stats.transactions" :icon="ReceiptPercentIcon" /></div>
-                <div class="fade-in-up delay-3"><StatCard label="Profit" :value="formatPeso(stats.profit)" :icon="ArrowTrendingUpIcon" color="success" /></div>
-                <div class="fade-in-up delay-4"><StatCard label="Discounts Given" :value="formatPeso(stats.discounts)" :icon="TagIcon" color="warning" /></div>
+                <div class="fade-in-up delay-3"><StatCard label="Profit" :value="money(stats.profit)" :icon="ArrowTrendingUpIcon" color="success" /></div>
+                <div class="fade-in-up delay-4"><StatCard label="Discounts Given" :value="money(stats.discounts)" :icon="TagIcon" color="warning" /></div>
                 <div class="fade-in-up delay-5"><StatCard label="Low Stock Items" :value="stats.low_stock_count" :icon="ExclamationTriangleIcon" :color="stats.low_stock_count > 0 ? 'danger' : 'default'" /></div>
                 <div class="fade-in-up delay-6"><StatCard :label="`Total ${words.items}`" :value="stats.total_products" :icon="CubeIcon" /></div>
             </div>
@@ -98,7 +102,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                             </div>
                             <div class="text-right">
                                 <p class="text-[13px] font-bold tabular-nums text-slate-900">
-                                    {{ formatPeso(sale.total) }}
+                                    {{ money(sale.total) }}
                                 </p>
                                 <span
                                     v-if="sale.status === 'voided'"

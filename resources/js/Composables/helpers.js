@@ -1,18 +1,8 @@
 /**
  * TindaPOS Composables — shared utility functions for Vue components.
- * Philippine Peso formatting, dates, cart logic.
+ * Dates and cart logic. Money lives in currency.js, which formats with the
+ * shop's own symbol rather than a hardcoded one.
  */
-
-/**
- * Format a number as Philippine Peso.
- */
-export function formatPeso(amount) {
-    const num = parseFloat(amount) || 0
-    return '₱' + num.toLocaleString('en-PH', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    })
-}
 
 /**
  * Format a date string to a readable format.

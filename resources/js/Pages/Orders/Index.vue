@@ -1,8 +1,9 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/Composables/currency';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { formatPeso } from '@/Composables/helpers';
+
 import {
     BanknotesIcon,
     CheckCircleIcon,
@@ -12,6 +13,8 @@ import {
     XMarkIcon,
     ClockIcon,
 } from '@heroicons/vue/24/outline';
+
+const { money } = useCurrency();
 
 const props = defineProps({
     orders: { type: Array, default: () => [] },
@@ -212,7 +215,7 @@ const waitingSince = (order) => {
                             </p>
 
                             <p class="mt-2 text-right text-[15px] font-bold tabular-nums text-slate-900">
-                                {{ formatPeso(order.total) }}
+                                {{ money(order.total) }}
                             </p>
 
                             <div class="mt-3 flex gap-2">
@@ -333,7 +336,7 @@ const waitingSince = (order) => {
 
                     <p class="mt-4 flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3">
                         <span class="text-[13px] text-slate-500">Total</span>
-                        <span class="text-2xl font-bold tabular-nums text-slate-900">{{ formatPeso(settling.total) }}</span>
+                        <span class="text-2xl font-bold tabular-nums text-slate-900">{{ money(settling.total) }}</span>
                     </p>
 
                     <div class="mt-5">
@@ -362,11 +365,11 @@ const waitingSince = (order) => {
                             v-model="settleForm.cash_received"
                             type="number" step="0.01" min="0"
                             class="input-field mt-1.5 w-full text-right text-lg font-bold tabular-nums"
-                            :placeholder="`Min: ${formatPeso(settleTotal)}`"
+                            :placeholder="`Min: ${money(settleTotal)}`"
                         />
                         <div v-if="cashReceived >= settleTotal" class="mt-3 rounded-xl bg-emerald-50 p-3 text-center">
                             <p class="text-[12px] font-medium text-emerald-600">Change</p>
-                            <p class="text-2xl font-bold tabular-nums text-emerald-700">{{ formatPeso(change) }}</p>
+                            <p class="text-2xl font-bold tabular-nums text-emerald-700">{{ money(change) }}</p>
                         </div>
                     </div>
 

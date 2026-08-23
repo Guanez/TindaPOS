@@ -8,6 +8,7 @@ const props = defineProps({
     store: { type: Object, required: true },
     orderUrl: { type: String, required: true },
     qrSvg: { type: String, required: true },
+    qrUnreachable: { type: Boolean, default: false },
 });
 
 const form = useForm({
@@ -110,6 +111,23 @@ const copyLink = async () => {
                     <p class="mt-3 w-full break-all rounded-lg bg-slate-50 px-3 py-2 font-mono text-[11px] text-slate-500">
                         {{ orderUrl }}
                     </p>
+
+                    <!--
+                        The code renders and scans fine here; it just resolves
+                        to nothing on a phone. Stated on the screen that offers
+                        the print button, not left to be found at a counter.
+                    -->
+                    <div
+                        v-if="qrUnreachable"
+                        role="alert"
+                        class="mt-3 w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2"
+                    >
+                        <p class="text-[12px] font-bold text-amber-900">Not ready to print</p>
+                        <p class="mt-0.5 text-[11px] leading-relaxed text-amber-800">
+                            This address only works on the computer running the app. Set
+                            <span class="font-mono">APP_URL</span> to the one customers will use.
+                        </p>
+                    </div>
 
                     <div class="mt-3 flex w-full gap-2">
                         <button type="button" class="btn-secondary flex-1 justify-center !py-2 text-[12px]" @click="copyLink">

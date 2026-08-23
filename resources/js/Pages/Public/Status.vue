@@ -1,8 +1,12 @@
 <script setup>
 import { Head, router, Link } from '@inertiajs/vue3';
+import { useCurrency } from '@/Composables/currency';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { formatPeso } from '@/Composables/helpers';
+
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/vue/24/outline';
+
+const { money } = useCurrency();
+
 
 const props = defineProps({
     order: { type: Object, required: true },
@@ -186,13 +190,13 @@ const subline = computed(() => {
                                 + {{ item.modifiers.join(', ') }}
                             </span>
                         </span>
-                        <span class="text-[13px] font-semibold tabular-nums text-slate-700">{{ formatPeso(item.line_total) }}</span>
+                        <span class="text-[13px] font-semibold tabular-nums text-slate-700">{{ money(item.line_total) }}</span>
                     </li>
                 </ul>
 
                 <div class="mt-3 flex items-baseline justify-between border-t border-slate-100 pt-3">
                     <span class="text-[13px] font-semibold text-slate-500">Total</span>
-                    <span class="text-xl font-bold tabular-nums text-slate-900">{{ formatPeso(order.total) }}</span>
+                    <span class="text-xl font-bold tabular-nums text-slate-900">{{ money(order.total) }}</span>
                 </div>
 
                 <p v-if="order.note" class="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] italic text-slate-500">

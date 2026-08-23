@@ -1,9 +1,10 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/Composables/currency';
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { formatPeso } from '@/Composables/helpers';
+
 import {
     MagnifyingGlassIcon,
     ShoppingCartIcon,
@@ -20,6 +21,9 @@ import {
     PrinterIcon,
 } from '@heroicons/vue/24/outline';
 import { StarIcon } from '@heroicons/vue/16/solid';
+
+const { money } = useCurrency();
+
 
 const props = defineProps({
     products: Object,
@@ -341,7 +345,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                             <p class="text-[13px] font-semibold leading-tight text-slate-800">{{ product.name }}</p>
                             <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-brand-600">
-                                <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ formatPeso(product.selling_price) }}
+                                <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ money(product.selling_price) }}
                             </p>
 
                             <p
@@ -416,7 +420,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 <p v-if="item.modifier_names?.length" class="truncate text-[11px] text-brand-600">
                                     + {{ item.modifier_names.join(', ') }}
                                 </p>
-                                <p class="text-[11px] text-slate-400">{{ formatPeso(item.selling_price) }} each</p>
+                                <p class="text-[11px] text-slate-400">{{ money(item.selling_price) }} each</p>
                             </div>
 
                             <!-- Quantity Controls -->
@@ -437,7 +441,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                             <!-- Line Total -->
                             <p class="w-[72px] text-right text-[13px] font-bold tabular-nums text-slate-900">
-                                {{ formatPeso(item.selling_price * item.quantity) }}
+                                {{ money(item.selling_price * item.quantity) }}
                             </p>
 
                             <!-- Remove -->
@@ -464,15 +468,15 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                     <div class="space-y-1 text-[13px]">
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
-                            <span>{{ formatPeso(subtotal) }}</span>
+                            <span>{{ money(subtotal) }}</span>
                         </div>
                         <div v-if="discountAmount > 0" class="flex justify-between text-emerald-600">
                             <span>Discount</span>
-                            <span>-{{ formatPeso(discountAmount) }}</span>
+                            <span>-{{ money(discountAmount) }}</span>
                         </div>
                         <div class="flex justify-between border-t border-slate-200 pt-2 text-lg font-bold text-slate-900">
                             <span>Total</span>
-                            <span>{{ formatPeso(total) }}</span>
+                            <span>{{ money(total) }}</span>
                         </div>
                     </div>
 
@@ -481,7 +485,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700 active:scale-[0.98]" style="transition: background-color 0.15s, transform 0.1s;"
                     >
                         <CreditCardIcon class="h-4 w-4" aria-hidden="true" />
-                        Checkout &mdash; {{ formatPeso(total) }}
+                        Checkout &mdash; {{ money(total) }}
                         <kbd class="ml-1 hidden rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium sm:inline">F9</kbd>
                     </button>
                 </div>
@@ -509,15 +513,15 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                     <div class="mt-4 rounded-xl bg-slate-50 p-3 space-y-1 text-[13px]">
                         <div class="flex justify-between text-slate-500">
                             <span>{{ cartItemCount }} item{{ cartItemCount !== 1 ? 's' : '' }}</span>
-                            <span>{{ formatPeso(subtotal) }}</span>
+                            <span>{{ money(subtotal) }}</span>
                         </div>
                         <div v-if="discountAmount > 0" class="flex justify-between text-emerald-600">
                             <span>Discount</span>
-                            <span>-{{ formatPeso(discountAmount) }}</span>
+                            <span>-{{ money(discountAmount) }}</span>
                         </div>
                         <div class="flex justify-between border-t border-slate-200 pt-1.5 text-lg font-bold tabular-nums text-slate-900">
                             <span>Total</span>
-                            <span>{{ formatPeso(total) }}</span>
+                            <span>{{ money(total) }}</span>
                         </div>
                     </div>
 
@@ -550,7 +554,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             <input
                                 v-model="cashReceived"
                                 type="number" min="0" step="0.01"
-                                :placeholder="`Min: ${formatPeso(total)}`"
+                                :placeholder="`Min: ${money(total)}`"
                                 class="w-full rounded-xl border-slate-200 py-2.5 pl-8 pr-4 text-right text-lg font-bold text-slate-800 focus:border-brand-500 focus:ring-brand-500/20"
                             />
                         </div>
@@ -575,7 +579,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         <!-- Change display -->
                         <div v-if="cashReceivedNum >= total" class="mt-3 rounded-xl bg-emerald-50 p-3 text-center">
                             <p class="text-[12px] font-medium text-emerald-600">Change</p>
-                            <p class="text-2xl font-bold tabular-nums text-emerald-700">{{ formatPeso(change) }}</p>
+                            <p class="text-2xl font-bold tabular-nums text-emerald-700">{{ money(change) }}</p>
                         </div>
                     </div>
 
@@ -596,7 +600,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
-                            {{ processing ? 'Processing...' : `Pay ${formatPeso(total)}` }}
+                            {{ processing ? 'Processing...' : `Pay ${money(total)}` }}
                         </button>
                     </div>
                 </div>
@@ -633,7 +637,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                     + {{ item.modifiers.map(m => m.name).join(', ') }}
                                 </span>
                             </span>
-                            <span class="tabular-nums text-slate-600">{{ formatPeso(item.line_total) }}</span>
+                            <span class="tabular-nums text-slate-600">{{ money(item.line_total) }}</span>
                         </li>
                     </ul>
 
@@ -644,15 +648,15 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         </div>
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
-                            <span class="text-slate-700">{{ formatPeso(lastSale.subtotal) }}</span>
+                            <span class="text-slate-700">{{ money(lastSale.subtotal) }}</span>
                         </div>
                         <div v-if="parseFloat(lastSale.discount) > 0" class="flex justify-between text-emerald-600">
                             <span>Discount</span>
-                            <span>-{{ formatPeso(lastSale.discount) }}</span>
+                            <span>-{{ money(lastSale.discount) }}</span>
                         </div>
                         <div class="flex justify-between border-t border-slate-200 pt-2 text-lg font-bold text-slate-900">
                             <span>Total</span>
-                            <span>{{ formatPeso(lastSale.total) }}</span>
+                            <span>{{ money(lastSale.total) }}</span>
                         </div>
                         <div class="flex justify-between text-slate-500">
                             <span>Payment</span>
@@ -660,11 +664,11 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         </div>
                         <div v-if="lastSale.cash_received" class="flex justify-between text-slate-500">
                             <span>Cash Received</span>
-                            <span class="text-slate-700">{{ formatPeso(lastSale.cash_received) }}</span>
+                            <span class="text-slate-700">{{ money(lastSale.cash_received) }}</span>
                         </div>
                         <div v-if="lastSale.change_amount" class="flex justify-between font-bold text-emerald-700">
                             <span>Change</span>
-                            <span>{{ formatPeso(lastSale.change_amount) }}</span>
+                            <span>{{ money(lastSale.change_amount) }}</span>
                         </div>
                     </div>
 

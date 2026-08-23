@@ -1,7 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { formatPeso } from '@/Composables/helpers';
+import { useCurrency } from '@/Composables/currency';
+
 import { XMarkIcon, PlusIcon } from '@heroicons/vue/24/outline';
+
+const { money } = useCurrency();
+
 
 const props = defineProps({
     show: Boolean,
@@ -136,7 +140,7 @@ const confirm = () => {
                                 @click="selectedVariantId = variant.id"
                             >
                                 <span class="block text-[13px] font-semibold">{{ variant.name }}</span>
-                                <span class="block text-[12px] tabular-nums opacity-70">{{ formatPeso(variant.selling_price) }}</span>
+                                <span class="block text-[12px] tabular-nums opacity-70">{{ money(variant.selling_price) }}</span>
                             </button>
                         </div>
                     </fieldset>
@@ -179,7 +183,7 @@ const confirm = () => {
                                     v-if="parseFloat(modifier.price_delta) > 0"
                                     class="text-[12px] font-semibold tabular-nums text-slate-500"
                                 >
-                                    +{{ formatPeso(modifier.price_delta) }}
+                                    +{{ money(modifier.price_delta) }}
                                 </span>
                             </button>
                         </div>
@@ -199,7 +203,7 @@ const confirm = () => {
                         @click="confirm"
                     >
                         <PlusIcon class="h-4 w-4" aria-hidden="true" />
-                        Add to cart &mdash; {{ formatPeso(unitPrice) }}
+                        Add to cart &mdash; {{ money(unitPrice) }}
                     </button>
                 </div>
             </div>

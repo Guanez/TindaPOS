@@ -1,9 +1,10 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/Composables/currency';
 import StockBadge from '@/Components/StockBadge.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, watch, nextTick } from 'vue';
-import { formatPeso, debounce } from '@/Composables/helpers';
+import { debounce } from '@/Composables/helpers';
 import { useVocabulary } from '@/Composables/vocabulary';
 import {
     MagnifyingGlassIcon,
@@ -15,6 +16,9 @@ import {
     XMarkIcon,
 } from '@heroicons/vue/24/outline';
 import { StarIcon } from '@heroicons/vue/16/solid';
+
+const { money } = useCurrency();
+
 
 const props = defineProps({
     products: Object,
@@ -260,8 +264,8 @@ const goToPage = (url) => {
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-[13px] text-slate-500">{{ product.category?.name ?? '—' }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] tabular-nums text-slate-500">{{ formatPeso(product.cost_price) }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] tabular-nums font-semibold text-slate-800">{{ formatPeso(product.selling_price) }}</td>
+                                <td class="px-4 py-3 text-right text-[13px] tabular-nums text-slate-500">{{ money(product.cost_price) }}</td>
+                                <td class="px-4 py-3 text-right text-[13px] tabular-nums font-semibold text-slate-800">{{ money(product.selling_price) }}</td>
                                 <td class="px-4 py-3 text-center">
                                     <StockBadge :stock="product.stock_quantity" :threshold="product.low_stock_threshold" />
                                 </td>

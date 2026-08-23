@@ -7,6 +7,7 @@ defineProps({
     store: { type: Object, required: true },
     orderUrl: { type: String, required: true },
     qrSvg: { type: String, required: true },
+    qrUnreachable: { type: Boolean, default: false },
 });
 
 // Deliberately not auto-printing: a shop should see the card before it
@@ -50,6 +51,26 @@ onMounted(() => document.title = 'Order here');
                     <span class="text-[14px] text-slate-700">Your phone tells you when it&rsquo;s ready</span>
                 </li>
             </ol>
+
+
+            <!--
+                A code built from APP_URL=localhost prints and scans perfectly
+                — it just resolves to nothing on a customer's phone. The
+                failure has no symptom on this screen, so it gets stated here
+                rather than discovered at a counter.
+            -->
+            <div
+                v-if="qrUnreachable"
+                role="alert"
+                class="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-3 text-left print:hidden"
+            >
+                <p class="text-[13px] font-bold text-amber-900">Do not print this yet</p>
+                <p class="mt-1 text-[12px] leading-relaxed text-amber-800">
+                    This code points at <span class="font-mono">{{ orderUrl }}</span>, which only
+                    works on the computer running the app. Set <span class="font-mono">APP_URL</span>
+                    to the address customers will use, then reload this page.
+                </p>
+            </div>
 
             <p class="mt-7 break-all font-mono text-[11px] text-slate-400">{{ orderUrl }}</p>
         </div>

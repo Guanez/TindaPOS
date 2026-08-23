@@ -1,9 +1,10 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/Composables/currency';
 import StatCard from '@/Components/StatCard.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
-import { formatPeso, formatDate, today } from '@/Composables/helpers';
+import { formatDate, today } from '@/Composables/helpers';
 import {
     CalendarIcon,
     ChartBarIcon,
@@ -14,6 +15,8 @@ import {
     TagIcon,
     ArrowTrendingDownIcon,
 } from '@heroicons/vue/24/outline';
+
+const { money } = useCurrency();
 
 const props = defineProps({
     dailyReport: { type: Object, default: null },
@@ -152,10 +155,10 @@ watch(currentTab, (tab) => {
 
                 <template v-else-if="dailyData">
                     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                        <StatCard label="Revenue" :value="formatPeso(dailyData.revenue ?? 0)" :icon="BanknotesIcon" color="success" />
+                        <StatCard label="Revenue" :value="money(dailyData.revenue ?? 0)" :icon="BanknotesIcon" color="success" />
                         <StatCard label="Transactions" :value="dailyData.transactions ?? 0" :icon="ReceiptPercentIcon" />
-                        <StatCard label="Profit" :value="formatPeso(dailyData.profit ?? 0)" :icon="ArrowTrendingUpIcon" color="success" />
-                        <StatCard label="Discounts" :value="formatPeso(dailyData.discounts ?? 0)" :icon="TagIcon" color="warning" />
+                        <StatCard label="Profit" :value="money(dailyData.profit ?? 0)" :icon="ArrowTrendingUpIcon" color="success" />
+                        <StatCard label="Discounts" :value="money(dailyData.discounts ?? 0)" :icon="TagIcon" color="warning" />
                     </div>
 
                     <!-- Hourly Chart -->
@@ -167,7 +170,7 @@ watch(currentTab, (tab) => {
                             <div
                                 v-for="h in dailyData.hourly" :key="h.hour"
                                 class="group relative flex-1"
-                                :title="`${h.hour}:00 — ${formatPeso(h.revenue)} (${h.transactions} txn)`"
+                                :title="`${h.hour}:00 — ${money(h.revenue)} (${h.transactions} txn)`"
                             >
                                 <div
                                     class="absolute bottom-0 w-full rounded-t bg-brand-500 transition-all hover:bg-brand-600"
@@ -179,7 +182,7 @@ watch(currentTab, (tab) => {
                                 </span>
                                 <div class="pointer-events-none absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-800 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
                                     <p class="font-bold">{{ h.hour }}:00</p>
-                                    <p>{{ formatPeso(h.revenue) }}</p>
+                                    <p>{{ money(h.revenue) }}</p>
                                     <p>{{ h.transactions }} txn</p>
                                 </div>
                             </div>
@@ -218,10 +221,10 @@ watch(currentTab, (tab) => {
 
                 <template v-else-if="rangeData">
                     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                        <StatCard label="Total Revenue" :value="formatPeso(rangeData.revenue ?? 0)" :icon="BanknotesIcon" color="success" />
+                        <StatCard label="Total Revenue" :value="money(rangeData.revenue ?? 0)" :icon="BanknotesIcon" color="success" />
                         <StatCard label="Transactions" :value="rangeData.transactions ?? 0" :icon="ReceiptPercentIcon" />
-                        <StatCard label="Total Profit" :value="formatPeso(rangeData.profit ?? 0)" :icon="ArrowTrendingUpIcon" color="success" />
-                        <StatCard label="Avg per Day" :value="formatPeso(rangeData.daily?.length ? (rangeData.revenue ?? 0) / rangeData.daily.length : 0)" :icon="ArrowTrendingDownIcon" />
+                        <StatCard label="Total Profit" :value="money(rangeData.profit ?? 0)" :icon="ArrowTrendingUpIcon" color="success" />
+                        <StatCard label="Avg per Day" :value="money(rangeData.daily?.length ? (rangeData.revenue ?? 0) / rangeData.daily.length : 0)" :icon="ArrowTrendingDownIcon" />
                     </div>
 
                     <!-- Payment Methods -->
@@ -234,7 +237,7 @@ watch(currentTab, (tab) => {
                                     <div class="h-full rounded-full bg-brand-500 transition-all"
                                         :style="{ width: `${(pm.count / (rangeData.transactions || 1)) * 100}%` }" />
                                 </div>
-                                <span class="w-20 text-right text-[13px] font-semibold tabular-nums text-slate-700">{{ formatPeso(pm.revenue) }}</span>
+                                <span class="w-20 text-right text-[13px] font-semibold tabular-nums text-slate-700">{{ money(pm.revenue) }}</span>
                                 <span class="w-12 text-right text-[11px] tabular-nums text-slate-400">{{ pm.count }} txn</span>
                             </div>
                         </div>
@@ -255,10 +258,10 @@ watch(currentTab, (tab) => {
                             <tbody class="divide-y divide-slate-100">
                                 <tr v-for="day in rangeData.daily" :key="day.date" class="transition-colors hover:bg-slate-50/50">
                                     <td class="px-4 py-2.5 text-[13px] font-semibold text-slate-800">{{ formatDate(day.date) }}</td>
-                                    <td class="px-4 py-2.5 text-right text-[13px] tabular-nums text-slate-800">{{ formatPeso(day.revenue) }}</td>
-                                    <td class="px-4 py-2.5 text-right text-[13px] font-semibold tabular-nums text-emerald-600">{{ formatPeso(day.profit) }}</td>
+                                    <td class="px-4 py-2.5 text-right text-[13px] tabular-nums text-slate-800">{{ money(day.revenue) }}</td>
+                                    <td class="px-4 py-2.5 text-right text-[13px] font-semibold tabular-nums text-emerald-600">{{ money(day.profit) }}</td>
                                     <td class="px-4 py-2.5 text-center text-[13px] tabular-nums text-slate-500">{{ day.transactions }}</td>
-                                    <td class="px-4 py-2.5 text-right text-[13px] text-slate-500">{{ formatPeso(day.discounts) }}</td>
+                                    <td class="px-4 py-2.5 text-right text-[13px] text-slate-500">{{ money(day.discounts) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -325,7 +328,7 @@ watch(currentTab, (tab) => {
                                 </td>
                                 <td class="px-4 py-3 text-[13px] font-semibold text-slate-800">{{ product.product_name }}</td>
                                 <td class="px-4 py-3 text-right text-[13px] font-bold text-slate-800">{{ product.total_quantity }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] text-slate-800">{{ formatPeso(product.total_revenue) }}</td>
+                                <td class="px-4 py-3 text-right text-[13px] text-slate-800">{{ money(product.total_revenue) }}</td>
                                 <td class="px-4 py-3 text-right text-[13px] text-slate-500">{{ product.order_count }}</td>
                             </tr>
                         </tbody>

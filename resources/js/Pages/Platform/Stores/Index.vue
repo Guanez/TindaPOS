@@ -1,6 +1,7 @@
 <script setup>
 import PlatformLayout from '@/Layouts/PlatformLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { formatWith } from '@/Composables/currency';
 import { ref } from 'vue';
 import {
     PlusIcon,
@@ -15,8 +16,9 @@ defineProps({
     totals: { type: Object, default: () => ({}) },
 });
 
-const peso = (n) =>
-    '₱' + Number(n ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Each row is a different shop, so revenue is shown in that shop's own
+// symbol rather than the console's — which has no store and no symbol.
+const peso = (store, n) => formatWith(store.currency_symbol || '₱', n);
 
 // Suspension is the one destructive control on this page, so it asks first
 // rather than relying on a browser confirm() — which would block the tab.
@@ -70,7 +72,7 @@ const confirmSuspension = () => {
                 </div>
                 <div class="rounded-2xl bg-white p-4 shadow-card">
                     <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Revenue MTD</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ peso(totals.revenue_month) }}</p>
+                    <p class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ formatWith('₱', totals.revenue_month) }}</p>
                 </div>
             </div>
 
@@ -115,7 +117,7 @@ const confirmSuspension = () => {
                             <p class="mt-1.5 text-[13px] text-slate-600">
                                 <span class="font-semibold tabular-nums">{{ store.staff_count }}</span> staff
                                 &middot;
-                                <span class="font-semibold tabular-nums">{{ peso(store.revenue_month) }}</span>
+                                <span class="font-semibold tabular-nums">{{ peso(store, store.revenue_month) }}</span>
                                 this month
                             </p>
                         </div>

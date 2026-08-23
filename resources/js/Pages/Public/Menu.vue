@@ -1,7 +1,8 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
+import { useCurrency } from '@/Composables/currency';
 import { ref, computed, onMounted } from 'vue';
-import { formatPeso } from '@/Composables/helpers';
+
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import {
     ShoppingBagIcon,
@@ -11,6 +12,8 @@ import {
     ArrowRightIcon,
     ClockIcon,
 } from '@heroicons/vue/24/outline';
+
+const { money } = useCurrency();
 
 const props = defineProps({
     store: { type: Object, required: true },
@@ -202,7 +205,7 @@ const place = () => {
                         {{ product.description }}
                     </span>
                     <span class="mt-1.5 block text-[15px] font-bold tabular-nums text-brand-600">
-                        <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ formatPeso(product.price_from) }}
+                        <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ money(product.price_from) }}
                     </span>
                 </span>
                 <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50">
@@ -221,7 +224,7 @@ const place = () => {
                     {{ basketCount }}
                 </span>
                 <span class="flex-1 text-left text-[15px] font-bold">View basket</span>
-                <span class="text-[15px] font-bold tabular-nums">{{ formatPeso(basketTotal) }}</span>
+                <span class="text-[15px] font-bold tabular-nums">{{ money(basketTotal) }}</span>
             </button>
         </div>
 
@@ -255,7 +258,7 @@ const place = () => {
                                 <p v-if="line.modifier_names.length" class="text-[12px] text-brand-600">
                                     + {{ line.modifier_names.join(', ') }}
                                 </p>
-                                <p class="text-[12px] tabular-nums text-slate-400">{{ formatPeso(line.unit_price) }} each</p>
+                                <p class="text-[12px] tabular-nums text-slate-400">{{ money(line.unit_price) }} each</p>
                             </div>
 
                             <div class="flex items-center gap-1">
@@ -289,7 +292,7 @@ const place = () => {
 
                     <div class="mt-5 flex items-baseline justify-between border-t border-slate-100 pt-4">
                         <span class="text-[15px] font-semibold text-slate-500">Total</span>
-                        <span class="text-2xl font-bold tabular-nums text-slate-900">{{ formatPeso(basketTotal) }}</span>
+                        <span class="text-2xl font-bold tabular-nums text-slate-900">{{ money(basketTotal) }}</span>
                     </div>
 
                     <button

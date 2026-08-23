@@ -114,6 +114,9 @@ const submit = () => form.post(route('platform.stores.store'));
                                     type="text"
                                     class="w-full rounded-xl border-slate-200 text-[14px] focus:border-brand-500 focus:ring-brand-500"
                                 />
+                                <p class="mt-1 text-[12px] text-slate-500">
+                                    Use a plain P if their receipt printer cannot render &#8369;.
+                                </p>
                                 <p v-if="form.errors.currency_symbol" class="mt-1 text-[12px] text-red-600">
                                     {{ form.errors.currency_symbol }}
                                 </p>

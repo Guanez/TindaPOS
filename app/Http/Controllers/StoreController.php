@@ -36,6 +36,7 @@ class StoreController extends Controller
             // Generated from our own URL by the QR library, so it is safe to
             // render inline rather than fetched as a second request.
             'qrSvg' => $this->qrCodes->svgFor($store),
+            'qrUnreachable' => $this->qrCodes->isUnreachable($store),
         ]);
     }
 
@@ -58,6 +59,7 @@ class StoreController extends Controller
             'store' => $store->only(['name', 'address']),
             'orderUrl' => $this->qrCodes->urlFor($store),
             'qrSvg' => $this->qrCodes->svgFor($store, 420),
+            'qrUnreachable' => $this->qrCodes->isUnreachable($store),
         ]);
     }
 

@@ -1,8 +1,9 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useCurrency } from '@/Composables/currency';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
-import { formatPeso, formatDateTime, formatDate, debounce } from '@/Composables/helpers';
+import { formatDateTime, formatDate, debounce } from '@/Composables/helpers';
 import {
     EyeIcon,
     XMarkIcon,
@@ -11,6 +12,8 @@ import {
     ClipboardDocumentListIcon,
     NoSymbolIcon,
 } from '@heroicons/vue/24/outline';
+
+const { money } = useCurrency();
 
 const props = defineProps({
     sales: Object,
@@ -160,7 +163,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                                 <td class="px-4 py-3 font-mono text-[13px] font-semibold text-slate-800">{{ sale.receipt_number }}</td>
                                 <td class="px-4 py-3 text-[13px] text-slate-500">{{ formatDateTime(sale.created_at) }}</td>
                                 <td class="px-4 py-3 text-center text-[13px] tabular-nums text-slate-500">{{ sale.item_count }}</td>
-                                <td class="px-4 py-3 text-right text-[13px] font-bold tabular-nums text-slate-800">{{ formatPeso(sale.total) }}</td>
+                                <td class="px-4 py-3 text-right text-[13px] font-bold tabular-nums text-slate-800">{{ money(sale.total) }}</td>
                                 <td class="px-4 py-3 text-center">
                                     <span class="badge badge-neutral">{{ sale.payment_method.toUpperCase() }}</span>
                                 </td>
@@ -254,7 +257,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                             </div>
                             <div v-if="selectedSale.cash_received">
                                 <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Cash / Change</p>
-                                <p class="mt-0.5 text-[13px] font-medium text-slate-700">{{ formatPeso(selectedSale.cash_received) }} / {{ formatPeso(selectedSale.change_amount) }}</p>
+                                <p class="mt-0.5 text-[13px] font-medium text-slate-700">{{ money(selectedSale.cash_received) }} / {{ money(selectedSale.change_amount) }}</p>
                             </div>
                         </div>
 
@@ -266,9 +269,9 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                                     class="flex items-center justify-between px-3 py-2.5">
                                     <div>
                                         <p class="text-[13px] font-semibold text-slate-800">{{ item.product_name }}</p>
-                                        <p class="text-[11px] text-slate-400">{{ formatPeso(item.selling_price) }} x {{ item.quantity }}</p>
+                                        <p class="text-[11px] text-slate-400">{{ money(item.selling_price) }} x {{ item.quantity }}</p>
                                     </div>
-                                    <p class="text-[13px] font-bold text-slate-800">{{ formatPeso(item.line_total) }}</p>
+                                    <p class="text-[13px] font-bold text-slate-800">{{ money(item.line_total) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -277,15 +280,15 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                         <div class="mt-4 space-y-1 text-[13px]">
                             <div class="flex justify-between text-slate-500">
                                 <span>Subtotal</span>
-                                <span>{{ formatPeso(selectedSale.subtotal) }}</span>
+                                <span>{{ money(selectedSale.subtotal) }}</span>
                             </div>
                             <div v-if="parseFloat(selectedSale.discount) > 0" class="flex justify-between text-emerald-600">
                                 <span>Discount</span>
-                                <span>-{{ formatPeso(selectedSale.discount) }}</span>
+                                <span>-{{ money(selectedSale.discount) }}</span>
                             </div>
                             <div class="flex justify-between border-t border-slate-100 pt-2 text-lg font-bold text-slate-900">
                                 <span>Total</span>
-                                <span>{{ formatPeso(selectedSale.total) }}</span>
+                                <span>{{ money(selectedSale.total) }}</span>
                             </div>
                         </div>
 
