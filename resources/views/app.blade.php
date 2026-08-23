@@ -1,10 +1,19 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+{{--
+    data-density switches the whole type scale. A customer reading a menu on
+    a phone gets larger text than a cashier at a terminal, from the same
+    components — the roles carry both values and this attribute picks one.
+--}}
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    data-density="{{ $page['props']['density'] ?? 'counter' }}"
+>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#1a70f5">
-        <meta name="color-scheme" content="light">
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#100d16" media="(prefers-color-scheme: dark)">
+        <meta name="color-scheme" content="light dark">
 
         <title inertia>{{ config('app.name', 'TindaPOS') }}</title>
 

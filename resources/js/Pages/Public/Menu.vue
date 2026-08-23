@@ -170,7 +170,7 @@ const place = () => {
                 <button
                     :class="[
                         'shrink-0 rounded-control px-3 py-1.5 text-meta font-semibold',
-                        selectedCategory === null ? 'bg-accent text-white' : 'bg-surface-1 text-ink-3',
+                        selectedCategory === null ? 'bg-accent text-accent-fg' : 'bg-surface-1 text-ink-3',
                     ]"
                     @click="selectedCategory = null"
                 >All</button>
@@ -179,7 +179,7 @@ const place = () => {
                     :key="category.id"
                     :class="[
                         'shrink-0 rounded-control px-3 py-1.5 text-meta font-semibold',
-                        selectedCategory === category.id ? 'bg-accent text-white' : 'bg-surface-1 text-ink-3',
+                        selectedCategory === category.id ? 'bg-accent text-accent-fg' : 'bg-surface-1 text-ink-3',
                     ]"
                     @click="selectedCategory = category.id"
                 >{{ category.name }}</button>
@@ -217,7 +217,7 @@ const place = () => {
         <!-- Basket bar -->
         <div v-if="basketCount > 0 && !showBasket" class="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md p-4">
             <button
-                class="flex w-full items-center gap-3 rounded-card bg-accent px-5 py-4 text-white shadow-overlay"
+                class="flex w-full items-center gap-3 rounded-card bg-accent px-5 py-4 text-accent-fg shadow-overlay"
                 @click="showBasket = true"
             >
                 <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-1/20 text-ui font-bold tabular-nums">
@@ -297,7 +297,7 @@ const place = () => {
 
                     <button
                         :disabled="placing"
-                        class="mt-4 w-full rounded-card bg-accent py-4 text-body font-bold text-white shadow-rest disabled:opacity-50"
+                        class="mt-4 w-full rounded-card bg-accent py-4 text-body font-bold text-accent-fg shadow-rest disabled:opacity-50"
                         @click="place"
                     >
                         {{ placing ? 'Sending…' : 'Place order' }}

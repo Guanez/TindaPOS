@@ -209,7 +209,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                             @click="goToPage(link.url)" :disabled="!link.url"
                             :class="[
                                 'rounded-control px-3 py-1 text-meta font-medium transition-all',
-                                link.active ? 'bg-accent text-white' : link.url ? 'text-ink-3 hover:bg-surface-2' : 'text-ink-3 cursor-default'
+                                link.active ? 'bg-accent text-accent-fg' : link.url ? 'text-ink-3 hover:bg-surface-2' : 'text-ink-3 cursor-default'
                             ]"
                             v-html="link.label"
                         />
@@ -344,7 +344,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                             Cancel
                         </button>
                         <button @click="confirmVoid" :disabled="!voidReason.trim()"
-                            class="flex-1 rounded-control bg-stop-mark py-2.5 text-ui font-bold text-white transition-all hover:bg-stop-ink disabled:opacity-50">
+                            class="flex-1 rounded-control bg-stop-solid py-2.5 text-ui font-bold text-on-solid transition-all hover:bg-stop-solid disabled:opacity-50">
                             Confirm Void
                         </button>
                     </div>

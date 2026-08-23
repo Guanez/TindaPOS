@@ -72,21 +72,29 @@ export default {
                     DEFAULT: 'rgb(var(--identity) / <alpha-value>)',
                     tint: 'rgb(var(--identity-tint) / <alpha-value>)',
                 },
+                /*
+                 * tint = the background, ink = text on it, mark = the signal
+                 * itself, solid = a filled control carrying `on-solid` text.
+                 */
                 wait: {
                     ink: 'rgb(var(--wait-ink) / <alpha-value>)',
                     mark: 'rgb(var(--wait-mark) / <alpha-value>)',
                     tint: 'rgb(var(--wait-tint) / <alpha-value>)',
+                    solid: 'rgb(var(--wait-solid) / <alpha-value>)',
                 },
                 ready: {
                     ink: 'rgb(var(--ready-ink) / <alpha-value>)',
                     mark: 'rgb(var(--ready-mark) / <alpha-value>)',
                     tint: 'rgb(var(--ready-tint) / <alpha-value>)',
+                    solid: 'rgb(var(--ready-solid) / <alpha-value>)',
                 },
                 stop: {
                     ink: 'rgb(var(--stop-ink) / <alpha-value>)',
                     mark: 'rgb(var(--stop-mark) / <alpha-value>)',
                     tint: 'rgb(var(--stop-tint) / <alpha-value>)',
+                    solid: 'rgb(var(--stop-solid) / <alpha-value>)',
                 },
+                'on-solid': 'rgb(var(--on-solid) / <alpha-value>)',
 
                 /*
                  * The ramps the semantic tokens will point at from phase 3.

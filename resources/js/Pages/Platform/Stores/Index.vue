@@ -99,7 +99,7 @@ const confirmSuspension = () => {
                                 >
                                     <span
                                         class="h-1.5 w-1.5 rounded-full"
-                                        :class="store.is_active ? 'bg-emerald-500' : 'bg-stop-mark'"
+                                        :class="store.is_active ? 'bg-emerald-500' : 'bg-stop-solid'"
                                     />
                                     {{ store.is_active ? 'Active' : 'Suspended' }}
                                 </span>
@@ -126,7 +126,7 @@ const confirmSuspension = () => {
                             <button
                                 v-if="store.is_active"
                                 @click="enter(store)"
-                                class="flex items-center gap-1.5 rounded-control bg-accent px-3 py-2 text-ui font-semibold text-white hover:bg-accent-hover"
+                                class="flex items-center gap-1.5 rounded-control bg-accent px-3 py-2 text-ui font-semibold text-accent-fg hover:bg-accent-hover"
                                 style="transition: background-color var(--t-fast);"
                             >
                                 <ArrowRightOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
@@ -198,8 +198,8 @@ const confirmSuspension = () => {
                             @click="confirmSuspension"
                             class="rounded-control px-4 py-2 text-ui font-semibold text-white"
                             :class="pendingSuspend.is_active
-                                ? 'bg-stop-mark hover:bg-stop-ink'
-                                : 'bg-ready-ink hover:bg-ready-ink'"
+                                ? 'bg-stop-solid hover:bg-stop-solid'
+                                : 'bg-ready-solid hover:bg-ready-solid'"
                         >
                             {{ pendingSuspend.is_active ? 'Suspend store' : 'Reactivate store' }}
                         </button>

@@ -220,7 +220,7 @@ onUnmounted(() => {
             <!-- User Footer -->
             <div class="border-t border-line p-4">
                 <div class="flex items-center gap-3">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover text-sm font-bold text-white shadow-rest">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover text-sm font-bold text-accent-fg shadow-rest">
                         {{ user?.name?.charAt(0)?.toUpperCase() }}
                     </div>
                     <div class="min-w-0 flex-1">
@@ -279,7 +279,7 @@ onUnmounted(() => {
                         v-if="showToast"
                         role="status"
                         class="flex items-center gap-2.5 rounded-control px-4 py-3 text-ui font-medium text-white shadow-overlay"
-                        :class="toastType === 'success' ? 'bg-ready-ink' : 'bg-stop-mark'"
+                        :class="toastType === 'success' ? 'bg-ready-solid' : 'bg-stop-solid'"
                     >
                         <svg v-if="toastType === 'success'" class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />

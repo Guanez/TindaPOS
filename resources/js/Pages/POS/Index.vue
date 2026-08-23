@@ -296,7 +296,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             :class="[
                                 'rounded-control px-3 py-1.5 text-meta font-semibold transition-all',
                                 !selectedCategory
-                                    ? 'bg-accent text-white shadow-rest'
+                                    ? 'bg-accent text-accent-fg shadow-rest'
                                     : 'bg-surface-3 text-ink-3 hover:bg-line-strong hover:text-ink-2'
                             ]"
                         >
@@ -309,7 +309,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             :class="[
                                 'rounded-control px-3 py-1.5 text-meta font-semibold transition-all',
                                 selectedCategory === cat.id
-                                    ? 'bg-accent text-white shadow-rest'
+                                    ? 'bg-accent text-accent-fg shadow-rest'
                                     : 'bg-surface-3 text-ink-3 hover:bg-line-strong hover:text-ink-2'
                             ]"
                         >
@@ -371,7 +371,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             <!-- Cart quantity indicator -->
                             <span
                                 v-if="inCartCount(product) > 0"
-                                class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-label font-bold text-white shadow-rest"
+                                class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-label font-bold text-accent-fg shadow-rest"
                             >
                                 {{ inCartCount(product) }}
                             </span>
@@ -482,7 +482,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                     <button
                         @click="openCheckout"
-                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-white shadow-rest hover:bg-accent-hover active:scale-[0.98]" style="transition: background-color var(--t-fast), transform var(--t-fast);"
+                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg shadow-rest hover:bg-accent-hover active:scale-[0.98]" style="transition: background-color var(--t-fast), transform var(--t-fast);"
                     >
                         <CreditCardIcon class="h-4 w-4" aria-hidden="true" />
                         Checkout &mdash; {{ money(total) }}
@@ -594,7 +594,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         <button
                             @click="processCheckout"
                             :disabled="!canCheckout || processing"
-                            class="flex flex-1 items-center justify-center gap-2 rounded-control bg-accent py-2.5 text-ui font-bold text-white transition-all hover:bg-accent-hover disabled:opacity-50"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-control bg-accent py-2.5 text-ui font-bold text-accent-fg transition-all hover:bg-accent-hover disabled:opacity-50"
                         >
                             <svg v-if="processing" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -687,7 +687,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         </button>
                         <button
                             @click="closeReceipt"
-                            class="flex flex-[2] items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-white transition-all hover:bg-accent-hover"
+                            class="flex flex-[2] items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg transition-all hover:bg-accent-hover"
                         >
                             <PlusIcon class="h-4 w-4" />
                             New Transaction

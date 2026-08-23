@@ -142,7 +142,7 @@ const goToPage = (url) => {
                             :class="[
                                 'rounded-control px-3 py-1.5 text-meta font-medium transition-all',
                                 link.active
-                                    ? 'bg-accent text-white shadow-rest'
+                                    ? 'bg-accent text-accent-fg shadow-rest'
                                     : link.url
                                         ? 'text-ink-2 hover:bg-surface-3'
                                         : 'cursor-not-allowed text-ink-3',

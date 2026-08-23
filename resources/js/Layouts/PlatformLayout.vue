@@ -101,7 +101,7 @@ onUnmounted(() => clearInterval(clockInterval))
                         v-if="showToast"
                         role="status"
                         class="flex items-center gap-2.5 rounded-control px-4 py-3 text-ui font-medium text-white shadow-overlay"
-                        :class="toastType === 'success' ? 'bg-ready-ink' : 'bg-stop-mark'"
+                        :class="toastType === 'success' ? 'bg-ready-solid' : 'bg-stop-solid'"
                     >
                         {{ toastMessage }}
                         <button

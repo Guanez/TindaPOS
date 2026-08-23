@@ -126,7 +126,7 @@ watch(currentTab, (tab) => {
                     :class="[
                         'flex flex-1 items-center justify-center gap-1.5 rounded-control py-2.5 text-ui font-semibold transition-all',
                         currentTab === tab.id
-                            ? 'bg-accent text-white shadow-rest'
+                            ? 'bg-accent text-accent-fg shadow-rest'
                             : 'text-ink-3 hover:bg-surface-2'
                     ]"
                 >
@@ -210,7 +210,7 @@ watch(currentTab, (tab) => {
                             class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
                     </div>
                     <button @click="fetchRange"
-                        class="rounded-control bg-accent px-4 py-2 text-ui font-semibold text-white shadow-rest transition-all hover:bg-accent-hover">
+                        class="rounded-control bg-accent px-4 py-2 text-ui font-semibold text-accent-fg shadow-rest transition-all hover:bg-accent-hover">
                         Generate Report
                     </button>
                 </div>
@@ -293,7 +293,7 @@ watch(currentTab, (tab) => {
                         </select>
                     </div>
                     <button @click="fetchTop"
-                        class="rounded-control bg-accent px-4 py-2 text-ui font-semibold text-white shadow-rest transition-all hover:bg-accent-hover">
+                        class="rounded-control bg-accent px-4 py-2 text-ui font-semibold text-accent-fg shadow-rest transition-all hover:bg-accent-hover">
                         Generate
                     </button>
                 </div>

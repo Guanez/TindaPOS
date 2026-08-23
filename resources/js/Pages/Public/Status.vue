@@ -117,7 +117,7 @@ const subline = computed(() => {
 <template>
     <div
         class="min-h-screen px-5 py-10"
-        :class="isReady ? 'bg-ready-ink' : isRejected ? 'bg-surface-3' : 'bg-surface-2'"
+        :class="isReady ? 'bg-ready-solid' : isRejected ? 'bg-surface-3' : 'bg-surface-2'"
         style="transition: background-color var(--t-slow);"
     >
         <Head :title="`Order #${order.queue_number} · ${store.name}`" />
@@ -164,7 +164,7 @@ const subline = computed(() => {
                 >
                     <span
                         class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-label font-bold text-white"
-                        :class="index <= stepIndex ? 'bg-ready-ink' : 'bg-line-strong'"
+                        :class="index <= stepIndex ? 'bg-ready-solid' : 'bg-line-strong'"
                     >
                         <CheckCircleIcon v-if="index <= stepIndex" class="h-3.5 w-3.5" aria-hidden="true" />
                     </span>

@@ -199,7 +199,7 @@ const confirm = () => {
                     <button
                         type="button"
                         :disabled="!canAdd"
-                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-white shadow-rest transition-colors hover:bg-accent-hover disabled:opacity-50"
+                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg shadow-rest transition-colors hover:bg-accent-hover disabled:opacity-50"
                         @click="confirm"
                     >
                         <PlusIcon class="h-4 w-4" aria-hidden="true" />

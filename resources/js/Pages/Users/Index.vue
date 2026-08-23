@@ -134,7 +134,7 @@ const roleClass = (role) => ({
                                         <button v-if="user.is_active && !user.is_self"
                                             class="flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-meta font-semibold"
                                             :class="confirmingDeactivate === user.id
-                                                ? 'border-stop-mark bg-stop-mark text-white'
+                                                ? 'border-stop-mark bg-stop-solid text-on-solid'
                                                 : 'border-stop-tint text-stop-ink hover:bg-stop-tint'"
                                             style="transition: background-color var(--t-fast);"
                                             @click="deactivate(user)">

@@ -211,7 +211,7 @@ const goToPage = (url) => {
                 </div>
                 <button
                     @click="openAddModal"
-                    class="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 text-ui font-semibold text-white shadow-rest hover:bg-accent-hover" style="transition: background-color var(--t-fast);"
+                    class="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 text-ui font-semibold text-accent-fg shadow-rest hover:bg-accent-hover" style="transition: background-color var(--t-fast);"
                 >
                     <PlusIcon aria-hidden="true" class="h-4 w-4" />
                     Add {{ words.item }}
@@ -318,7 +318,7 @@ const goToPage = (url) => {
                             @click="goToPage(link.url)" :disabled="!link.url"
                             :class="[
                                 'rounded-control px-3 py-1 text-meta font-medium transition-all',
-                                link.active ? 'bg-accent text-white' : link.url ? 'text-ink-3 hover:bg-surface-2' : 'text-ink-3 cursor-default'
+                                link.active ? 'bg-accent text-accent-fg' : link.url ? 'text-ink-3 hover:bg-surface-2' : 'text-ink-3 cursor-default'
                             ]"
                             v-html="link.label"
                         />
@@ -659,7 +659,7 @@ const goToPage = (url) => {
                                 Cancel
                             </button>
                             <button type="submit" :disabled="restockForm.processing"
-                                class="flex-1 rounded-control bg-ready-ink py-2.5 text-ui font-bold text-white hover:bg-ready-ink disabled:opacity-50" style="transition: background-color var(--t-fast);">
+                                class="flex-1 rounded-control bg-ready-solid py-2.5 text-ui font-bold text-on-solid hover:bg-ready-solid disabled:opacity-50" style="transition: background-color var(--t-fast);">
                                 {{ restockForm.processing ? 'Restocking…' : 'Confirm Restock' }}
                             </button>
                         </div>

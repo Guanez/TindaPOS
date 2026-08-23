@@ -81,10 +81,23 @@
     --identity: 42 28 23;
     --identity-tint: 247 241 236;
 
-    /* Order state. Reserved — no store, no theme may repurpose these. */
-    --wait-ink: 180 83 9;   --wait-mark: 245 158 11;  --wait-tint: 254 243 199;
-    --ready-ink: 4 120 87;  --ready-mark: 16 185 129; --ready-tint: 209 250 229;
-    --stop-ink: 185 28 28;  --stop-mark: 239 68 68;   --stop-tint: 254 226 226;
+    /*
+     * Order state. Reserved — no store, no theme may repurpose these.
+     *
+     * Three roles each, and mixing them up is what breaks a theme:
+     *   tint  — the background of a badge or panel
+     *   ink   — text sitting ON that tint, so it inverts with the theme
+     *   mark  — a dot, bar or border; the signal at its most saturated
+     *   solid — a filled button, which always carries --on-solid text
+     *
+     * `ink` and `solid` look similar in light mode and are not the same
+     * thing: ink flips light when the page goes dark, and a button filled
+     * with it would put white text on a pale green.
+     */
+    --wait-ink: 180 83 9;   --wait-mark: 245 158 11;  --wait-tint: 254 243 199;  --wait-solid: 180 83 9;
+    --ready-ink: 4 120 87;  --ready-mark: 16 185 129; --ready-tint: 209 250 229; --ready-solid: 4 120 87;
+    --stop-ink: 185 28 28;  --stop-mark: 239 68 68;   --stop-tint: 254 226 226;  --stop-solid: 185 28 28;
+    --on-solid: 255 255 255;
 
     /* Form. Three radii named for what they wrap, not how round they are. */
     --r-control: 0.625rem;
@@ -107,8 +120,106 @@
 }
 
 /*
- * Touch density — the customer's phone. Not yet applied by any layout; the
- * attribute arrives in phase 4, and until then this block is inert.
+ * ─── Dark ───────────────────────────────────────────────────────────────
+ *
+ * Only the tokens are redefined; not one component rule appears in here.
+ * That is the whole return on the token layer — a second theme costs a
+ * block of values rather than a second stylesheet.
+ *
+ * Two surfaces genuinely need it: a café counter running dim through a late
+ * shift, and a customer reading a menu on their phone at night with the
+ * screen at its lowest brightness.
+ *
+ * The surfaces do not invert naively. In light, surface-1 is the raised card
+ * and surface-2 is the page beneath it; in dark the same relationship holds
+ * with the page as the darkest thing, so a card still reads as lifted rather
+ * than as a hole.
+ */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --surface-1: 26 22 34;
+        --surface-2: 16 13 22;
+        --surface-3: 44 37 57;
+        --line: 51 44 68;
+        --line-strong: 69 60 89;
+
+        --ink-1: 244 242 248;
+        --ink-2: 192 186 209;
+        --ink-3: 143 135 164;
+
+        /* Ink-first inverts: the button becomes the light thing on a dark page. */
+        --action-bg: 244 242 248;
+        --action-bg-hover: 255 255 255;
+        --action-fg: 21 18 28;
+
+        --accent: 156 125 255;
+        --accent-hover: 182 155 255;
+        --accent-tint: 36 28 61;
+        --accent-line: 61 49 99;
+        --on-accent: 23 16 43;
+
+        --identity: 232 220 210;
+        --identity-tint: 36 27 22;
+
+        /* Tints go deep, ink goes light, solid stays dark enough for white. */
+        --wait-ink: 251 191 36;  --wait-mark: 245 158 11;  --wait-tint: 51 38 12;   --wait-solid: 180 83 9;
+        --ready-ink: 52 211 153; --ready-mark: 16 185 129; --ready-tint: 12 44 34;  --ready-solid: 5 122 85;
+        --stop-ink: 252 165 165; --stop-mark: 239 68 68;   --stop-tint: 51 22 22;   --stop-solid: 185 28 28;
+
+        --e-rest: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+        --e-raised: 0 4px 12px -2px rgb(0 0 0 / 0.50), 0 1px 2px rgb(0 0 0 / 0.30);
+        --e-overlay: 0 24px 48px -12px rgb(0 0 0 / 0.70);
+    }
+}
+
+/*
+ * The same values again, for an explicit choice rather than the OS one.
+ *
+ * The duplication is deliberate and unavoidable: no selector can express
+ * "the OS is dark", so a media query and a stamped attribute cannot share a
+ * rule. light-dark() would collapse the two, but it needs a 2024 browser,
+ * and a chunk of this audience is scanning QR codes on older Androids.
+ *
+ * Nothing sets data-theme yet — there is no toggle in the UI. It is here so
+ * the dark palette can be exercised, and so adding that toggle later is a
+ * button rather than a stylesheet.
+ */
+:root[data-theme='dark'] {
+    --surface-1: 26 22 34;
+    --surface-2: 16 13 22;
+    --surface-3: 44 37 57;
+    --line: 51 44 68;
+    --line-strong: 69 60 89;
+
+    --ink-1: 244 242 248;
+    --ink-2: 192 186 209;
+    --ink-3: 143 135 164;
+
+    --action-bg: 244 242 248;
+    --action-bg-hover: 255 255 255;
+    --action-fg: 21 18 28;
+
+    --accent: 156 125 255;
+    --accent-hover: 182 155 255;
+    --accent-tint: 36 28 61;
+    --accent-line: 61 49 99;
+    --on-accent: 23 16 43;
+
+    --identity: 232 220 210;
+    --identity-tint: 36 27 22;
+
+    --wait-ink: 251 191 36;  --wait-mark: 245 158 11;  --wait-tint: 51 38 12;   --wait-solid: 180 83 9;
+    --ready-ink: 52 211 153; --ready-mark: 16 185 129; --ready-tint: 12 44 34;  --ready-solid: 5 122 85;
+    --stop-ink: 252 165 165; --stop-mark: 239 68 68;   --stop-tint: 51 22 22;   --stop-solid: 185 28 28;
+
+    --e-rest: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+    --e-raised: 0 4px 12px -2px rgb(0 0 0 / 0.50), 0 1px 2px rgb(0 0 0 / 0.30);
+    --e-overlay: 0 24px 48px -12px rgb(0 0 0 / 0.70);
+}
+
+/*
+ * Touch density — the customer's phone, set from the route by
+ * HandleInertiaRequests. Staff terminals stay on the counter scale above.
  */
 [data-density='touch'] {
     --fs-label:   12px; --lh-label:   16px;
@@ -224,10 +335,10 @@
 
     /* Btn danger */
     .btn-danger {
-        @apply flex items-center justify-center gap-1.5 rounded-control bg-stop-mark px-4 py-2.5
-               text-ui font-bold text-white shadow-rest
+        @apply flex items-center justify-center gap-1.5 rounded-control bg-stop-solid px-4 py-2.5
+               text-ui font-bold text-on-solid shadow-rest
                transition-colors duration-fast
-               hover:bg-stop-ink;
+               hover:bg-stop-mark;
     }
 
     /* Input field */

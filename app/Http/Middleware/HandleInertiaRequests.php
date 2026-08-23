@@ -71,12 +71,26 @@ class HandleInertiaRequests extends Middleware
             // context, so stepping into a client cafe switches the wording to
             // theirs, which is the whole point of standing inside it.
             'words' => fn () => StoreVocabulary::for($this->currentStore()['type'] ?? null),
+            // Which side of the counter this page is on. Every type role
+            // carries a counter value and a phone value, so this one string
+            // switches the entire scale — a component never asks where it is.
+            'density' => $this->density($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'sale' => fn () => $request->session()->get('sale'),
             ],
         ];
+    }
+
+    /**
+     * Keyed off the route rather than the page component, because the surface
+     * is the thing that matters: everything under the public prefix is a
+     * customer holding a phone, and everything else is staff at a terminal.
+     */
+    private function density(Request $request): string
+    {
+        return $request->routeIs('public.*') ? 'touch' : 'counter';
     }
 
     /**
