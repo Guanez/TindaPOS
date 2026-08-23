@@ -430,7 +430,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 <p class="truncate text-ui font-semibold text-ink-1">
                                     {{ item.name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
                                 </p>
-                                <p v-if="item.modifier_names?.length" class="truncate text-meta text-accent">
+                                <p v-if="item.modifier_names?.length" class="truncate text-meta text-accent-ink">
                                     + {{ item.modifier_names.join(', ') }}
                                 </p>
                                 <p class="text-meta text-ink-3">{{ money(item.selling_price) }} each</p>
@@ -518,7 +518,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
             <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checkout">
                 <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay" style="overscroll-behavior: contain;">
                     <div class="flex items-center gap-2">
-                        <CreditCardIcon class="h-5 w-5 text-accent" aria-hidden="true" />
+                        <CreditCardIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                         <h3 class="text-lg font-bold text-ink-1">Checkout</h3>
                     </div>
 
@@ -549,7 +549,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 :class="[
                                     'flex flex-col items-center gap-1 rounded-control border py-2.5 text-meta font-semibold transition-all',
                                     paymentMethod === pm.value
-                                        ? 'border-accent bg-accent-tint text-accent shadow-rest'
+                                        ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
                                         : 'border-line text-ink-3 hover:border-line-strong hover:bg-surface-2'
                                 ]"
                             >
@@ -581,7 +581,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 :class="[
                                     'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
                                     cashReceivedNum === amount
-                                        ? 'border-accent bg-accent-tint text-accent'
+                                        ? 'border-accent bg-accent-tint text-accent-ink'
                                         : 'border-line text-ink-3 hover:bg-surface-2'
                                 ]"
                             >

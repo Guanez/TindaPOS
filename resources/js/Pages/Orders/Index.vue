@@ -167,7 +167,7 @@ const waitingSince = (order) => {
                     :aria-pressed="soundOn"
                     @click="soundOn = !soundOn"
                 >
-                    <BellAlertIcon class="h-4 w-4" :class="soundOn ? 'text-accent' : 'text-ink-3'" aria-hidden="true" />
+                    <BellAlertIcon class="h-4 w-4" :class="soundOn ? 'text-accent-ink' : 'text-ink-3'" aria-hidden="true" />
                     {{ soundOn ? 'Sound on' : 'Sound off' }}
                 </button>
             </div>
@@ -204,7 +204,7 @@ const waitingSince = (order) => {
                                 <li v-for="item in order.items" :key="item.id" class="text-meta text-ink-2">
                                     <span class="font-semibold tabular-nums">{{ item.quantity }}&times;</span>
                                     {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
-                                    <span v-if="item.modifiers?.length" class="block pl-5 text-meta text-accent">
+                                    <span v-if="item.modifiers?.length" class="block pl-5 text-meta text-accent-ink">
                                         + {{ item.modifiers.map(m => m.name).join(', ') }}
                                     </span>
                                 </li>
@@ -235,7 +235,7 @@ const waitingSince = (order) => {
                 <!-- Preparing -->
                 <section class="card flex flex-col overflow-hidden">
                     <header class="flex items-center justify-between border-b border-line bg-accent-tint/60 px-4 py-3">
-                        <h2 class="text-ui font-bold text-accent">Preparing</h2>
+                        <h2 class="text-ui font-bold text-accent-ink">Preparing</h2>
                         <span class="badge badge-info tabular-nums">{{ preparing.length }}</span>
                     </header>
 
@@ -258,7 +258,7 @@ const waitingSince = (order) => {
                                 <li v-for="item in order.items" :key="item.id" class="text-meta text-ink-2">
                                     <span class="font-semibold tabular-nums">{{ item.quantity }}&times;</span>
                                     {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
-                                    <span v-if="item.modifiers?.length" class="block pl-5 text-meta text-accent">
+                                    <span v-if="item.modifiers?.length" class="block pl-5 text-meta text-accent-ink">
                                         + {{ item.modifiers.map(m => m.name).join(', ') }}
                                     </span>
                                 </li>
@@ -330,7 +330,7 @@ const waitingSince = (order) => {
             >
                 <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="flex items-center gap-2">
-                        <BanknotesIcon class="h-5 w-5 text-accent" aria-hidden="true" />
+                        <BanknotesIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                         <h3 class="text-lg font-bold text-ink-1">Order #{{ settling.queue_number }}</h3>
                     </div>
 
@@ -349,7 +349,7 @@ const waitingSince = (order) => {
                                 :class="[
                                     'rounded-control border py-2 text-meta font-semibold capitalize transition-all',
                                     settleForm.payment_method === method
-                                        ? 'border-accent bg-accent-tint text-accent'
+                                        ? 'border-accent bg-accent-tint text-accent-ink'
                                         : 'border-line text-ink-3 hover:bg-surface-2',
                                 ]"
                                 @click="settleForm.payment_method = method"

@@ -11,7 +11,7 @@ const bgClasses = {
     success: 'bg-ready-tint text-ready-ink',
     warning: 'bg-wait-tint text-wait-ink',
     danger:  'bg-stop-tint text-stop-ink',
-    info:    'bg-accent-tint text-accent',
+    info:    'bg-accent-tint text-accent-ink',
 }
 
 const valueClasses = {
@@ -19,7 +19,7 @@ const valueClasses = {
     success: 'text-ready-ink',
     warning: 'text-wait-ink',
     danger:  'text-stop-ink',
-    info:    'text-accent',
+    info:    'text-accent-ink',
 }
 </script>
 

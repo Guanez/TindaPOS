@@ -141,7 +141,7 @@ const subline = computed(() => {
                 <div class="mt-5 flex flex-col items-center gap-2">
                     <CheckCircleIcon v-if="isReady" class="h-9 w-9 text-ready-ink" aria-hidden="true" />
                     <XCircleIcon v-else-if="isRejected" class="h-9 w-9 text-ink-3" aria-hidden="true" />
-                    <ClockIcon v-else class="h-9 w-9 text-accent" aria-hidden="true" />
+                    <ClockIcon v-else class="h-9 w-9 text-accent-ink" aria-hidden="true" />
 
                     <h1 class="text-xl font-bold text-ink-1">{{ headline }}</h1>
                     <p class="text-ui leading-snug text-ink-3">{{ subline }}</p>
@@ -186,7 +186,7 @@ const subline = computed(() => {
                             <span class="block text-ui font-semibold text-ink-1">
                                 {{ item.name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
                             </span>
-                            <span v-if="item.modifiers.length" class="block text-meta text-accent">
+                            <span v-if="item.modifiers.length" class="block text-meta text-accent-ink">
                                 + {{ item.modifiers.join(', ') }}
                             </span>
                         </span>

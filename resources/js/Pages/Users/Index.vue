@@ -194,7 +194,7 @@ const roleClass = (role) => ({
                                     :class="form.role === role.value ? 'border-accent bg-accent-tint/60' : 'border-line hover:bg-surface-2'"
                                     style="transition: background-color var(--t-fast), border-color var(--t-fast);">
                                     <input v-model="form.role" :value="role.value" type="radio" name="role"
-                                        class="mt-0.5 border-line-strong text-accent focus:ring-accent" />
+                                        class="mt-0.5 border-line-strong text-accent-ink focus:ring-accent" />
                                     <span>
                                         <span class="block text-ui font-semibold text-ink-1">{{ role.label }}</span>
                                         <span class="block text-meta text-ink-3">{{ role.hint }}</span>
@@ -223,7 +223,7 @@ const roleClass = (role) => ({
 
                         <label v-if="editing && !editing.is_self" class="flex items-center gap-2.5">
                             <input v-model="form.is_active" type="checkbox"
-                                class="rounded border-line-strong text-accent focus:ring-accent" />
+                                class="rounded border-line-strong text-accent-ink focus:ring-accent" />
                             <span class="text-ui text-ink-2">Account is active</span>
                         </label>
 

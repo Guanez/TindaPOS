@@ -30,7 +30,7 @@ onMounted(() => document.title = 'Order here');
 
         <!-- The card itself -->
         <div class="mx-auto flex max-w-[420px] flex-col items-center rounded-sheet bg-surface-1 px-8 py-10 text-center shadow-rest print:max-w-none print:rounded-none print:shadow-none">
-            <p class="text-meta font-semibold uppercase tracking-[0.2em] text-accent">Scan to order</p>
+            <p class="text-meta font-semibold uppercase tracking-[0.2em] text-accent-ink">Scan to order</p>
 
             <h1 class="mt-2 text-3xl font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
             <p v-if="store.address" class="mt-1 text-ui text-ink-3">{{ store.address }}</p>
@@ -39,15 +39,15 @@ onMounted(() => document.title = 'Order here');
 
             <ol class="mt-7 space-y-2 text-left">
                 <li class="flex items-start gap-3">
-                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-tint text-meta font-bold text-accent">1</span>
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-tint text-meta font-bold text-accent-ink">1</span>
                     <span class="text-body text-ink-2">Scan the code and choose what you want</span>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-tint text-meta font-bold text-accent">2</span>
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-tint text-meta font-bold text-accent-ink">2</span>
                     <span class="text-body text-ink-2">Pay at the counter with your number</span>
                 </li>
                 <li class="flex items-start gap-3">
-                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-tint text-meta font-bold text-accent">3</span>
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-tint text-meta font-bold text-accent-ink">3</span>
                     <span class="text-body text-ink-2">Your phone tells you when it&rsquo;s ready</span>
                 </li>
             </ol>

@@ -134,7 +134,7 @@ const confirm = () => {
                                 :class="[
                                     'rounded-control border px-3.5 py-2 text-left transition-all',
                                     selectedVariantId === variant.id
-                                        ? 'border-accent bg-accent-tint text-accent shadow-rest'
+                                        ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
                                         : 'border-line text-ink-2 hover:border-line-strong hover:bg-surface-2',
                                 ]"
                                 @click="selectedVariantId = variant.id"

@@ -22,9 +22,31 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
+
         <!-- Scripts -->
         @routes
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
+        {{--
+            The shop's own palette, overriding the accent tokens for this page
+            only. Rendered raw because it has to be CSS, which is safe here
+            for one specific reason: AccentPalette never interpolates the
+            stored value. It parses the hex to three integers, derives the
+            rest arithmetically, and prints integers back out — so the only
+            characters that can reach this element are digits and punctuation
+            this application wrote.
+
+            Present on customer pages and absent everywhere else, which is
+            what keeps a cashier's till the same colour in every shop they
+            work in.
+
+            Placed after @vite deliberately: app.css defines these same
+            tokens on :root, and with equal specificity the later rule
+            wins. Above the bundle this block loads and is then quietly
+            overwritten by the platform default.
+        --}}
+        @if (! empty($page['props']['store']['brand_css']))
+            <style>{!! $page['props']['store']['brand_css'] !!}</style>
+        @endif
         @inertiaHead
     </head>
     <body class="font-sans antialiased">

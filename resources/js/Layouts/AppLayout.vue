@@ -196,7 +196,7 @@ onUnmounted(() => {
                         :href="route(item.href)"
                         class="group mb-0.5 flex items-center gap-3 rounded-control px-3 py-2.5 text-ui font-medium"
                         :class="isActive(item.href)
-                            ? 'bg-accent-tint text-accent shadow-rest shadow-rest/50'
+                            ? 'bg-accent-tint text-accent-ink shadow-rest shadow-rest/50'
                             : 'text-ink-3 hover:bg-surface-2 hover:text-ink-2'"
                         style="transition: background-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);"
                         @click="sidebarOpen = false"
@@ -204,7 +204,7 @@ onUnmounted(() => {
                         <component
                             :is="iconMap[item.href]"
                             class="h-[18px] w-[18px] shrink-0"
-                            :class="isActive(item.href) ? 'text-accent' : 'text-ink-3 group-hover:text-ink-3'"
+                            :class="isActive(item.href) ? 'text-accent-ink' : 'text-ink-3 group-hover:text-ink-3'"
                             aria-hidden="true"
                             style="transition: color var(--t-fast);"
                         />

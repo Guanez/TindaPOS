@@ -67,7 +67,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                         <h2 class="text-body font-semibold text-ink-1">Recent Sales</h2>
                         <Link
                             :href="route('sales.index')"
-                            class="flex items-center gap-1 text-ui font-medium text-accent transition-colors hover:text-accent"
+                            class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:text-accent-ink"
                         >
                             View all
                             <ArrowRightIcon class="h-3.5 w-3.5" aria-hidden="true" />
@@ -79,7 +79,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                             <ClipboardDocumentListIcon class="h-6 w-6 text-ink-3" aria-hidden="true" />
                         </div>
                         <p class="mt-3 text-sm text-ink-3">No sales yet today</p>
-                        <Link :href="route('pos.index')" class="mt-2 text-ui font-medium text-accent hover:text-accent">
+                        <Link :href="route('pos.index')" class="mt-2 text-ui font-medium text-accent-ink hover:text-accent-ink">
                             Open POS to start selling
                         </Link>
                     </div>
@@ -121,7 +121,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                         <h2 class="text-body font-semibold text-ink-1">Low Stock Alert</h2>
                         <Link
                             :href="route('inventory.index')"
-                            class="flex items-center gap-1 text-ui font-medium text-accent transition-colors hover:text-accent"
+                            class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:text-accent-ink"
                         >
                             Manage
                             <ArrowRightIcon class="h-3.5 w-3.5" aria-hidden="true" />
@@ -161,7 +161,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                     class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 300ms;"
                 >
                     <div class="flex h-10 w-10 items-center justify-center rounded-control bg-accent-tint group-hover:bg-accent-tint" style="transition: background-color var(--t-fast);">
-                        <ShoppingCartIcon class="h-5 w-5 text-accent" aria-hidden="true" />
+                        <ShoppingCartIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                     </div>
                     <div>
                         <p class="text-ui font-semibold text-ink-1">Open POS</p>
@@ -197,7 +197,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                     class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 450ms;"
                 >
                     <div class="flex h-10 w-10 items-center justify-center rounded-control bg-accent-tint group-hover:bg-accent-tint" style="transition: background-color var(--t-fast);">
-                        <ChartBarIcon class="h-5 w-5 text-accent" aria-hidden="true" />
+                        <ChartBarIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                     </div>
                     <div>
                         <p class="text-ui font-semibold text-ink-1">Reports</p>

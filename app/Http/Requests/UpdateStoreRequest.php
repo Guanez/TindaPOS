@@ -25,7 +25,22 @@ class UpdateStoreRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'receipt_footer' => ['nullable', 'string', 'max:255'],
             'currency_symbol' => ['required', 'string', 'max:5'],
+            // Exactly six hex digits. Anything looser and the value ends
+            // up inside a CSS rule, which is not a place to be relaxed.
+            'accent' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'logo' => ['sometimes', 'image', 'mimes:png,webp,jpeg,jpg', 'max:2048'],
+            'remove_logo' => ['sometimes', 'boolean'],
             'online_ordering_enabled' => ['required', 'boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'accent.regex' => 'Pick a colour in the form #1A70F5.',
         ];
     }
 }

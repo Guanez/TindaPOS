@@ -27,6 +27,8 @@ class Store extends Model
         'phone',
         'receipt_footer',
         'currency_symbol',
+        'accent',
+        'logo_path',
         'online_ordering_enabled',
         'is_active',
     ];

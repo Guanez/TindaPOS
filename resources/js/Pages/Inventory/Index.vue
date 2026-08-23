@@ -373,7 +373,7 @@ const goToPage = (url) => {
             <div v-if="showProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" :aria-label="editingProduct ? 'Edit product' : 'Add product'">
                 <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in" style="overscroll-behavior: contain;">
                     <div class="flex items-center gap-2">
-                        <component :is="editingProduct ? PencilSquareIcon : PlusIcon" aria-hidden="true" class="h-5 w-5 text-accent" />
+                        <component :is="editingProduct ? PencilSquareIcon : PlusIcon" aria-hidden="true" class="h-5 w-5 text-accent-ink" />
                         <h3 class="text-lg font-bold text-ink-1">
                             {{ editingProduct ? `Edit ${words.item}` : `Add ${words.item}` }}
                         </h3>
@@ -393,7 +393,7 @@ const goToPage = (url) => {
                             :aria-selected="activeTab === tab.id"
                             :class="[
                                 'relative px-3.5 py-2 text-ui font-semibold',
-                                activeTab === tab.id ? 'text-accent' : 'text-ink-3 hover:text-ink-2',
+                                activeTab === tab.id ? 'text-accent-ink' : 'text-ink-3 hover:text-ink-2',
                             ]"
                             style="transition: color var(--t-fast);"
                             @click="activeTab = tab.id"
@@ -533,7 +533,7 @@ const goToPage = (url) => {
 
                         <label class="flex items-center gap-2.5">
                             <input v-model="productForm.is_favorite" type="checkbox"
-                                class="rounded border-line-strong text-accent focus:ring-accent" />
+                                class="rounded border-line-strong text-accent-ink focus:ring-accent" />
                             <span class="flex items-center gap-1 text-ui text-ink-2">
                                 <StarIcon aria-hidden="true" class="h-3.5 w-3.5 text-wait-mark" />
                                 Mark as favorite (prioritized in POS)
@@ -542,7 +542,7 @@ const goToPage = (url) => {
 
                         <label class="flex items-center gap-2.5">
                             <input v-model="productForm.track_stock" type="checkbox"
-                                class="rounded border-line-strong text-accent focus:ring-accent" />
+                                class="rounded border-line-strong text-accent-ink focus:ring-accent" />
                             <span class="text-ui text-ink-2">
                                 Count stock for this item
                                 <span class="block text-meta text-ink-3">Turn off for made-to-order items like coffee</span>
@@ -551,7 +551,7 @@ const goToPage = (url) => {
 
                         <label class="flex items-center gap-2.5">
                             <input v-model="productForm.is_available" type="checkbox"
-                                class="rounded border-line-strong text-accent focus:ring-accent" />
+                                class="rounded border-line-strong text-accent-ink focus:ring-accent" />
                             <span class="text-ui text-ink-2">
                                 Available today
                                 <span class="block text-meta text-ink-3">Untick to hide it from the POS without deactivating it</span>
@@ -623,7 +623,7 @@ const goToPage = (url) => {
                             >
                                 <input
                                     type="checkbox"
-                                    class="mt-0.5 rounded border-line-strong text-accent focus:ring-accent"
+                                    class="mt-0.5 rounded border-line-strong text-accent-ink focus:ring-accent"
                                     :checked="productForm.modifier_group_ids.includes(group.id)"
                                     @change="toggleGroup(group.id)"
                                 />
@@ -683,7 +683,7 @@ const goToPage = (url) => {
                                         </button>
                                     </div>
                                     <p v-if="groupForm.errors.modifiers" class="text-meta text-stop-ink">{{ groupForm.errors.modifiers }}</p>
-                                    <button type="button" class="text-meta font-semibold text-accent hover:text-accent" @click="addGroupOption">
+                                    <button type="button" class="text-meta font-semibold text-accent-ink hover:text-accent-ink" @click="addGroupOption">
                                         + Add option
                                     </button>
                                 </div>

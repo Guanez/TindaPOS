@@ -72,6 +72,13 @@
      * overrides to make the page its own.
      */
     --accent: 91 63 217;
+    /*
+     * The accent used AS text. Split from the fill because a shop's brand
+     * colour has to survive being a button (where --on-accent handles the
+     * contrast) and being a word on the page (where nothing can save it
+     * but the colour itself). AccentPalette derives this per shop.
+     */
+    --accent-ink: 74 47 184;
     --accent-hover: 74 47 184;
     --accent-tint: 243 239 254;
     --accent-line: 207 192 251;
@@ -153,6 +160,7 @@
         --action-fg: 21 18 28;
 
         --accent: 156 125 255;
+        --accent-ink: 182 155 255;
         --accent-hover: 182 155 255;
         --accent-tint: 36 28 61;
         --accent-line: 61 49 99;
@@ -200,6 +208,7 @@
     --action-fg: 21 18 28;
 
     --accent: 156 125 255;
+    --accent-ink: 182 155 255;
     --accent-hover: 182 155 255;
     --accent-tint: 36 28 61;
     --accent-line: 61 49 99;

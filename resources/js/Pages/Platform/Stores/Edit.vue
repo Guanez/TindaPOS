@@ -101,7 +101,7 @@ const submit = () => form.put(route('platform.stores.update', props.store.id));
                             <input
                                 v-model="form.online_ordering_enabled"
                                 type="checkbox"
-                                class="mt-0.5 rounded border-line-strong text-accent focus:ring-accent"
+                                class="mt-0.5 rounded border-line-strong text-accent-ink focus:ring-accent"
                             />
                             <span>
                                 <span class="block text-ui font-semibold text-ink-2">QR ordering</span>

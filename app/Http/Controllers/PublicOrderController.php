@@ -11,7 +11,9 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Store;
+use App\Services\AccentPalette;
 use App\Services\OrderService;
+use App\Services\StoreLogoService;
 use App\Support\StoreContext;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -119,6 +121,12 @@ class PublicOrderController extends Controller
             'address' => $store->address,
             'currency_symbol' => $store->currency_symbol,
             'receipt_footer' => $store->receipt_footer,
+            'logo_url' => StoreLogoService::url($store->logo_path),
+            // The whole palette, derived from the one colour the shop chose
+            // and emitted as token overrides. Only ever on these pages: a
+            // cashier working two shops should not have the till change
+            // colour between shifts.
+            'brand_css' => AccentPalette::css($store->accent),
         ];
     }
 

@@ -145,7 +145,19 @@ const place = () => {
 
         <!-- Store header -->
         <header class="bg-surface-1 px-5 pb-5 pt-8 shadow-rest">
-            <p class="text-label font-semibold uppercase tracking-widest text-accent">Order ahead</p>
+            <!--
+                The logo replaces the eyebrow rather than sitting above it —
+                a shop that has uploaded one has already said who it is, and
+                repeating it in small caps underneath is clutter.
+            -->
+            <img
+                v-if="store.logo_url"
+                :src="store.logo_url"
+                :alt="store.name"
+                class="mb-3 max-h-12 w-auto max-w-[200px] object-contain"
+            />
+            <p v-else class="text-label font-semibold uppercase tracking-widest text-accent-ink">Order ahead</p>
+
             <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
             <p v-if="store.address" class="mt-0.5 text-ui text-ink-3">{{ store.address }}</p>
             <p class="mt-3 rounded-control bg-wait-tint px-3 py-2 text-meta font-medium text-wait-ink">
@@ -159,9 +171,9 @@ const place = () => {
             class="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-2 rounded-control border border-accent-line bg-accent-tint px-4 py-3 text-left"
             @click="openActiveOrder"
         >
-            <ClockIcon class="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-            <span class="flex-1 text-ui font-semibold text-accent">You have an order in progress</span>
-            <ArrowRightIcon class="h-4 w-4 text-accent" aria-hidden="true" />
+            <ClockIcon class="h-4 w-4 shrink-0 text-accent-ink" aria-hidden="true" />
+            <span class="flex-1 text-ui font-semibold text-accent-ink">You have an order in progress</span>
+            <ArrowRightIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
         </button>
 
         <!-- Categories -->
@@ -224,7 +236,7 @@ const place = () => {
                     </span>
                 </span>
                 <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
-                    <PlusIcon class="h-4 w-4 text-accent" aria-hidden="true" />
+                    <PlusIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
                 </span>
             </button>
         </main>
@@ -256,7 +268,7 @@ const place = () => {
                 <div class="mx-auto max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-sheet bg-surface-1 p-5" style="overscroll-behavior: contain;">
                     <div class="flex items-center justify-between">
                         <h2 class="flex items-center gap-2 text-lg font-bold text-ink-1">
-                            <ShoppingBagIcon class="h-5 w-5 text-accent" aria-hidden="true" />
+                            <ShoppingBagIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                             Your basket
                         </h2>
                         <button class="rounded-control p-1 text-ink-3" aria-label="Close" @click="showBasket = false">
@@ -270,7 +282,7 @@ const place = () => {
                                 <p class="text-body font-semibold text-ink-1">
                                     {{ line.name }}<span v-if="line.variant_name" class="text-ink-3"> ({{ line.variant_name }})</span>
                                 </p>
-                                <p v-if="line.modifier_names.length" class="text-meta text-accent">
+                                <p v-if="line.modifier_names.length" class="text-meta text-accent-ink">
                                     + {{ line.modifier_names.join(', ') }}
                                 </p>
                                 <p class="text-meta tabular-nums text-ink-3">{{ money(line.unit_price) }} each</p>

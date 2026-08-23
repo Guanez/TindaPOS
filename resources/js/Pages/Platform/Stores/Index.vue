@@ -105,7 +105,7 @@ const confirmSuspension = () => {
                                 </span>
                                 <span
                                     v-if="store.online_ordering_enabled"
-                                    class="rounded-control bg-accent-tint px-1.5 py-0.5 text-meta font-semibold text-accent"
+                                    class="rounded-control bg-accent-tint px-1.5 py-0.5 text-meta font-semibold text-accent-ink"
                                 >
                                     QR ordering
                                 </span>
