@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\UserRole;
+use App\Models\Category;
+use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\User;
@@ -200,6 +202,78 @@ it('creates a store and its owner together', function () {
 
     expect($owner->store_id)->toBe($store->id)
         ->and($owner->role)->toBe(UserRole::Owner);
+});
+
+it('furnishes a new cafe with the structure every cafe needs', function () {
+    // StoreStarterKitTest covers the kit in isolation. This covers the wiring:
+    // that creating a shop from the console actually applies it, and applies
+    // it to the NEW shop rather than to whatever store the request had in
+    // context — which for a platform admin is none at all.
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)->post(route('platform.stores.store'), [
+        'name' => 'Kape Bago',
+        'slug' => 'kape-bago',
+        'type' => 'cafe',
+        'currency_symbol' => 'P',
+        'owner_name' => 'Ana Cruz',
+        'owner_username' => 'ana_cruz',
+        'owner_password' => 'cafe-secret-pw',
+        'owner_password_confirmation' => 'cafe-secret-pw',
+    ])->assertRedirect(route('platform.stores.index'));
+
+    $store = Store::query()->where('slug', 'kape-bago')->sole();
+
+    asStore($store, function () {
+        expect(Category::query()->pluck('name')->all())
+            ->toEqualCanonicalizing(['Espresso', 'Non-Coffee', 'Pastries'])
+            ->and(ModifierGroup::query()->pluck('name')->all())
+            ->toEqualCanonicalizing(['Temperature', 'Milk', 'Extras']);
+    });
+});
+
+it('gives a sari-sari store its own shelves and no add-on groups', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)->post(route('platform.stores.store'), [
+        'name' => 'Tindahan ni Aling Rosa',
+        'slug' => 'aling-rosa',
+        'type' => 'sari_sari',
+        'currency_symbol' => 'P',
+        'owner_name' => 'Rosa Santos',
+        'owner_username' => 'rosa_santos',
+        'owner_password' => 'tindahan-secret',
+        'owner_password_confirmation' => 'tindahan-secret',
+    ]);
+
+    $store = Store::query()->where('slug', 'aling-rosa')->sole();
+
+    asStore($store, function () {
+        // Sachets and tins have no options, so add-on groups would be clutter.
+        expect(Category::query()->count())->toBe(6)
+            ->and(ModifierGroup::query()->count())->toBe(0);
+    });
+});
+
+it('furnishes the new shop without touching the platform admin own context', function () {
+    // The starter kit runs inside a request whose context is null. If it
+    // leaked, categories would land nowhere or, worse, everywhere.
+    $admin = User::factory()->superAdmin()->create();
+    $bystander = currentStore();
+    $before = asStore($bystander, fn () => Category::query()->count());
+
+    $this->actingAs($admin)->post(route('platform.stores.store'), [
+        'name' => 'Third Wave',
+        'slug' => 'third-wave',
+        'type' => 'cafe',
+        'currency_symbol' => 'P',
+        'owner_name' => 'Leo Tan',
+        'owner_username' => 'leo_tan',
+        'owner_password' => 'third-wave-pw',
+        'owner_password_confirmation' => 'third-wave-pw',
+    ]);
+
+    expect(asStore($bystander, fn () => Category::query()->count()))->toBe($before);
 });
 
 it('rejects a duplicate ordering slug', function () {

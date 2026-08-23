@@ -11,6 +11,7 @@ use App\Http\Requests\Platform\UpdateStoreRequest;
 use App\Models\Sale;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\StoreStarterKit;
 use App\Support\Impersonation;
 use App\Support\StoreContext;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,7 @@ class StoreController extends Controller
     public function __construct(
         private readonly Impersonation $impersonation,
         private readonly StoreContext $context,
+        private readonly StoreStarterKit $starterKit,
     ) {}
 
     public function index(): Response
@@ -105,6 +107,12 @@ class StoreController extends Controller
                     'is_active' => true,
                 ]);
             });
+
+            // Categories and, for a cafe, the add-on groups every cafe needs.
+            // Inside the transaction so a shop cannot come into existence
+            // half-furnished. It scopes itself, so it is safe here where the
+            // caller has no store of their own.
+            $this->starterKit->applyTo($store);
 
             return $store;
         });
