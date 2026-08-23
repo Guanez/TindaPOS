@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ModifierGroupController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Platform\StoreController as PlatformStoreController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicOrderController;
@@ -39,8 +40,33 @@ Route::get('/o/{token}', [PublicOrderController::class, 'status'])
     ->middleware('throttle:120,1')
     ->name('public.status');
 
+// ─── Platform: the landlord's own screens ────────────
+// Above tenancy rather than inside it. `platform` insists on a super admin
+// with no store of their own, which is what makes the unscoped queries in
+// this controller safe; `store.selected` is deliberately absent, because
+// these are the screens you use before you have picked a store.
+Route::middleware(['auth', 'active', 'platform'])->prefix('platform')->name('platform.')->group(function () {
+    Route::get('/', fn () => redirect()->route('platform.stores.index'));
+
+    Route::get('/stores', [PlatformStoreController::class, 'index'])->name('stores.index');
+    Route::get('/stores/create', [PlatformStoreController::class, 'create'])->name('stores.create');
+    Route::post('/stores', [PlatformStoreController::class, 'store'])->name('stores.store');
+    Route::get('/stores/{store}/edit', [PlatformStoreController::class, 'edit'])->name('stores.edit');
+    Route::put('/stores/{store}', [PlatformStoreController::class, 'update'])->name('stores.update');
+
+    Route::post('/stores/{store}/suspension', [PlatformStoreController::class, 'toggleSuspension'])
+        ->name('stores.suspension');
+
+    // Stepping into a client shop, and back out again.
+    Route::post('/stores/{store}/enter', [PlatformStoreController::class, 'enter'])->name('stores.enter');
+    Route::post('/leave', [PlatformStoreController::class, 'leave'])->name('leave');
+});
+
 // ─── Authenticated Routes ────────────────────────────
-Route::middleware(['auth', 'active'])->group(function () {
+// `store.active` signs out the staff of a suspended client; `store.selected`
+// bounces a platform admin who has not stepped into a shop yet, so these
+// screens always have exactly one store behind them.
+Route::middleware(['auth', 'active', 'store.active', 'store.selected'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', DashboardController::class)->name('dashboard');

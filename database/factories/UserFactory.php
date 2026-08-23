@@ -42,6 +42,23 @@ class UserFactory extends Factory
     }
 
     /**
+     * A platform admin: the super_admin role AND no store.
+     *
+     * The store has to be cleared after the fact — BelongsToStore stamps the
+     * store in context on create and cannot tell "not given" from "given as
+     * null" — so this state is applied with afterCreating rather than by
+     * setting store_id in the attributes, where it would be overwritten.
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::SuperAdmin,
+        ])->afterCreating(function (User $user): void {
+            $user->forceFill(['store_id' => null])->save();
+        });
+    }
+
+    /**
      * Create an owner user.
      */
     public function owner(): static

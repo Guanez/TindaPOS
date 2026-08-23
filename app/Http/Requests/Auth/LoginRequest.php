@@ -60,6 +60,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // A suspended client's staff are turned away at the door. Worded
+        // without blame — the barista holding the phone did not cause it, and
+        // should be pointed at whoever can fix it.
+        $store = Auth::user()->store;
+
+        if ($store !== null && ! $store->is_active) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'username' => 'This store is inactive. Please contact support.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

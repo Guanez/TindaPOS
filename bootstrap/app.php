@@ -10,6 +10,9 @@ use App\Exceptions\ProductInactiveException;
 use App\Exceptions\ProductUnavailableException;
 use App\Exceptions\SaleAlreadyVoidedException;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\EnsureIsSuperAdmin;
+use App\Http\Middleware\EnsureStoreIsActive;
+use App\Http\Middleware\EnsureStoreSelected;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolvePublicStore;
@@ -36,6 +39,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
             'active' => EnsureUserIsActive::class,
             'public.store' => ResolvePublicStore::class,
+            'platform' => EnsureIsSuperAdmin::class,
+            'store.active' => EnsureStoreIsActive::class,
+            'store.selected' => EnsureStoreSelected::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

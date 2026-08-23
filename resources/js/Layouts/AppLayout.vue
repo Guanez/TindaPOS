@@ -14,10 +14,19 @@ import {
     QueueListIcon,
     UsersIcon,
     Cog6ToothIcon,
+    ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 
 const page = usePage()
 const user = computed(() => page.props.auth.user)
+const store = computed(() => page.props.store)
+
+// Only ever set for a platform admin. When they have stepped into a client
+// shop the rest of this layout is deliberately indistinguishable from that
+// shop's own — the banner is the one thing that gives it away, which is
+// exactly why it has to be loud.
+const actingAs = computed(() => page.props.platform?.acting_as ?? null)
+const leaveStore = () => router.post(route('platform.leave'))
 
 const sidebarOpen = ref(false)
 
@@ -106,7 +115,32 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex h-screen bg-slate-50/80">
+    <div class="flex h-screen flex-col bg-slate-50/80">
+        <!--
+            Impersonation banner. Amber and full-bleed on purpose: everything
+            below it is a real shop's real till, and the one mistake worth
+            engineering against is forgetting whose.
+        -->
+        <div
+            v-if="actingAs"
+            role="alert"
+            class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 bg-amber-500 px-4 py-2 text-[13px] font-medium text-amber-950"
+        >
+            <ExclamationTriangleIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+                You are inside <strong class="font-bold">{{ actingAs.name }}</strong> as platform admin.
+                Anything you do here is real.
+            </span>
+            <button
+                @click="leaveStore"
+                class="ml-auto rounded-lg bg-amber-950/10 px-3 py-1 text-[12px] font-semibold text-amber-950 hover:bg-amber-950/20"
+                style="transition: background-color 0.15s;"
+            >
+                Leave store
+            </button>
+        </div>
+
+    <div class="flex min-h-0 flex-1">
         <!-- Sidebar Overlay (mobile) -->
         <Transition
             enter-active-class="transition-opacity duration-200"
@@ -137,8 +171,18 @@ onUnmounted(() => {
                     <ShoppingCartIcon class="h-5 w-5 text-white" />
                 </div>
                 <div>
-                    <h1 class="text-[15px] font-bold tracking-tight text-slate-900">TindaPOS</h1>
-                    <p class="text-[11px] font-medium text-slate-400">Sari-Sari Store System</p>
+                    <!--
+                        The shop's own name, not a hard-coded tagline: this
+                        layout is used by cafes and sari-sari stores alike,
+                        and while a platform admin is inside a client it needs
+                        to say whose till this is. The store type is
+                        deliberately not spelled out here — StoreVocabulary
+                        owns every word that varies by type.
+                    -->
+                    <h1 class="truncate text-[15px] font-bold tracking-tight text-slate-900">
+                        {{ store?.name ?? 'TindaPOS' }}
+                    </h1>
+                    <p class="text-[11px] font-medium text-slate-400">TindaPOS</p>
                 </div>
             </div>
 
@@ -255,5 +299,6 @@ onUnmounted(() => {
                 </Transition>
             </div>
         </Teleport>
+    </div>
     </div>
 </template>

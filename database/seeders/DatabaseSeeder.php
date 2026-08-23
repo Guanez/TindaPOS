@@ -20,6 +20,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // The platform admin belongs to no shop, so it is made before any
+        // store is put into context.
+        $this->call(PlatformSeeder::class);
+
         $store = Store::query()->firstOrCreate(
             ['slug' => 'main'],
             [

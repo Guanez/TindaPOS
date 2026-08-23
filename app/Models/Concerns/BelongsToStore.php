@@ -30,6 +30,9 @@ trait BelongsToStore
         });
     }
 
+    /**
+     * @return BelongsTo<Store, $this>
+     */
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);

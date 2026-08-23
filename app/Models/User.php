@@ -79,12 +79,28 @@ class User extends Authenticatable
     }
 
     /**
-     * A user with no store operates the platform itself rather than a shop,
-     * and is deliberately left unscoped.
+     * Runs the platform rather than any one shop.
+     *
+     * Deliberately requires BOTH halves. The null store_id is the mechanism
+     * that unscopes their queries (StoreScope no-ops on a null context), but
+     * on its own it is an absence, not a grant — an owner whose store_id got
+     * nulled by a bad migration or a botched delete would otherwise inherit
+     * every client's data. The role is the claim that has to be made
+     * explicitly; the null store is what that claim then buys.
      */
-    public function isPlatformOwner(): bool
+    public function isSuperAdmin(): bool
     {
-        return $this->store_id === null;
+        return $this->role === UserRole::SuperAdmin && $this->store_id === null;
+    }
+
+    /**
+     * Carries the super_admin role but is pinned to a store — which should
+     * never happen. Treated as powerless by isSuperAdmin() and surfaced here
+     * so the platform screens can say so rather than fail silently.
+     */
+    public function isMisconfiguredSuperAdmin(): bool
+    {
+        return $this->role === UserRole::SuperAdmin && $this->store_id !== null;
     }
 
     public function hasRole(string ...$roles): bool

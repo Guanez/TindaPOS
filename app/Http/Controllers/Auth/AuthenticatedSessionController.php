@@ -33,6 +33,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // A platform admin has no shop to land in, and the dashboard would
+        // only bounce them here anyway.
+        if ($request->user()->isSuperAdmin()) {
+            return redirect()->intended(route('platform.stores.index', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -41,6 +47,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Invalidating the session drops any impersonation with it, so a
+        // platform admin never returns to a shop they forgot they were in.
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

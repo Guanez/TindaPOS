@@ -14,7 +14,8 @@ class CheckRole
      * Handle an incoming request.
      * Usage in routes: ->middleware('role:owner,admin')
      *
-     * Account status is handled separately by EnsureUserIsActive.
+     * Account status is handled separately by EnsureUserIsActive, and store
+     * status by EnsureStoreIsActive.
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
@@ -22,6 +23,14 @@ class CheckRole
 
         if (! $user) {
             abort(403);
+        }
+
+        // A platform admin standing inside a client store outranks every role
+        // that store can hand out. Listing 'super_admin' on each route instead
+        // would mean one forgotten route locks support out of a shop it is
+        // supposed to be able to fix.
+        if ($user->isSuperAdmin()) {
+            return $next($request);
         }
 
         if (! empty($roles) && ! $user->hasRole(...$roles)) {

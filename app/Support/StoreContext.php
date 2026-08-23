@@ -43,6 +43,24 @@ class StoreContext
      */
     public function runFor(int $storeId, Closure $callback): mixed
     {
+        return $this->runAs($storeId, $callback);
+    }
+
+    /**
+     * Run a callback with no store at all, then restore what was set before.
+     *
+     * The only way to genuinely create a storeless row: BelongsToStore fills
+     * store_id from the current context and cannot tell "not given" from
+     * "given as null", so a platform admin has to be made in this state
+     * rather than made and then corrected.
+     */
+    public function runForNone(Closure $callback): mixed
+    {
+        return $this->runAs(null, $callback);
+    }
+
+    private function runAs(?int $storeId, Closure $callback): mixed
+    {
         $previous = $this->storeId;
         $this->storeId = $storeId;
 
