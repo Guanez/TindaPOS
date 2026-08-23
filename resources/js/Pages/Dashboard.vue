@@ -4,6 +4,7 @@ import StatCard from '@/Components/StatCard.vue';
 import StockBadge from '@/Components/StockBadge.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { formatPeso, formatDateTime } from '@/Composables/helpers';
+import { useVocabulary } from '@/Composables/vocabulary';
 import {
     BanknotesIcon,
     ReceiptPercentIcon,
@@ -24,6 +25,8 @@ const props = defineProps({
     recentSales: Array,
     lowStockProducts: Object,
 });
+
+const words = useVocabulary();
 
 // Resolve resource collection (handles {data:[...]} or plain [...])
 const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowStockProducts ?? []);
@@ -49,7 +52,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                 <div class="fade-in-up delay-3"><StatCard label="Profit" :value="formatPeso(stats.profit)" :icon="ArrowTrendingUpIcon" color="success" /></div>
                 <div class="fade-in-up delay-4"><StatCard label="Discounts Given" :value="formatPeso(stats.discounts)" :icon="TagIcon" color="warning" /></div>
                 <div class="fade-in-up delay-5"><StatCard label="Low Stock Items" :value="stats.low_stock_count" :icon="ExclamationTriangleIcon" :color="stats.low_stock_count > 0 ? 'danger' : 'default'" /></div>
-                <div class="fade-in-up delay-6"><StatCard label="Total Products" :value="stats.total_products" :icon="CubeIcon" /></div>
+                <div class="fade-in-up delay-6"><StatCard :label="`Total ${words.items}`" :value="stats.total_products" :icon="CubeIcon" /></div>
             </div>
 
             <!-- Two-Column Layout -->

@@ -4,6 +4,7 @@ import StockBadge from '@/Components/StockBadge.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, watch, nextTick } from 'vue';
 import { formatPeso, debounce } from '@/Composables/helpers';
+import { useVocabulary } from '@/Composables/vocabulary';
 import {
     MagnifyingGlassIcon,
     PlusIcon,
@@ -45,6 +46,8 @@ watch([search, categoryFilter, stockFilter], applyFilters);
 // Add/Edit Product Modal
 const showProductModal = ref(false);
 const editingProduct = ref(null);
+
+const words = useVocabulary();
 
 const activeTab = ref('details');
 const productFormEl = ref(null);
@@ -193,13 +196,13 @@ const goToPage = (url) => {
 
 <template>
     <AppLayout>
-        <Head title="Inventory" />
+        <Head :title="words.catalogue" />
 
         <div class="space-y-5">
             <!-- Header -->
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Inventory</h1>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">{{ words.catalogue }}</h1>
                     <p class="mt-0.5 text-[13px] text-slate-500">Manage your products and stock levels</p>
                 </div>
                 <button
@@ -207,7 +210,7 @@ const goToPage = (url) => {
                     class="flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-brand-700" style="transition: background-color 0.15s;"
                 >
                     <PlusIcon aria-hidden="true" class="h-4 w-4" />
-                    Add Product
+                    Add {{ words.item }}
                 </button>
             </div>
 
@@ -297,7 +300,7 @@ const goToPage = (url) => {
                     <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
                         <CubeIcon aria-hidden="true" class="h-7 w-7 text-slate-300" />
                     </div>
-                    <p class="mt-3 text-sm font-medium text-slate-400">No products found</p>
+                    <p class="mt-3 text-sm font-medium text-slate-400">No {{ words.items.toLowerCase() }} found</p>
                 </div>
 
                 <!-- Pagination -->
@@ -327,7 +330,7 @@ const goToPage = (url) => {
                     <div class="flex items-center gap-2">
                         <component :is="editingProduct ? PencilSquareIcon : PlusIcon" aria-hidden="true" class="h-5 w-5 text-brand-600" />
                         <h3 class="text-lg font-bold text-slate-900">
-                            {{ editingProduct ? 'Edit Product' : 'Add Product' }}
+                            {{ editingProduct ? `Edit ${words.item}` : `Add ${words.item}` }}
                         </h3>
                     </div>
 
@@ -611,7 +614,7 @@ const goToPage = (url) => {
                             <button type="submit" :disabled="productForm.processing"
                                 class="btn-primary flex flex-1 items-center justify-center gap-2 py-2.5 disabled:opacity-50">
                                 <svg v-if="productForm.processing" aria-hidden="true" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                {{ productForm.processing ? 'Saving…' : (editingProduct ? 'Update Product' : 'Add Product') }}
+                                {{ productForm.processing ? 'Saving…' : (editingProduct ? `Update ${words.item}` : `Add ${words.item}`) }}
                             </button>
                         </div>
                     </form>

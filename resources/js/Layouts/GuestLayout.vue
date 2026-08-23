@@ -17,7 +17,7 @@ import { ShoppingCartIcon } from '@heroicons/vue/24/outline'
                     <ShoppingCartIcon class="h-6 w-6 text-white" aria-hidden="true" />
                 </div>
                 <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900">TindaPOS</h1>
-                <p class="mt-1 text-sm text-slate-500">Sari-Sari Store System</p>
+                <p class="mt-1 text-sm text-slate-500">Point of Sale</p>
             </div>
 
             <!-- Content Card -->
