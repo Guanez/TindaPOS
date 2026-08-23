@@ -341,7 +341,20 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                     : 'hover:border-accent-line'
                             ]"
                         >
-                            <StarIcon v-if="product.is_favorite" class="absolute right-2 top-2 h-3.5 w-3.5 text-wait-mark" aria-hidden="true" />
+                            <StarIcon v-if="product.is_favorite" class="absolute right-2 top-2 z-10 h-3.5 w-3.5 text-wait-mark" aria-hidden="true" />
+
+                            <!--
+                                Only rendered when there is a photo. An empty
+                                grey placeholder on every tile would cost the
+                                cashier a third of the screen to say nothing.
+                            -->
+                            <img
+                                v-if="product.image_thumb_url"
+                                :src="product.image_thumb_url"
+                                alt=""
+                                loading="lazy"
+                                class="mb-2 aspect-square w-full rounded-control bg-surface-2 object-cover"
+                            />
 
                             <p class="text-ui font-semibold leading-tight text-ink-1">{{ product.name }}</p>
                             <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-ink-1">

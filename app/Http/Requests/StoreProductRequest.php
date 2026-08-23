@@ -24,6 +24,7 @@ class StoreProductRequest extends FormRequest
             'sku' => ['required', 'string', 'max:50', $this->uniqueInStore('sku')],
             'barcode' => ['nullable', 'string', 'max:50', $this->uniqueInStore('barcode')],
             'description' => ['nullable', 'string', 'max:1000'],
+            'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192', 'dimensions:min_width=200,min_height=200'],
             'cost_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'selling_price' => ['required', 'numeric', 'min:0', 'gte:cost_price', 'max:999999.99'],
             'stock_quantity' => ['required', 'integer', 'min:0', 'max:99999'],

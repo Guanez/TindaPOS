@@ -199,6 +199,21 @@ const place = () => {
                 style="transition: transform var(--t-fast);"
                 @click="choose(product)"
             >
+                <!--
+                    Lazy, because a menu can be forty items long and the
+                    customer is on mobile data seconds after scanning a code
+                    at the counter. Decorative: the name is right beside it,
+                    so a screen reader announcing the filename would only
+                    repeat what it is about to read.
+                -->
+                <img
+                    v-if="product.image_url"
+                    :src="product.image_url"
+                    alt=""
+                    loading="lazy"
+                    class="h-[76px] w-[76px] shrink-0 rounded-control bg-surface-2 object-cover"
+                />
+
                 <span class="min-w-0 flex-1">
                     <span class="block text-body font-semibold text-ink-1">{{ product.name }}</span>
                     <span v-if="product.description" class="mt-0.5 block text-meta leading-snug text-ink-3">

@@ -60,7 +60,7 @@ A modern, full-featured Point of Sale system built for Philippine **sari-sari st
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.2+ with the **GD** extension (product image resizing)
 - Composer 2+
 - Node.js 18+ / npm 9+
 - SQLite (bundled with PHP) — or MySQL 8.0+ / PostgreSQL if you prefer
@@ -94,12 +94,15 @@ php artisan key:generate
 # 6. Run migrations and seed demo data
 php artisan migrate --seed
 
-# 7. Build frontend assets
+# 7. Link public storage (serves product images)
+php artisan storage:link
+
+# 8. Build frontend assets
 npm run build       # Production
 # OR
 npm run dev         # Development (with HMR)
 
-# 8. Start the server
+# 9. Start the server
 php artisan serve
 ```
 
@@ -176,6 +179,8 @@ database/
 - [ ] Configure proper database credentials
 - [ ] Run `npm run build` for optimized frontend assets
 - [ ] Run `php artisan config:cache && php artisan route:cache && php artisan view:cache`
+- [ ] Run `php artisan storage:link` — product images 404 without it
+- [ ] Set `APP_URL` to the public address; image and QR URLs are built from it
 - [ ] Set up HTTPS (required for secure session cookies)
 - [ ] Configure `SESSION_SECURE_COOKIE=true` in `.env`
 - [ ] Set up database backups (daily recommended)
@@ -192,6 +197,8 @@ Not built yet — tracked here rather than implied elsewhere in this README:
 - [ ] Receipt printing / PDF export
 - [ ] CSV export for sales and reports
 - [ ] Tablet-optimised POS layout
+- [ ] Per-store branding on the customer menu (accent colour, logo)
+- [ ] Menu sections with sticky headers, and a basket that survives a backgrounded phone
 
 ---
 

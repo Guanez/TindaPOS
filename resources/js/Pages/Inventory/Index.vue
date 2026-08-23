@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
 import StockBadge from '@/Components/StockBadge.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue';
 import { debounce } from '@/Composables/helpers';
 import { useVocabulary } from '@/Composables/vocabulary';
 import {
@@ -14,6 +14,7 @@ import {
     TrashIcon,
     ArrowPathIcon,
     XMarkIcon,
+    PhotoIcon,
 } from '@heroicons/vue/24/outline';
 import { StarIcon } from '@heroicons/vue/16/solid';
 
@@ -62,7 +63,39 @@ const productForm = useForm({
     low_stock_threshold: 10, is_favorite: false, description: '',
     track_stock: true, is_available: true,
     variants: [], modifier_group_ids: [],
+    image: null, remove_image: false,
 });
+
+// ── Photo ──────────────────────────────────────────────────────────────
+// `preview` is either an object URL for a file chosen just now or the saved
+// card URL for one already on the product, so the markup has one thing to
+// render and does not care which.
+const imagePreview = ref(null);
+
+const revokePreview = () => {
+    if (imagePreview.value?.startsWith('blob:')) URL.revokeObjectURL(imagePreview.value);
+};
+
+const chooseImage = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    revokePreview();
+    productForm.image = file;
+    productForm.remove_image = false;
+    imagePreview.value = URL.createObjectURL(file);
+};
+
+const clearImage = () => {
+    revokePreview();
+    productForm.image = null;
+    // Only meaningful when editing: it tells the server to drop a photo that
+    // is already saved, which sending no file at all would not.
+    productForm.remove_image = true;
+    imagePreview.value = null;
+};
+
+onUnmounted(revokePreview);
 
 // ── Sizes ──────────────────────────────────────────────────────────────
 const addVariant = () => {
@@ -135,7 +168,10 @@ const openEditModal = (product) => {
             selling_price: v.selling_price,
         })),
         modifier_group_ids: (product.modifier_groups ?? []).map(g => g.id),
+        image: null, remove_image: false,
     });
+    revokePreview();
+    imagePreview.value = product.image_card_url ?? null;
     productForm.clearErrors();
     activeTab.value = 'details';
     showProductModal.value = true;
@@ -151,9 +187,14 @@ const saveProduct = () => {
     }
 
     if (editingProduct.value) {
-        productForm.put(route('inventory.update', editingProduct.value.id), {
-            preserveScroll: true, onSuccess: () => { showProductModal.value = false; },
-        });
+        // POST with _method, not put(). A PUT carrying multipart data never
+        // reaches PHP's file parser, so the photo would vanish in silence
+        // while every other field saved correctly.
+        productForm
+            .transform((data) => ({ ...data, _method: 'put' }))
+            .post(route('inventory.update', editingProduct.value.id), {
+                preserveScroll: true, onSuccess: () => { showProductModal.value = false; },
+            });
     } else {
         productForm.post(route('inventory.store'), {
             preserveScroll: true, onSuccess: () => { showProductModal.value = false; },
@@ -436,6 +477,58 @@ const goToPage = (url) => {
                                 <input v-model="productForm.low_stock_threshold" type="number" min="1"
                                     class="input-field mt-1.5 w-full tabular-nums" />
                             </div>
+                        </div>
+
+                        <!-- Photo -->
+                        <div>
+                            <span class="block text-ui font-semibold text-ink-2">Photo</span>
+                            <p class="mt-0.5 text-meta text-ink-3">
+                                Shown on the customer menu and the POS grid. Square works best.
+                            </p>
+
+                            <div class="mt-2 flex items-center gap-4">
+                                <div
+                                    class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-card border border-line bg-surface-2"
+                                >
+                                    <img
+                                        v-if="imagePreview"
+                                        :src="imagePreview"
+                                        alt=""
+                                        class="h-full w-full object-cover"
+                                    />
+                                    <PhotoIcon v-else class="h-7 w-7 text-ink-3" aria-hidden="true" />
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <label
+                                        class="btn-secondary cursor-pointer !py-2"
+                                        :class="productForm.progress ? 'pointer-events-none opacity-60' : ''"
+                                    >
+                                        {{ imagePreview ? 'Replace' : 'Choose photo' }}
+                                        <input
+                                            type="file"
+                                            class="sr-only"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            @change="chooseImage"
+                                        />
+                                    </label>
+                                    <button
+                                        v-if="imagePreview"
+                                        type="button"
+                                        class="text-meta font-semibold text-stop-ink hover:underline"
+                                        @click="clearImage"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p v-if="productForm.errors.image" class="mt-1.5 text-meta text-stop-ink">
+                                {{ productForm.errors.image }}
+                            </p>
+                            <p v-if="productForm.progress" class="mt-1.5 text-meta text-ink-3 tabular-nums">
+                                Uploading… {{ productForm.progress.percentage }}%
+                            </p>
                         </div>
 
                         <label class="flex items-center gap-2.5">
