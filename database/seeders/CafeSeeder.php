@@ -13,6 +13,7 @@ use App\Models\ProductVariant;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\OrderService;
+use App\Services\StoreStarterKit;
 use App\Support\StoreContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -46,7 +47,7 @@ class CafeSeeder extends Seeder
 
         app(StoreContext::class)->runFor($store->id, function () use ($store): void {
             $this->seedStaff();
-            $groups = $this->seedModifierGroups();
+            $groups = $this->seedModifierGroups($store);
             $this->seedMenu($groups);
             $this->seedQueue($store);
         });
@@ -132,47 +133,18 @@ class CafeSeeder extends Seeder
     }
 
     /**
+     * The add-on groups come from StoreStarterKit — the same ones a real cafe
+     * gets when it is created from the platform console. This seeder had its
+     * own identical copy, which is two definitions of what a cafe starts with
+     * and one of them silently going stale.
+     *
      * @return array<string, ModifierGroup>
      */
-    private function seedModifierGroups(): array
+    private function seedModifierGroups(Store $store): array
     {
-        $definitions = [
-            'Temperature' => [
-                'min_select' => 1,
-                'max_select' => 1,
-                'options' => [['Hot', 0], ['Iced', 10]],
-            ],
-            'Milk' => [
-                'min_select' => 0,
-                'max_select' => 1,
-                'options' => [['Fresh milk', 0], ['Oat milk', 30], ['Soy milk', 25], ['Almond milk', 35]],
-            ],
-            'Extras' => [
-                'min_select' => 0,
-                'max_select' => 3,
-                'options' => [['Extra shot', 25], ['Vanilla syrup', 20], ['Caramel syrup', 20], ['Whipped cream', 15]],
-            ],
-        ];
+        app(StoreStarterKit::class)->applyTo($store);
 
-        $groups = [];
-
-        foreach ($definitions as $name => $definition) {
-            $group = ModifierGroup::query()->firstOrCreate(
-                ['name' => $name],
-                ['min_select' => $definition['min_select'], 'max_select' => $definition['max_select']]
-            );
-
-            foreach ($definition['options'] as $index => $option) {
-                $group->modifiers()->firstOrCreate(
-                    ['name' => $option[0]],
-                    ['price_delta' => $option[1], 'sort_order' => $index]
-                );
-            }
-
-            $groups[$name] = $group;
-        }
-
-        return $groups;
+        return ModifierGroup::query()->with('modifiers')->get()->keyBy('name')->all();
     }
 
     /**
