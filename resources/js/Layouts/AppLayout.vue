@@ -12,6 +12,8 @@ import {
     ArrowRightStartOnRectangleIcon,
     ClockIcon,
     QueueListIcon,
+    UsersIcon,
+    Cog6ToothIcon,
 } from '@heroicons/vue/24/outline'
 
 const page = usePage()
@@ -47,6 +49,8 @@ const iconMap = {
     'sales.index':     ClipboardDocumentListIcon,
     'inventory.index': CubeIcon,
     'reports.index':   ChartBarIcon,
+    'users.index':     UsersIcon,
+    'store.edit':      Cog6ToothIcon,
     'inventory.logs':  ClockIcon,
 }
 
@@ -60,6 +64,9 @@ const navItems = computed(() => {
         { name: 'Inventory',     href: 'inventory.index', roles: ['owner', 'admin'] },
         { name: 'Stock Logs',    href: 'inventory.logs',  roles: ['owner', 'admin'] },
         { name: 'Reports',       href: 'reports.index',   roles: ['owner', 'admin'] },
+        { name: 'divider2',      roles: ['owner', 'admin'] },
+        { name: 'Staff',          href: 'users.index',    roles: ['owner', 'admin'] },
+        { name: 'Store Settings', href: 'store.edit',     roles: ['owner', 'admin'] },
     ]
     return items.filter(item => item.roles.includes(user.value?.role))
 })
@@ -139,7 +146,7 @@ onUnmounted(() => {
             <nav class="flex-1 overflow-y-auto px-3 py-4" role="navigation" aria-label="Primary">
                 <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-300">Menu</p>
                 <template v-for="item in navItems" :key="item.name">
-                    <div v-if="item.name === 'divider'" class="my-3 border-t border-slate-100" role="separator" />
+                    <div v-if="item.name.startsWith('divider')" class="my-3 border-t border-slate-100" role="separator" />
                     <Link
                         v-else
                         :href="route(item.href)"

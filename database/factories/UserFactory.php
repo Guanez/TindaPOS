@@ -29,7 +29,10 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'username' => fake()->unique()->userName(),
+            // Faker's userName() can contain dots, which the staff form
+            // rejects — test accounts should look like ones a cafe could
+            // actually create.
+            'username' => fake()->unique()->regexify('[a-z]{5,10}(_[a-z]{3,6})?'),
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => UserRole::Cashier,

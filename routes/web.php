@@ -12,6 +12,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SalesController;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Guest: redirect to login ────────────────────────
@@ -87,6 +89,21 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/modifier-groups', [ModifierGroupController::class, 'store'])->name('modifierGroups.store');
         Route::put('/modifier-groups/{modifier_group}', [ModifierGroupController::class, 'update'])->name('modifierGroups.update');
         Route::delete('/modifier-groups/{modifier_group}', [ModifierGroupController::class, 'destroy'])->name('modifierGroups.destroy');
+    });
+
+    // Staff accounts (managers only)
+    Route::middleware('role:owner,admin')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    // Store settings and the customer QR code (managers only)
+    Route::middleware('role:owner,admin')->group(function () {
+        Route::get('/store/settings', [StoreController::class, 'edit'])->name('store.edit');
+        Route::put('/store/settings', [StoreController::class, 'update'])->name('store.update');
+        Route::get('/store/qr', [StoreController::class, 'qr'])->name('store.qr');
     });
 
     // Reports (managers only)
