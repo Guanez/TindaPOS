@@ -60,6 +60,7 @@ const form = useForm({
     logo: null,
     remove_logo: false,
     hours: props.store.hours ?? null,
+    prep_minutes: props.store.prep_minutes ?? '',
 });
 
 // Copying Monday down is the difference between two inputs and fourteen.
@@ -286,6 +287,33 @@ const copyLink = async () => {
                             </span>
                         </span>
                     </label>
+
+                    <!--
+                        How long you take. Sits with the ordering switch
+                        because it is the other half of what a waiting
+                        customer is told: the status page says "about eight
+                        minutes" instead of "hang tight", which is the only
+                        one of the two that answers their actual question —
+                        whether there is time to sit down.
+                    -->
+                    <div>
+                        <label class="block text-ui font-semibold text-ink-2" for="store-prep">
+                            Usual preparation time
+                        </label>
+                        <div class="mt-1.5 flex items-center gap-2">
+                            <input id="store-prep" v-model="form.prep_minutes" type="number" min="1" max="120" inputmode="numeric"
+                                :aria-invalid="form.errors.prep_minutes ? 'true' : undefined"
+                                :aria-describedby="form.errors.prep_minutes ? 'store-prep-error' : 'store-prep-hint'"
+                                class="input-field w-28" placeholder="—" />
+                            <span class="text-ui text-ink-3">minutes</span>
+                        </div>
+                        <p id="store-prep-hint" class="mt-1 text-meta text-ink-3">
+                            Shown to customers once they&rsquo;ve paid, and counted down as they wait. Leave it empty to say nothing.
+                        </p>
+                        <p v-if="form.errors.prep_minutes" id="store-prep-error" class="mt-1 text-meta text-stop-ink">
+                            {{ form.errors.prep_minutes }}
+                        </p>
+                    </div>
 
                     <!--
                         Opening hours. Directly under the ordering switch

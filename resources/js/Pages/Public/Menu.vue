@@ -11,6 +11,7 @@ import {
     MinusIcon,
     ArrowRightIcon,
     ClockIcon,
+    MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline';
 
 const { money } = useCurrency();
@@ -31,6 +32,25 @@ const isClosed = computed(() => props.store.is_open === false);
 // The rail used to filter the list, which meant reading the menu was a
 // series of decisions before you could see anything. Sections show the whole
 // menu and the rail moves you around it, which is how a paper menu works.
+// ── Search ──────────────────────────────────────────────────────────────
+// Browsing and looking for one thing are different jobs. The rail is for
+// browsing and deliberately does not filter; search is the other job, and a
+// forty-item menu on a phone is where it earns its place — a customer who
+// already knows they want the spanish latte should not have to scroll past
+// the pastries to order it.
+const query = ref('');
+const searching = computed(() => query.value.trim().length > 0);
+
+const matches = (product, needle) =>
+    product.name.toLowerCase().includes(needle) ||
+    (product.description ?? '').toLowerCase().includes(needle);
+
+const results = computed(() => {
+    if (!searching.value) return [];
+    const needle = query.value.trim().toLowerCase();
+    return menu.value.filter((p) => matches(p, needle));
+});
+
 const sections = computed(() =>
     props.categories
         .map((category) => ({
@@ -39,6 +59,20 @@ const sections = computed(() =>
         }))
         .filter((section) => section.products.length > 0),
 );
+
+// What the list actually renders. Search results come through as a single
+// pseudo-section so the tile markup has exactly one home — a second copy of
+// it is a second place for a sold-out state to be forgotten.
+const visibleSections = computed(() => {
+    if (!searching.value) return sections.value;
+    if (results.value.length === 0) return [];
+
+    return [{
+        id: '__results',
+        name: `${results.value.length} ${results.value.length === 1 ? 'match' : 'matches'}`,
+        products: results.value,
+    }];
+});
 
 const activeCategory = ref(null);
 const sectionEls = ref({});
@@ -66,9 +100,9 @@ const RAIL = 72;
 let spy = null;
 
 const syncActive = () => {
-    let current = sections.value[0]?.id ?? null;
+    let current = visibleSections.value[0]?.id ?? null;
 
-    for (const section of sections.value) {
+    for (const section of visibleSections.value) {
         const el = sectionEls.value[section.id];
         if (el && el.getBoundingClientRect().top <= RAIL) current = section.id;
     }
@@ -86,6 +120,13 @@ const watchSections = () => {
 
     Object.values(sectionEls.value).forEach((el) => spy.observe(el));
 };
+
+// Searching swaps the whole list, which leaves the observer holding elements
+// that are no longer in the document. Rebind after the DOM catches up.
+watch(visibleSections, () => nextTick(() => {
+    watchSections();
+    syncActive();
+}));
 
 // ── An order already in progress on this phone ──────────────────────────
 const TOKEN_KEY = 'tindapos_order_token';
@@ -124,9 +165,12 @@ const restoreBasket = () => {
         if (!Array.isArray(saved)) return;
 
         // The menu may have moved on since this was saved — an item pulled,
-        // a shop closed for the night. Anything no longer sellable is
-        // dropped rather than carried to a checkout that would reject it.
-        const sellable = new Set(menu.value.map((p) => p.id));
+        // a shop closed for the night, the last one sold. Anything no longer
+        // orderable is dropped rather than carried to a checkout that would
+        // reject it. Note this is the orderable set, not the visible one:
+        // sold-out items are on the menu now, and must not survive in a
+        // basket.
+        const sellable = new Set(menu.value.filter((p) => p.is_available).map((p) => p.id));
         basket.value = saved.filter((line) => sellable.has(line.product_id));
     } catch { /* private browsing, or nothing saved */ }
 };
@@ -154,7 +198,7 @@ const forChooser = (product) => ({ ...product, selling_price: product.price_from
 const choose = (product) => {
     // Nothing goes in a basket that cannot be sent. The tile stays readable
     // rather than disabled — the menu is still worth reading when shut.
-    if (isClosed.value) return;
+    if (isClosed.value || !product.is_available) return;
 
     if (hasOptions(product)) {
         chooser.value = forChooser(product);
@@ -276,7 +320,11 @@ const place = () => {
                 {{ store.next_opening ?? 'Come back during opening hours.' }} You can still look at the menu.
             </p>
             <p v-else class="mt-3 rounded-control bg-wait-tint px-3 py-2 text-meta font-medium text-wait-ink">
-                Order here, then pay at the counter. We start making it once you&rsquo;ve paid.
+                Order here, then pay at the counter. We start making it once you&rsquo;ve paid.<!--
+                    The estimate belongs here as well as on the status page:
+                    "is this worth the wait" is a question people answer
+                    before they order, not after.
+                --><span v-if="store.prep_minutes"> Usually ready about {{ store.prep_minutes }} minutes after that.</span>
             </p>
         </header>
 
@@ -297,7 +345,26 @@ const place = () => {
             see anything; a paper menu just has headings.
         -->
         <div v-if="sections.length" class="sticky top-0 z-20 border-b border-line/70 bg-surface-2/95 px-5 py-3 backdrop-blur">
-            <div class="flex gap-1.5 overflow-x-auto pb-0.5">
+            <div class="relative">
+                <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden="true" />
+                <label class="sr-only" for="menu-search">Search the menu</label>
+                <input
+                    id="menu-search"
+                    v-model="query"
+                    type="search"
+                    enterkeyhint="search"
+                    autocomplete="off"
+                    placeholder="Search the menu"
+                    class="input-field w-full !pl-9"
+                />
+            </div>
+
+            <!--
+                The rail is for browsing, and browsing is not what is
+                happening once someone has typed. It goes rather than sitting
+                there highlighting a category the results are not grouped by.
+            -->
+            <div v-if="!searching" class="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
                 <button
                     v-for="section in sections"
                     :key="section.id"
@@ -316,8 +383,15 @@ const place = () => {
                 Nothing on the menu right now.
             </p>
 
+            <div v-else-if="searching && results.length === 0" class="py-16 text-center">
+                <p class="text-body font-semibold text-ink-1">No matches for &ldquo;{{ query.trim() }}&rdquo;</p>
+                <button type="button" class="mt-2 text-ui font-semibold text-accent-ink underline" @click="query = ''">
+                    Show the whole menu
+                </button>
+            </div>
+
             <section
-                v-for="section in sections"
+                v-for="section in visibleSections"
                 :key="section.id"
                 :ref="setSectionEl(section.id)"
                 :data-category="section.id"
@@ -336,7 +410,9 @@ const place = () => {
                 <button
                     v-for="product in section.products"
                     :key="product.id"
-                    class="flex w-full items-start gap-3 rounded-card border border-line/80 bg-surface-1 p-4 text-left shadow-rest active:scale-[0.99]"
+                    :disabled="!product.is_available"
+                    :aria-label="product.is_available ? null : `${product.name}, sold out`"
+                    class="flex w-full items-start gap-3 rounded-card border border-line/80 bg-surface-1 p-4 text-left shadow-rest enabled:active:scale-[0.99] disabled:cursor-default"
                     style="transition: transform var(--t-fast);"
                     @click="choose(product)"
                 >
@@ -347,12 +423,18 @@ const place = () => {
                         so a screen reader announcing the filename would only
                         repeat what it is about to read.
                     -->
+                    <!--
+                        Sold out dims the picture and the price but NOT the
+                        name — the point of showing the row at all is that the
+                        customer can find the thing and see it is gone for
+                        today, which needs the name at full strength.
+                    -->
                     <img
                         v-if="product.image_url"
                         :src="product.image_url"
                         alt=""
                         loading="lazy"
-                        class="h-[76px] w-[76px] shrink-0 rounded-control bg-surface-2 object-cover"
+                        :class="['h-[76px] w-[76px] shrink-0 rounded-control bg-surface-2 object-cover', product.is_available || 'opacity-40 grayscale']"
                     />
 
                     <span class="min-w-0 flex-1">
@@ -360,12 +442,16 @@ const place = () => {
                         <span v-if="product.description" class="mt-0.5 block text-meta leading-snug text-ink-3">
                             {{ product.description }}
                         </span>
-                        <span class="mt-1.5 block text-body font-bold tabular-nums text-ink-1">
+
+                        <span v-if="!product.is_available" class="mt-1.5 inline-block rounded-control bg-surface-3 px-2 py-0.5 text-label font-bold uppercase tracking-widest text-ink-3">
+                            Sold out
+                        </span>
+                        <span v-else class="mt-1.5 block text-body font-bold tabular-nums text-ink-1">
                             <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.price_from) }}
                         </span>
                     </span>
                     <!-- The add affordance goes when there is nothing to add to. -->
-                    <span v-if="!isClosed" class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
+                    <span v-if="!isClosed && product.is_available" class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
                         <PlusIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
                     </span>
                 </button>
@@ -436,7 +522,16 @@ const place = () => {
                 </div>
             </div>
 
-            <p v-if="errors.items" role="alert" class="mt-3 text-meta text-stop-ink">{{ errors.items }}</p>
+            <!--
+                Two keys, because two different things reject an order: the
+                request validator says `items` (empty basket, shop shut) and
+                the pricer says `checkout` (sold out between opening the menu
+                and pressing the button, which is now possible in a way it was
+                not when sold-out items were hidden).
+            -->
+            <p v-if="errors.items || errors.checkout" role="alert" class="mt-3 text-meta text-stop-ink">
+                {{ errors.items || errors.checkout }}
+            </p>
 
             <template #footer>
                 <div class="flex items-baseline justify-between">

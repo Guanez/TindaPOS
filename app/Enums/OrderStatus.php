@@ -9,11 +9,13 @@ namespace App\Enums;
  *
  *   placed ──> paid ──> ready ──> collected
  *     │          └──────────────> collected   (nothing to prepare)
- *     ├──> rejected   (staff refused it, with a reason)
- *     └──> expired    (nobody came to the till)
+ *     ├──> rejected    (staff refused it, with a reason)
+ *     ├──> cancelled   (the customer changed their mind)
+ *     └──> expired     (nobody came to the till)
  *
  * Payment is what starts preparation, so `paid` is also the moment the order
- * becomes a sale and stock moves.
+ * becomes a sale and stock moves — and the moment cancelling stops being the
+ * customer's to do, because by then someone is making it.
  */
 enum OrderStatus: string
 {
@@ -22,6 +24,7 @@ enum OrderStatus: string
     case Ready = 'ready';
     case Collected = 'collected';
     case Rejected = 'rejected';
+    case Cancelled = 'cancelled';
     case Expired = 'expired';
 
     public function label(): string
@@ -32,6 +35,7 @@ enum OrderStatus: string
             self::Ready => 'Ready for pickup',
             self::Collected => 'Collected',
             self::Rejected => 'Rejected',
+            self::Cancelled => 'Cancelled',
             self::Expired => 'Expired',
         };
     }
@@ -55,10 +59,10 @@ enum OrderStatus: string
     public function allowedNext(): array
     {
         return match ($this) {
-            self::Placed => [self::Paid, self::Rejected, self::Expired],
+            self::Placed => [self::Paid, self::Rejected, self::Cancelled, self::Expired],
             self::Paid => [self::Ready, self::Collected],
             self::Ready => [self::Collected],
-            self::Collected, self::Rejected, self::Expired => [],
+            self::Collected, self::Rejected, self::Cancelled, self::Expired => [],
         };
     }
 

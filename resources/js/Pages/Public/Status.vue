@@ -1,8 +1,9 @@
 <script setup>
-import { Head, router, Link } from '@inertiajs/vue3';
+import { Head, router, Link, usePage } from '@inertiajs/vue3';
 import { useCurrency } from '@/Composables/currency';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
+import Dialog from '@/Components/Dialog.vue';
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/vue/24/outline';
 
 const { money } = useCurrency();
@@ -23,7 +24,7 @@ const POLL_MS = 5000;
 let poller = null;
 
 const finished = computed(() =>
-    ['collected', 'rejected', 'expired'].includes(props.order.status),
+    ['collected', 'rejected', 'expired', 'cancelled'].includes(props.order.status),
 );
 
 const refresh = () => {
@@ -96,7 +97,43 @@ const stepIndex = computed(() => {
 });
 
 const isReady = computed(() => props.order.status === 'ready');
-const isRejected = computed(() => ['rejected', 'expired'].includes(props.order.status));
+const isRejected = computed(() => ['rejected', 'expired', 'cancelled'].includes(props.order.status));
+
+// ── How much longer ─────────────────────────────────────────────────────
+// The server sends the remaining minutes rather than a target time, so a
+// phone with a wrong clock still reads correctly. Zero is a real answer —
+// "any moment now" — so this checks for null, not for falsy.
+const estimate = computed(() => {
+    const left = props.order.ready_in_minutes;
+    if (left === null || left === undefined) return null;
+    if (left === 0) return 'Any moment now';
+    return `About ${left} ${left === 1 ? 'minute' : 'minutes'} to go`;
+});
+
+// ── Cancelling ──────────────────────────────────────────────────────────
+// Only theirs to do before they pay. After that someone is making it, and
+// the button goes rather than failing when pressed.
+const canCancel = computed(() => props.order.status === 'placed');
+const confirmingCancel = ref(false);
+const cancelling = ref(false);
+
+// A cancel that loses the race to the till comes back as a transition error.
+// Worth showing: the order is being made, which is the opposite of what they
+// just asked for, and silence would leave them thinking it worked.
+const page = usePage();
+const cancelError = computed(() => page.props.errors?.order ?? null);
+
+const cancelOrder = () => {
+    if (cancelling.value) return;
+    cancelling.value = true;
+
+    router.post(`/o/${props.order.token}/cancel`, {}, {
+        onFinish: () => {
+            cancelling.value = false;
+            confirmingCancel.value = false;
+        },
+    });
+};
 
 const headline = computed(() => {
     switch (props.order.status) {
@@ -105,6 +142,7 @@ const headline = computed(() => {
         case 'ready': return 'Ready — come and get it';
         case 'collected': return 'Enjoy!';
         case 'rejected': return 'Order declined';
+        case 'cancelled': return 'Order cancelled';
         case 'expired': return 'Order expired';
         default: return '';
     }
@@ -113,9 +151,10 @@ const headline = computed(() => {
 const subline = computed(() => {
     switch (props.order.status) {
         case 'placed': return `Show number ${props.order.queue_number} at the till. We start once you’ve paid.`;
-        case 'paid': return 'Hang tight — we’ll tell you the moment it’s ready.';
+        case 'paid': return estimate.value ?? 'Hang tight — we’ll tell you the moment it’s ready.';
         case 'ready': return 'Collect at the counter.';
         case 'collected': return 'Thanks for ordering.';
+        case 'cancelled': return 'You cancelled this one. Order again any time.';
         case 'expired': return 'Nobody came to the till, so we released it. Order again any time.';
         default: return '';
     }
@@ -219,6 +258,26 @@ const subline = computed(() => {
                 </p>
             </div>
 
+            <!--
+                Cancelling is offered only while it is still the customer's to
+                do. It sits below the order rather than beside the queue
+                number: it is the rarest thing anyone does on this page, and a
+                destructive control next to the number you are showing the
+                cashier is a control that gets pressed by accident.
+            -->
+            <button
+                v-if="canCancel"
+                type="button"
+                class="mt-5 block w-full rounded-card border border-line bg-surface-1 py-3.5 text-center text-ui font-semibold text-ink-3 shadow-rest hover:text-stop-ink"
+                @click="confirmingCancel = true"
+            >
+                Cancel this order
+            </button>
+
+            <p v-if="cancelError" role="alert" class="mt-3 rounded-control bg-wait-tint px-4 py-3 text-ui font-medium text-wait-ink">
+                {{ cancelError }}
+            </p>
+
             <Link
                 :href="`/s/${store.slug}`"
                 class="mt-5 block rounded-card bg-surface-1 py-3.5 text-center text-ui font-semibold text-ink-2 shadow-rest"
@@ -230,5 +289,39 @@ const subline = computed(() => {
                 {{ store.receipt_footer }}
             </p>
         </div>
+
+        <Dialog
+            :show="confirmingCancel"
+            title="Cancel this order?"
+            :icon="XCircleIcon"
+            icon-class="text-stop-ink"
+            max-width="sm"
+            @close="confirmingCancel = false"
+        >
+            <p class="text-ui text-ink-2">
+                Number {{ order.queue_number }} will be released and the counter will stop expecting you.
+                Nothing has been charged, so there is nothing to refund.
+            </p>
+
+            <template #footer>
+                <div class="flex gap-2">
+                    <button
+                        type="button"
+                        class="flex-1 rounded-control border border-line py-3 text-ui font-semibold text-ink-2 hover:bg-surface-2"
+                        @click="confirmingCancel = false"
+                    >
+                        Keep it
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="cancelling"
+                        class="flex-1 rounded-control bg-stop-solid py-3 text-ui font-bold text-on-solid disabled:opacity-50"
+                        @click="cancelOrder"
+                    >
+                        {{ cancelling ? 'Cancelling&hellip;' : 'Cancel order' }}
+                    </button>
+                </div>
+            </template>
+        </Dialog>
     </div>
 </template>

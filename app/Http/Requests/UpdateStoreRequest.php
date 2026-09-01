@@ -33,6 +33,11 @@ class UpdateStoreRequest extends FormRequest
             'remove_logo' => ['sometimes', 'boolean'],
             'online_ordering_enabled' => ['required', 'boolean'],
 
+            // Minutes, and deliberately capped: an estimate that reads in
+            // hours is not an estimate a customer waits for. Null means the
+            // shop would rather not say, and nothing is shown.
+            'prep_minutes' => ['nullable', 'integer', 'min:1', 'max:120'],
+
             // Absent means "no hours set", which is a shop that never closes.
             // A day present but null is a closing day. Both are meaningful,
             // so neither is filtered out before it gets here.

@@ -52,6 +52,41 @@
 
         <title inertia>{{ config('app.name', 'TindaPOS') }}</title>
 
+        {{--
+            The link preview for a shared menu.
+
+            Rendered here, in Blade, rather than through Inertia's <Head> —
+            and that is the whole point of it being here. Every crawler that
+            builds a preview card (Messenger, Viber, Facebook, Twitter) reads
+            the HTML it is served and does not run JavaScript, so a title set
+            from a Vue component is a title those crawlers never see. A cafe
+            pasting its own menu link into a Facebook post is the single most
+            likely way this application ever gets shared, and without these
+            it renders as a bare URL.
+
+            Only present on pages that ask for it, via withViewData('og').
+        --}}
+        @isset($og)
+            <meta property="og:type" content="website">
+            <meta property="og:site_name" content="{{ config('app.name', 'TindaPOS') }}">
+            <meta property="og:title" content="{{ $og['title'] }}">
+            <meta property="og:description" content="{{ $og['description'] }}">
+            <meta property="og:url" content="{{ $og['url'] }}">
+            <meta name="twitter:title" content="{{ $og['title'] }}">
+            <meta name="twitter:description" content="{{ $og['description'] }}">
+
+            @if (! empty($og['image']))
+                {{-- summary_large_image only earns its size when there is an
+                     image to fill it; without one it renders as a wide empty
+                     box with the title beneath. --}}
+                <meta property="og:image" content="{{ $og['image'] }}">
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:image" content="{{ $og['image'] }}">
+            @else
+                <meta name="twitter:card" content="summary">
+            @endif
+        @endisset
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

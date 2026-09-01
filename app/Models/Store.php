@@ -41,6 +41,7 @@ class Store extends Model
         'logo_path',
         'online_ordering_enabled',
         'hours',
+        'prep_minutes',
         'is_active',
     ];
 
@@ -50,6 +51,7 @@ class Store extends Model
             'online_ordering_enabled' => 'boolean',
             'is_active' => 'boolean',
             'hours' => 'array',
+            'prep_minutes' => 'integer',
         ];
     }
 

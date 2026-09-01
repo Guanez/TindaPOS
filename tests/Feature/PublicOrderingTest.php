@@ -86,16 +86,41 @@ it('never exposes stock, cost or sku to a customer', function () {
         ->assertDontSee('SECRET-1');
 });
 
-it('leaves sold out and inactive items off the menu', function () {
+/*
+ * Sold out is shown and marked; deactivated is gone.
+ *
+ * These used to be treated the same and both hidden, which meant a customer
+ * looking for their usual could not tell "we ran out today" from "we stopped
+ * making it" — and the shop got asked at the counter either way. `is_active`
+ * is now the only line that removes something from the menu.
+ *
+ * Named deliberately: products are ordered by name, so this asserts on
+ * position without depending on what the factory invented.
+ */
+it('shows sold out items but marks them unorderable', function () {
     $store = openStore();
 
-    Product::factory()->active()->withStock(5)->create();                       // shown
-    Product::factory()->active()->withStock(0)->create();                       // out of stock
-    Product::factory()->active()->create(['is_available' => false]);            // switched off
-    Product::factory()->create(['is_active' => false]);                         // deactivated
+    Product::factory()->active()->withStock(5)->create(['name' => 'Alpha']);
+    Product::factory()->active()->withStock(0)->create(['name' => 'Bravo']);
+    Product::factory()->active()->create(['name' => 'Charlie', 'is_available' => false]);
+    Product::factory()->create(['name' => 'Delta', 'is_active' => false]);
 
     $this->get(route('public.menu', $store->slug))
-        ->assertInertia(fn ($page) => $page->has('products.data', 1));
+        ->assertInertia(fn ($page) => $page
+            ->has('products.data', 3)
+            ->where('products.data.0.is_available', true)
+            ->where('products.data.1.is_available', false)
+            ->where('products.data.2.is_available', false)
+        );
+});
+
+it('still refuses to sell something that is sold out', function () {
+    $store = openStore();
+    $product = Product::factory()->active()->withStock(0)->create();
+
+    $this->post(route('public.orders.place', $store->slug), [
+        'items' => [['product_id' => $product->id, 'quantity' => 1]],
+    ])->assertSessionHasErrors();
 });
 
 it('shows a made to order item even with no stock', function () {

@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Dialog from '@/Components/Dialog.vue';
+import Receipt from '@/Components/Receipt.vue';
 import { useCurrency } from '@/Composables/currency';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
@@ -12,6 +13,8 @@ import {
     ExclamationTriangleIcon,
     ClipboardDocumentListIcon,
     NoSymbolIcon,
+    PrinterIcon,
+    ArrowDownTrayIcon,
 } from '@heroicons/vue/24/outline';
 
 const { money } = useCurrency();
@@ -38,6 +41,18 @@ const applyFilters = debounce(() => {
 }, 300);
 
 watch([dateFrom, dateTo, statusFilter, paymentFilter], applyFilters);
+
+// The export takes the filters as they stand, so the file matches the screen.
+const exportUrl = computed(() => {
+    const params = new URLSearchParams();
+    if (dateFrom.value) params.set('date_from', dateFrom.value);
+    if (dateTo.value) params.set('date_to', dateTo.value);
+    if (statusFilter.value) params.set('status', statusFilter.value);
+    if (paymentFilter.value) params.set('payment_method', paymentFilter.value);
+
+    const qs = params.toString();
+    return route('sales.export') + (qs ? `?${qs}` : '');
+});
 
 // Sale Detail Modal — opens straight away when /sales/{id} is visited directly.
 const resolveDetail = (detail) => detail?.data ?? detail ?? null;
@@ -68,6 +83,19 @@ const closeSaleDetail = () => {
     selectedSale.value = null;
 };
 
+// ── Reprint ─────────────────────────────────────────────────────────────
+// The detail panel already holds everything a receipt needs, so a reprint is
+// a second rendering of a sale that is already loaded rather than a second
+// trip to the server.
+const reprinting = ref(null);
+
+const reprint = (sale) => {
+    closeSaleDetail();
+    reprinting.value = sale;
+};
+
+const printNow = () => window.print();
+
 // Void
 const confirmingVoid = ref(null);
 const voidReason = ref('');
@@ -92,6 +120,10 @@ const goToPage = (url) => {
 };
 
 const isManager = computed(() => usePage().props.auth?.user?.is_manager);
+
+// The shop in context, shared by the layout — the receipt needs its name,
+// address and footer, which are the same ones the till prints.
+const store = computed(() => usePage().props.store ?? {});
 </script>
 
 <template>
@@ -100,9 +132,26 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
 
         <div class="space-y-5">
             <!-- Header -->
-            <div>
-                <h1 class="text-heading font-bold tracking-tight text-ink-1">Sales History</h1>
-                <p class="mt-0.5 text-ui text-ink-3">View and manage all transactions</p>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h1 class="text-heading font-bold tracking-tight text-ink-1">Sales History</h1>
+                    <p class="mt-0.5 text-ui text-ink-3">View and manage all transactions</p>
+                </div>
+
+                <!--
+                    A plain link, not a fetch: the browser's own download
+                    handling is what a manager expects, and it survives a file
+                    big enough to take a while. Carries the current filters, so
+                    what downloads is what is on screen.
+                -->
+                <a
+                    v-if="isManager"
+                    :href="exportUrl"
+                    class="btn-secondary shrink-0"
+                >
+                    <ArrowDownTrayIcon class="h-4 w-4" aria-hidden="true" />
+                    Export CSV
+                </a>
             </div>
 
             <!-- Filters -->
@@ -389,9 +438,52 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                         class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
                         Close
                     </button>
+                    <button v-if="selectedSale" type="button" @click="reprint(selectedSale)"
+                        class="flex flex-1 items-center justify-center gap-1.5 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
+                        <PrinterIcon class="h-4 w-4" aria-hidden="true" /> Reprint
+                    </button>
                     <button v-if="selectedSale && selectedSale.status === 'completed' && isManager" type="button" @click="startVoid(selectedSale.id)"
                         class="flex flex-1 items-center justify-center gap-1.5 rounded-control border border-stop-tint bg-stop-tint py-2.5 text-ui font-bold text-stop-ink transition-all hover:bg-stop-mark/20">
                         <NoSymbolIcon class="h-4 w-4" aria-hidden="true" /> Void Sale
+                    </button>
+                </div>
+            </template>
+        </Dialog>
+
+        <!--
+            REPRINT
+
+            Its own dialog rather than printing the detail panel, because the
+            detail panel is a record and a receipt is a document — different
+            things, and only one of them belongs in a customer's hand.
+            Headerless for the same reason the till's is: the paper opens with
+            the shop's name.
+        -->
+        <Dialog
+            :show="reprinting !== null"
+            title="Reprint receipt"
+            max-width="sm"
+            headerless
+            @close="reprinting = null"
+        >
+            <Receipt
+                v-if="reprinting"
+                :sale="reprinting"
+                :store="store"
+                :cashier-name="reprinting.user?.name ?? null"
+                :printed-at="formatDateTime(reprinting.created_at)"
+                reprint
+            />
+
+            <template #footer>
+                <div class="flex gap-2 print:hidden">
+                    <button type="button" @click="reprinting = null"
+                        class="flex-1 rounded-control border border-line py-3 text-ui font-semibold text-ink-2 hover:bg-surface-2">
+                        Close
+                    </button>
+                    <button type="button" data-autofocus @click="printNow"
+                        class="flex flex-[2] items-center justify-center gap-2 rounded-control bg-action py-3 text-ui font-bold text-action-fg hover:bg-action-hover">
+                        <PrinterIcon class="h-4 w-4" aria-hidden="true" /> Print
                     </button>
                 </div>
             </template>

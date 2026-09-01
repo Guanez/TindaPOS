@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 class ReportService
@@ -151,7 +152,86 @@ class ReportService
             'discounts' => $discounts,
             'daily' => $daily,
             'payment_methods' => $payments,
+            // A number on its own is not a report. ₱48,000 is a good week or
+            // a bad one depending entirely on the week before it, and that is
+            // the comparison an owner makes in their head anyway.
+            'comparison' => $this->comparison($startDate, $endDate, [
+                'revenue' => $revenue,
+                'transactions' => (float) $transactions,
+                'profit' => $profit,
+                'discounts' => $discounts,
+            ]),
         ];
+    }
+
+    /**
+     * The same span of days immediately before this one, and the change.
+     *
+     * Equal length rather than "last month" so the two are actually
+     * comparable: a four-day range compared against a thirty-day one would
+     * read as a collapse every time.
+     *
+     * @param  array<string, float>  $current
+     * @return array<string, mixed>
+     */
+    private function comparison(string $startDate, string $endDate, array $current): array
+    {
+        $start = CarbonImmutable::parse($startDate)->startOfDay();
+        $end = CarbonImmutable::parse($endDate)->startOfDay();
+
+        // Carbon returns a float here, and a period is a whole number of days.
+        $days = (int) $start->diffInDays($end) + 1;
+
+        $previousEnd = $start->subDay();
+        $previousStart = $previousEnd->subDays($days - 1);
+
+        $sales = Sale::completed()->dateRange(
+            $previousStart->toDateString(),
+            $previousEnd->toDateString(),
+        );
+
+        $previous = [
+            'revenue' => (float) $sales->sum('total'),
+            'transactions' => (float) $sales->count(),
+            'discounts' => (float) $sales->sum('discount'),
+            'profit' => (float) (SaleItem::whereHas(
+                'sale',
+                fn ($q) => $q->completed()->dateRange(
+                    $previousStart->toDateString(),
+                    $previousEnd->toDateString(),
+                ),
+            )->selectRaw('SUM((selling_price - cost_price) * quantity) as profit')
+                ->value('profit') ?? 0),
+        ];
+
+        return [
+            'start_date' => $previousStart->toDateString(),
+            'end_date' => $previousEnd->toDateString(),
+            'days' => $days,
+            'previous' => $previous,
+            'change' => [
+                'revenue' => $this->percentChange($previous['revenue'], $current['revenue']),
+                'transactions' => $this->percentChange($previous['transactions'], $current['transactions']),
+                'profit' => $this->percentChange($previous['profit'], $current['profit']),
+                'discounts' => $this->percentChange($previous['discounts'], $current['discounts']),
+            ],
+        ];
+    }
+
+    /**
+     * Percentage change, or null when there is nothing to compare against.
+     *
+     * Null rather than 100% for a previous period of zero: going from no
+     * sales to some sales is not a percentage, and printing "+100%" for the
+     * first week a shop was open is a made-up number.
+     */
+    private function percentChange(float $before, float $after): ?float
+    {
+        if ($before <= 0.0) {
+            return null;
+        }
+
+        return round((($after - $before) / $before) * 100, 1);
     }
 
     /**

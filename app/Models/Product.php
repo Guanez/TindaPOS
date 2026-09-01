@@ -124,6 +124,31 @@ class Product extends Model
     }
 
     /**
+     * Everything a customer should SEE on the menu, which is more than what
+     * they can order: an item that has sold out today is still part of what
+     * this shop is, and a customer who cannot find their usual has no way to
+     * tell "sold out" from "we stopped making it". `is_active` is the line —
+     * that one means taken off the menu.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeOnMenu(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Can this be ordered right now?
+     */
+    public function isSellable(): bool
+    {
+        return $this->is_active
+            && $this->is_available
+            && (! $this->track_stock || $this->stock_quantity > 0);
+    }
+
+    /**
      * @param  Builder<Product>  $query
      * @return Builder<Product>
      */

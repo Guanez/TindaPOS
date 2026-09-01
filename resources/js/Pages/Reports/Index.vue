@@ -82,6 +82,40 @@ watch(dailyDate, fetchDaily);
 const rangeFrom = ref(today());
 const rangeTo = ref(today());
 const rangeData = ref(props.rangeReport);
+
+/*
+ * The four figures worth comparing, with their direction of "good".
+ *
+ * Discounts are the one that inverts: more of them is not an improvement, so
+ * a rise there is red where a rise in revenue is green. Colouring every
+ * increase green is how a dashboard ends up congratulating a shop for giving
+ * money away.
+ */
+const comparisonRows = computed(() => {
+    const c = rangeData.value?.comparison;
+    if (!c) return [];
+
+    const row = (key, label, format, higherIsBetter = true) => {
+        const change = c.change[key];
+        return {
+            key,
+            label,
+            now: format(rangeData.value[key] ?? 0),
+            before: format(c.previous[key] ?? 0),
+            change,
+            good: change === null ? true : (higherIsBetter ? change >= 0 : change <= 0),
+        };
+    };
+
+    const count = (n) => String(Math.round(n));
+
+    return [
+        row('revenue', 'Revenue', money),
+        row('transactions', 'Transactions', count),
+        row('profit', 'Profit', money),
+        row('discounts', 'Discounts', money, false),
+    ];
+});
 const rangeLoading = ref(false);
 
 const fetchRange = () => {
@@ -307,6 +341,44 @@ watch(currentTab, (tab) => {
                         <StatCard label="Transactions" :value="rangeData.transactions ?? 0" :icon="ReceiptPercentIcon" />
                         <StatCard label="Total Profit" :value="money(rangeData.profit ?? 0)" :icon="ArrowTrendingUpIcon" color="success" />
                         <StatCard label="Avg per Day" :value="money(rangeData.daily?.length ? (rangeData.revenue ?? 0) / rangeData.daily.length : 0)" :icon="ArrowTrendingDownIcon" />
+                    </div>
+
+                    <!--
+                        Against the same span of days immediately before.
+                        ₱48,000 is a good week or a bad one entirely depending
+                        on the week before it, and that is the comparison an
+                        owner is making in their head regardless.
+                    -->
+                    <div v-if="rangeData.comparison" class="card p-6">
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                            <h2 class="text-body font-bold text-ink-1">Compared with the previous {{ rangeData.comparison.days }} days</h2>
+                            <p class="text-meta tabular-nums text-ink-3">
+                                {{ rangeData.comparison.start_date }} &ndash; {{ rangeData.comparison.end_date }}
+                            </p>
+                        </div>
+
+                        <dl class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                            <div v-for="row in comparisonRows" :key="row.key">
+                                <dt class="text-label font-semibold uppercase tracking-wider text-ink-3">{{ row.label }}</dt>
+                                <dd class="mt-1 flex items-baseline gap-2">
+                                    <span class="text-title font-bold tabular-nums text-ink-1">{{ row.now }}</span>
+                                    <span
+                                        v-if="row.change !== null"
+                                        class="text-meta font-bold tabular-nums"
+                                        :class="row.good ? 'text-ready-ink' : 'text-stop-ink'"
+                                    >{{ row.change > 0 ? '+' : '' }}{{ row.change }}%</span>
+                                </dd>
+                                <dd class="mt-0.5 text-meta tabular-nums text-ink-3">
+                                    <template v-if="row.change !== null">was {{ row.before }}</template>
+                                    <!--
+                                        No percentage against a period with
+                                        nothing in it. "+100%" for a shop's
+                                        first week is a made-up number.
+                                    -->
+                                    <template v-else>nothing to compare</template>
+                                </dd>
+                            </div>
+                        </dl>
                     </div>
 
                     <!-- Payment Methods -->

@@ -31,6 +31,10 @@ class PublicMenuResource extends JsonResource
             'category_id' => $this->category_id,
             'price_from' => $this->selling_price,
             'is_favorite' => $this->is_favorite,
+            // A boolean, never a count. Whether they can order it is the
+            // customer's question; "three left" is the shop's business and
+            // invites a race for the last one.
+            'is_available' => $this->resource->isSellable(),
             'variants' => $this->whenLoaded('variants', fn () => $this->variants
                 ->where('is_active', true)
                 ->values()

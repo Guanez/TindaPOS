@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Http\Requests\PlaceOrderRequest;
 use App\Http\Resources\PublicMenuResource;
 use App\Models\Category;
@@ -42,8 +43,11 @@ class PublicOrderController extends Controller
     {
         $store = $this->store($request);
 
+        // Everything on the menu, not everything orderable — a sold-out item
+        // is shown and marked, because a gap where a customer's usual should
+        // be reads as "they stopped making it".
         $products = Product::with(['variants', 'modifierGroups.modifiers'])
-            ->sellable()
+            ->onMenu()
             ->orderBy('name')
             ->get();
 
@@ -54,7 +58,32 @@ class PublicOrderController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'products' => PublicMenuResource::collection($products),
-        ]);
+        ])->withViewData(['og' => $this->openGraph($store)]);
+    }
+
+    /**
+     * The link preview for this shop's menu.
+     *
+     * Passed to the Blade layout rather than set from Vue: the crawlers that
+     * build preview cards do not run JavaScript, and pasting the menu link
+     * into a Facebook post is the most likely way this ever gets shared.
+     *
+     * @return array<string, string|null>
+     */
+    private function openGraph(Store $store): array
+    {
+        $description = $store->address !== null
+            ? "Order ahead from {$store->name} on {$store->address}. Pay at the counter and we'll tell you when it's ready."
+            : "Order ahead from {$store->name}. Pay at the counter and we'll tell you when it's ready.";
+
+        return [
+            'title' => "Order from {$store->name}",
+            'description' => $description,
+            'url' => route('public.menu', $store->slug),
+            // The shop's own logo, so the card carries the cafe rather than
+            // this application. Absent is handled by the layout.
+            'image' => StoreLogoService::url($store->logo_path),
+        ];
     }
 
     /**
@@ -88,6 +117,23 @@ class PublicOrderController extends Controller
             'order' => fn () => $this->orderPayload($order->fresh(['items.modifiers'])),
             'store' => $this->storePayload($store),
         ]);
+    }
+
+    /**
+     * The customer changing their mind, which is only theirs to do until they
+     * pay. OrderService holds that rule; a cancel that arrives after the
+     * cashier has settled raises InvalidOrderTransitionException, which the
+     * global handler turns into an error on the page they are already looking
+     * at — so they find out the order is being made rather than watching a
+     * paid order disappear.
+     */
+    public function cancel(string $token): RedirectResponse
+    {
+        $order = $this->findByToken($token);
+
+        $this->orderService->cancel($order);
+
+        return redirect()->route('public.status', $token);
     }
 
     private function findByToken(string $token): Order
@@ -127,12 +173,41 @@ class PublicOrderController extends Controller
             // this says what to do about it rather than hiding the page.
             'is_open' => $store->isOpenNow(),
             'next_opening' => $store->nextOpening(),
+            // Shown on the menu as "usually ready in about N minutes", which
+            // is the question a customer has before they order rather than
+            // after. Null for a shop that has not said, and then nothing is
+            // claimed on its behalf.
+            'prep_minutes' => $store->prep_minutes,
             // The whole palette, derived from the one colour the shop chose
             // and emitted as token overrides. Only ever on these pages: a
             // cashier working two shops should not have the till change
             // colour between shifts.
             'brand_css' => AccentPalette::css($store->accent),
         ];
+    }
+
+    /**
+     * How much longer, roughly — or null when there is nothing honest to say.
+     *
+     * Only while it is being made: before payment nothing has started, and
+     * once it is ready the number is no longer a question. Floors at zero
+     * rather than going negative, because "ready in -3 minutes" is worse than
+     * saying nothing, and the page reads 0 as "any moment now".
+     */
+    private function readyInMinutes(Order $order): ?int
+    {
+        $prep = $order->store?->prep_minutes;
+
+        if ($order->status !== OrderStatus::Paid || $prep === null || $order->paid_at === null) {
+            return null;
+        }
+
+        // Rounded UP from seconds. Working in whole minutes would report an
+        // eight-minute wait as seven the instant it was paid for, because a
+        // fraction of a minute has already elapsed by then.
+        $remaining = ($prep * 60) - $order->paid_at->diffInSeconds(now());
+
+        return (int) max(0, ceil($remaining / 60));
     }
 
     /**
@@ -157,6 +232,11 @@ class PublicOrderController extends Controller
             'item_count' => $order->item_count,
             'placed_at' => $order->placed_at,
             'reject_reason' => $order->reject_reason,
+            // Minutes left, computed here rather than sent as a timestamp for
+            // the phone to subtract from. A customer's clock can be minutes
+            // out and they would never know it; the page already re-asks
+            // every five seconds, so the server's answer is always fresh.
+            'ready_in_minutes' => $this->readyInMinutes($order),
             'items' => $items->map(fn (OrderItem $item) => [
                 'id' => $item->id,
                 'name' => $item->product_name,

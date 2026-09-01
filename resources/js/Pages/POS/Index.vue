@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
 import Dialog from '@/Components/Dialog.vue';
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
+import Receipt from '@/Components/Receipt.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
@@ -17,7 +18,6 @@ import {
     BanknotesIcon,
     DevicePhoneMobileIcon,
     ArrowPathIcon,
-    CheckCircleIcon,
     CubeIcon,
     PrinterIcon,
 } from '@heroicons/vue/24/outline';
@@ -749,72 +749,13 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
             headerless
             @close="closeReceipt"
         >
-            <div v-if="lastSale" id="receipt">
-                <div class="text-center">
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ready-tint print:hidden">
-                        <CheckCircleIcon class="h-7 w-7 text-ready-ink" aria-hidden="true" />
-                    </div>
-                    <h2 class="mt-3 text-title font-bold text-ink-1 print:mt-0">
-                        {{ store.name || 'Sale Complete' }}
-                    </h2>
-                    <p v-if="store.address" class="text-meta leading-snug text-ink-3">{{ store.address }}</p>
-                    <p v-if="store.phone" class="text-meta text-ink-3">{{ store.phone }}</p>
-
-                    <p class="mt-2 font-mono text-ui text-ink-3">{{ lastSale.receipt_number }}</p>
-                    <p class="text-meta text-ink-3">
-                        {{ receiptPrintedAt }}<span v-if="page.props.auth?.user"> &middot; {{ page.props.auth.user.name }}</span>
-                    </p>
-                </div>
-
-                <!-- What was actually sold -->
-                <ul v-if="lastSale.items?.length" class="mt-4 space-y-1.5 border-t border-line pt-3">
-                    <li v-for="item in lastSale.items" :key="item.id" class="flex items-start gap-2 text-meta">
-                        <span class="font-semibold tabular-nums text-ink-3">{{ item.quantity }}&times;</span>
-                        <span class="min-w-0 flex-1 text-ink-2">
-                            {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
-                            <span v-if="item.modifiers?.length" class="block text-meta text-ink-3">
-                                + {{ item.modifiers.map(m => m.name).join(', ') }}
-                            </span>
-                        </span>
-                        <span class="tabular-nums text-ink-2">{{ money(item.line_total) }}</span>
-                    </li>
-                </ul>
-
-                <div class="mt-5 space-y-2 rounded-control bg-surface-2 p-4 text-ui">
-                    <div class="flex justify-between text-ink-3">
-                        <span>Items</span>
-                        <span class="font-medium text-ink-2">{{ lastSale.item_count }}</span>
-                    </div>
-                    <div class="flex justify-between text-ink-3">
-                        <span>Subtotal</span>
-                        <span class="text-ink-2">{{ money(lastSale.subtotal) }}</span>
-                    </div>
-                    <div v-if="parseFloat(lastSale.discount) > 0" class="flex justify-between text-ready-ink">
-                        <span>Discount</span>
-                        <span>-{{ money(lastSale.discount) }}</span>
-                    </div>
-                    <div class="flex justify-between border-t border-line pt-2 text-title font-bold text-ink-1">
-                        <span>Total</span>
-                        <span>{{ money(lastSale.total) }}</span>
-                    </div>
-                    <div class="flex justify-between text-ink-3">
-                        <span>Payment</span>
-                        <span class="font-medium text-ink-2">{{ lastSale.payment_method?.toUpperCase() }}</span>
-                    </div>
-                    <div v-if="lastSale.cash_received" class="flex justify-between text-ink-3">
-                        <span>Cash Received</span>
-                        <span class="text-ink-2">{{ money(lastSale.cash_received) }}</span>
-                    </div>
-                    <div v-if="lastSale.change_amount" class="flex justify-between font-bold text-ready-ink">
-                        <span>Change</span>
-                        <span>{{ money(lastSale.change_amount) }}</span>
-                    </div>
-                </div>
-
-                <p v-if="store.receipt_footer" class="mt-4 text-center text-meta italic text-ink-3">
-                    {{ store.receipt_footer }}
-                </p>
-            </div>
+            <Receipt
+                v-if="lastSale"
+                :sale="lastSale"
+                :store="store"
+                :cashier-name="page.props.auth?.user?.name ?? null"
+                :printed-at="receiptPrintedAt"
+            />
 
             <template #footer>
                 <div class="flex gap-2 print:hidden">
@@ -841,20 +782,3 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
         </Dialog>
     </AppLayout>
 </template>
-
-<style>
-/* Printing from the till should produce the receipt, nothing else. */
-@media print {
-    body * { visibility: hidden; }
-    #receipt, #receipt * { visibility: visible; }
-    #receipt {
-        position: absolute;
-        inset: 0 auto auto 0;
-        width: 100%;
-        max-width: none;
-        box-shadow: none;
-        padding: 0;
-    }
-    @page { margin: 8mm; }
-}
-</style>

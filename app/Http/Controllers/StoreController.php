@@ -38,7 +38,7 @@ class StoreController extends Controller
                 ...$store->only([
                     'id', 'name', 'slug', 'type', 'address', 'phone',
                     'receipt_footer', 'currency_symbol', 'online_ordering_enabled',
-                    'accent', 'hours',
+                    'accent', 'hours', 'prep_minutes',
                 ]),
                 'logo_url' => StoreLogoService::url($store->logo_path),
                 // So the form can show the shop what its own hours currently

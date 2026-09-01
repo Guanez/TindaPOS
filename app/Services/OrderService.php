@@ -164,6 +164,22 @@ class OrderService
         });
     }
 
+    /**
+     * The customer changed their mind before paying.
+     *
+     * No user, because there is no signed-in one — the token they hold is the
+     * authorisation, the same as it is for reading the page. The transition
+     * guard is what keeps this honest: once an order is paid it is being
+     * made, and cancelling it stops being the customer's to do. A cancel that
+     * arrives a second after the cashier settles loses, and the customer is
+     * told the order is already being prepared rather than silently having a
+     * paid order vanish from the queue.
+     */
+    public function cancel(Order $order): Order
+    {
+        return $this->advance($order, OrderStatus::Cancelled);
+    }
+
     public function markReady(Order $order): Order
     {
         return $this->advance($order, OrderStatus::Ready, ['ready_at' => now()]);

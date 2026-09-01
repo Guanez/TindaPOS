@@ -40,6 +40,12 @@ Route::get('/o/{token}', [PublicOrderController::class, 'status'])
     ->middleware('throttle:120,1')
     ->name('public.status');
 
+// Cancelling is the customer's, but only until they pay — after that someone
+// is making it. The guard lives in OrderService, not here.
+Route::post('/o/{token}/cancel', [PublicOrderController::class, 'cancel'])
+    ->middleware('throttle:20,1')
+    ->name('public.orders.cancel');
+
 // ─── Platform: the landlord's own screens ────────────
 // Above tenancy rather than inside it. `platform` insists on a super admin
 // with no store of their own, which is what makes the unscoped queries in
@@ -86,6 +92,15 @@ Route::middleware(['auth', 'active', 'store.active', 'store.selected'])->group(f
 
     // Sales History (all roles)
     Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
+
+    // Export (managers only). The screen is open to everyone because a
+    // cashier needs to look a receipt up; pulling the whole history out as a
+    // file is a different act, and it belongs with the other manager tools.
+    // Declared before /sales/{sale} so "export" is not read as an id.
+    Route::get('/sales/export', [SalesController::class, 'export'])
+        ->middleware(['role:owner,admin', 'throttle:6,1'])
+        ->name('sales.export');
+
     Route::get('/sales/{sale}', [SalesController::class, 'show'])->name('sales.show');
 
     // Sales void (managers only)
