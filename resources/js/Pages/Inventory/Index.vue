@@ -279,7 +279,7 @@ const goToPage = (url) => {
             <!-- Header -->
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-ink-1">{{ words.catalogue }}</h1>
+                    <h1 class="text-heading font-bold tracking-tight text-ink-1">{{ words.catalogue }}</h1>
                     <p class="mt-0.5 text-ui text-ink-3">Manage your products and stock levels</p>
                 </div>
                 <button

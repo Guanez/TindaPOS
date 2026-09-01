@@ -158,7 +158,7 @@ const subline = computed(() => {
                     <XCircleIcon v-else-if="isRejected" class="h-9 w-9 text-ink-3" aria-hidden="true" />
                     <ClockIcon v-else class="h-9 w-9 text-accent-ink" aria-hidden="true" />
 
-                    <h1 class="text-xl font-bold text-ink-1">{{ headline }}</h1>
+                    <h1 class="text-heading font-bold text-ink-1">{{ headline }}</h1>
                     <p class="text-ui leading-snug text-ink-3">{{ subline }}</p>
                 </div>
 
@@ -211,7 +211,7 @@ const subline = computed(() => {
 
                 <div class="mt-3 flex items-baseline justify-between border-t border-line pt-3">
                     <span class="text-ui font-semibold text-ink-3">Total</span>
-                    <span class="text-xl font-bold tabular-nums text-ink-1">{{ money(order.total) }}</span>
+                    <span class="text-title font-bold tabular-nums text-ink-1">{{ money(order.total) }}</span>
                 </div>
 
                 <p v-if="order.note" class="mt-3 rounded-control bg-surface-2 px-3 py-2 text-meta italic text-ink-3">

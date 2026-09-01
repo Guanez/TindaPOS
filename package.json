@@ -5,8 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "lint:tokens": "node scripts/check-tokens.mjs",
-        "lint:tokens:accept": "node scripts/check-tokens.mjs --update-baseline"
+        "lint:tokens": "node scripts/check-tokens.mjs"
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",

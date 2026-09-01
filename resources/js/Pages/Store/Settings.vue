@@ -180,7 +180,7 @@ const copyLink = async () => {
 
         <div class="space-y-5">
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-ink-1">Store Settings</h1>
+                <h1 class="text-heading font-bold tracking-tight text-ink-1">Store Settings</h1>
                 <p class="mt-0.5 text-ui text-ink-3">Your shop's details and its customer ordering code</p>
             </div>
 

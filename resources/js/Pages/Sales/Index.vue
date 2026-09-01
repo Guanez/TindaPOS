@@ -101,7 +101,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
         <div class="space-y-5">
             <!-- Header -->
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-ink-1">Sales History</h1>
+                <h1 class="text-heading font-bold tracking-tight text-ink-1">Sales History</h1>
                 <p class="mt-0.5 text-ui text-ink-3">View and manage all transactions</p>
             </div>
 

@@ -2,8 +2,7 @@
 # colour or a size. A reviewer will not catch a `text-sm` in a forty-line
 # diff, so the check runs here instead.
 #
-# It fails on NEW violations only — the known ones are recorded in
-# scripts/token-baseline.json and are being swept in stages.
+# The count is zero, so this fails on any violation at all.
 name: Design tokens
 
 on:

@@ -42,7 +42,7 @@ const confirmSuspension = () => {
             <!-- Header -->
             <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h2 class="text-xl font-bold tracking-tight text-ink-1">Client stores</h2>
+                    <h2 class="text-heading font-bold tracking-tight text-ink-1">Client stores</h2>
                     <p class="mt-0.5 text-ui text-ink-3">
                         Every shop running on TindaPOS.
                     </p>
@@ -61,19 +61,19 @@ const confirmSuspension = () => {
             <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div class="rounded-card bg-surface-1 p-4 shadow-rest">
                     <p class="text-label font-bold uppercase tracking-widest text-ink-3">Stores</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-ink-1">{{ totals.stores ?? 0 }}</p>
+                    <p class="mt-1 text-heading font-bold tabular-nums text-ink-1">{{ totals.stores ?? 0 }}</p>
                 </div>
                 <div class="rounded-card bg-surface-1 p-4 shadow-rest">
                     <p class="text-label font-bold uppercase tracking-widest text-ink-3">Active</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-ready-ink">{{ totals.active ?? 0 }}</p>
+                    <p class="mt-1 text-heading font-bold tabular-nums text-ready-ink">{{ totals.active ?? 0 }}</p>
                 </div>
                 <div class="rounded-card bg-surface-1 p-4 shadow-rest">
                     <p class="text-label font-bold uppercase tracking-widest text-ink-3">Staff</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-ink-1">{{ totals.staff ?? 0 }}</p>
+                    <p class="mt-1 text-heading font-bold tabular-nums text-ink-1">{{ totals.staff ?? 0 }}</p>
                 </div>
                 <div class="rounded-card bg-surface-1 p-4 shadow-rest">
                     <p class="text-label font-bold uppercase tracking-widest text-ink-3">Revenue MTD</p>
-                    <p class="mt-1 text-2xl font-bold tabular-nums text-ink-1">{{ formatWith('₱', totals.revenue_month) }}</p>
+                    <p class="mt-1 text-heading font-bold tabular-nums text-ink-1">{{ formatWith('₱', totals.revenue_month) }}</p>
                 </div>
             </div>
 

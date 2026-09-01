@@ -258,7 +258,7 @@ const place = () => {
             />
             <p v-else class="text-label font-semibold uppercase tracking-widest text-accent-ink">Order ahead</p>
 
-            <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
+            <h1 class="mt-1 text-heading font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
             <p v-if="store.address" class="mt-0.5 text-ui text-ink-3">{{ store.address }}</p>
 
             <!--

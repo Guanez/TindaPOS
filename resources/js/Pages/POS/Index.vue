@@ -371,7 +371,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         <div class="flex h-14 w-14 items-center justify-center rounded-card bg-surface-2">
                             <MagnifyingGlassIcon class="h-7 w-7 text-ink-3" />
                         </div>
-                        <p class="mt-3 text-sm font-medium text-ink-3">No products found</p>
+                        <p class="mt-3 text-ui font-medium text-ink-3">No products found</p>
                     </div>
 
                     <div v-else class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -404,7 +404,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             />
 
                             <p class="text-ui font-semibold leading-tight text-ink-1">{{ product.name }}</p>
-                            <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-ink-1">
+                            <p class="mt-1.5 text-title font-bold tabular-nums tracking-tight text-ink-1">
                                 <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.selling_price) }}
                             </p>
 
@@ -558,7 +558,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             <span>Discount</span>
                             <span>-{{ money(discountAmount) }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-line pt-2 text-lg font-bold text-ink-1">
+                        <div class="flex justify-between border-t border-line pt-2 text-title font-bold text-ink-1">
                             <span>Total</span>
                             <span>{{ money(total) }}</span>
                         </div>
@@ -566,7 +566,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                     <button
                         @click="openCheckout"
-                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg shadow-rest hover:bg-accent-hover active:scale-[0.98]" style="transition: background-color var(--t-fast), transform var(--t-fast);"
+                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-ui font-bold text-accent-fg shadow-rest hover:bg-accent-hover active:scale-[0.98]" style="transition: background-color var(--t-fast), transform var(--t-fast);"
                     >
                         <CreditCardIcon class="h-4 w-4" aria-hidden="true" />
                         Checkout &mdash; {{ money(total) }}

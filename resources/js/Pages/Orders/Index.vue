@@ -166,7 +166,7 @@ const waitingSince = (order) => {
             <!-- Header -->
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-ink-1">Order Queue</h1>
+                    <h1 class="text-heading font-bold tracking-tight text-ink-1">Order Queue</h1>
                     <p class="mt-0.5 text-ui text-ink-3">
                         Orders customers placed from the QR menu, updating live
                     </p>
@@ -199,7 +199,7 @@ const waitingSince = (order) => {
                             class="rounded-control border border-wait-mark/40 bg-surface-1 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
-                                <span class="text-lg font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
+                                <span class="text-title font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
                                 <span class="text-meta text-ink-3">
                                     <ClockIcon class="mr-0.5 inline h-3 w-3" aria-hidden="true" />{{ waitingSince(order) }}
                                 </span>
@@ -257,7 +257,7 @@ const waitingSince = (order) => {
                             class="rounded-control border border-line bg-surface-1 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
-                                <span class="text-lg font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
+                                <span class="text-title font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
                                 <span class="badge badge-success">Paid</span>
                             </div>
 
@@ -297,7 +297,7 @@ const waitingSince = (order) => {
                             class="rounded-control border border-ready-tint bg-ready-tint/30 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
-                                <span class="text-2xl font-bold tabular-nums text-ready-ink">#{{ order.queue_number }}</span>
+                                <span class="text-figure font-bold tabular-nums text-ready-ink">#{{ order.queue_number }}</span>
                                 <span v-if="order.customer_name" class="text-meta font-medium text-ink-2">{{ order.customer_name }}</span>
                             </div>
 

@@ -18,7 +18,7 @@ defineProps({
     <AppLayout>
         <div class="space-y-5">
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-ink-1">Profile</h1>
+                <h1 class="text-heading font-bold tracking-tight text-ink-1">Profile</h1>
                 <p class="mt-0.5 text-ui text-ink-3">Manage your account settings</p>
             </div>
 

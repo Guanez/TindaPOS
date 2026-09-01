@@ -138,7 +138,7 @@ watch(currentTab, (tab) => {
         <div class="space-y-5">
             <!-- Header -->
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-ink-1">Reports</h1>
+                <h1 class="text-heading font-bold tracking-tight text-ink-1">Reports</h1>
                 <p class="mt-0.5 text-ui text-ink-3">Sales analytics and performance insights</p>
             </div>
 

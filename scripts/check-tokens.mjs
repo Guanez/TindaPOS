@@ -9,25 +9,18 @@
  * mechanism. Eighty-five of them had accumulated before anyone noticed the
  * customer pages were not growing on a phone.
  *
- * So the rule is enforced by a script rather than by remembering.
+ * The count is zero now, so this runs with no baseline: any violation fails.
+ * If a large batch ever needs grandfathering again, add the baseline back —
+ * do not weaken the rule to let one through.
  *
- * Usage:
- *   node scripts/check-tokens.mjs              # fail on anything new
- *   node scripts/check-tokens.mjs --update-baseline
- *
- * The baseline exists because the fix lands in stages: known violations are
- * recorded per file, and the check fails only when a count goes UP or a new
- * file appears. Lowering a count is free — the script tells you when the
- * baseline is looser than reality so it can be tightened as work lands.
- * When the baseline reaches zero it should be deleted along with this note.
+ *   npm run lint:tokens
  */
 
-import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BASELINE = join(ROOT, 'scripts', 'token-baseline.json');
 
 const SCAN = [
     { dir: 'resources/js', ext: '.vue' },
@@ -44,7 +37,21 @@ const RULES = [
         // Variant prefixes (`sm:`, `hover:`, `print:`) end in `:`, which \b treats
         // as a boundary, so `sm:text-lg` is caught by the same pattern.
         pattern: /\btext-(xs|sm|base|lg|xl|[2-9]xl)\b/g,
-        hint: 'use a type role: label meta ui body title heading figure hero',
+        hint: 'use a type role',
+        // How the sweep mapped them, so the next person makes the same call.
+        // The two judgement calls worth keeping: `figure` is the number a
+        // component exists to communicate — the queue number a barista reads
+        // across a counter — not any number; a summary tile in a grid takes
+        // `heading`, because 28px of peso figure clips in a four-up.
+        suggest: {
+            'text-xs': 'text-meta',
+            'text-sm': 'text-ui',
+            'text-base': 'text-body',
+            'text-lg': 'text-title',
+            'text-xl': 'text-heading',
+            'text-2xl': 'text-heading (text-figure if the number is the point)',
+            'text-3xl': 'text-figure',
+        },
     },
     {
         id: 'type-arbitrary',
@@ -114,6 +121,7 @@ for (const { dir, ext } of SCAN) {
                         rule: rule.id,
                         token: match[0],
                         hint: rule.hint,
+                        suggest: rule.suggest?.[match[0]],
                     });
                 }
             }
@@ -121,56 +129,25 @@ for (const { dir, ext } of SCAN) {
     }
 }
 
-/* Counts per file per rule — line numbers move under every edit, counts do not. */
-const tally = {};
-for (const f of findings) {
-    tally[f.file] ??= {};
-    tally[f.file][f.rule] = (tally[f.file][f.rule] ?? 0) + 1;
-}
-
-if (process.argv.includes('--update-baseline')) {
-    writeFileSync(BASELINE, `${JSON.stringify(tally, null, 4)}\n`);
-    const total = findings.length;
-    console.log(`Baseline written: ${total} known violation${total === 1 ? '' : 's'} across ${Object.keys(tally).length} file(s).`);
+if (!findings.length) {
+    console.log('\nDesign tokens: clean.\n');
     process.exit(0);
 }
 
-const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : {};
+console.error(`\n${findings.length} design-token violation(s):\n`);
 
-const regressions = findings.filter(
-    (f) => (tally[f.file][f.rule] ?? 0) > (baseline[f.file]?.[f.rule] ?? 0),
-);
+const byRule = {};
+for (const f of findings) (byRule[f.rule] ??= []).push(f);
 
-/* Where reality is now better than the baseline, say so — that is the point. */
-const improved = [];
-for (const [file, rules] of Object.entries(baseline)) {
-    for (const [rule, was] of Object.entries(rules)) {
-        const now = tally[file]?.[rule] ?? 0;
-        if (now < was) improved.push(`  ${file}  ${rule}  ${was} → ${now}`);
+for (const [rule, items] of Object.entries(byRule)) {
+    console.error(`  ${rule} — ${items[0].hint}`);
+    for (const f of items) {
+        const fix = f.suggest ? `  →  ${f.suggest}` : '';
+        console.error(`    ${f.file}:${f.line}  ${f.token}${fix}`);
     }
+    console.error('');
 }
 
-if (regressions.length) {
-    console.error(`\n${regressions.length} new design-token violation(s):\n`);
-    const byRule = {};
-    for (const f of regressions) (byRule[f.rule] ??= []).push(f);
-    for (const [rule, items] of Object.entries(byRule)) {
-        console.error(`  ${rule} — ${items[0].hint}`);
-        for (const f of items) console.error(`    ${f.file}:${f.line}  ${f.token}`);
-        console.error('');
-    }
-    console.error('If a violation is genuinely correct, add it to EXEMPT in this script');
-    console.error('with the reason, rather than raising the baseline.\n');
-    process.exit(1);
-}
-
-if (improved.length) {
-    console.log('\nBaseline is looser than the code — run with --update-baseline to lock the gains in:');
-    console.log(improved.join('\n'));
-}
-
-const remaining = Object.values(tally).reduce(
-    (sum, rules) => sum + Object.values(rules).reduce((a, b) => a + b, 0),
-    0,
-);
-console.log(`\nNo new violations. ${remaining} known violation(s) still to sweep.\n`);
+console.error('If a violation is genuinely correct, add it to EXEMPT in this script');
+console.error('with the reason.\n');
+process.exit(1);

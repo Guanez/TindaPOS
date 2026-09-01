@@ -61,7 +61,7 @@ const goToPage = (url) => {
                             <ArrowLeftIcon aria-hidden="true" class="h-4 w-4" />
                         </Link>
                         <div>
-                            <h1 class="text-xl font-bold tracking-tight text-ink-1">Stock Logs</h1>
+                            <h1 class="text-heading font-bold tracking-tight text-ink-1">Stock Logs</h1>
                             <p class="mt-0.5 text-ui text-ink-3">Audit trail of all stock movements</p>
                         </div>
                     </div>

@@ -88,7 +88,7 @@ const roleClass = (role) => ({
         <div class="space-y-5">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-ink-1">Staff</h1>
+                    <h1 class="text-heading font-bold tracking-tight text-ink-1">Staff</h1>
                     <p class="mt-0.5 text-ui text-ink-3">Who can sign in to this store</p>
                 </div>
 
