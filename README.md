@@ -1,118 +1,229 @@
 # TindaPOS
 
-A modern, full-featured Point of Sale system built for Philippine **sari-sari stores** (neighborhood convenience shops). Designed for simplicity, speed, and real-world reliability.
+A point of sale and QR ordering system for small Philippine shops — a café where
+customers scan a code on the table and order ahead, or a sari-sari store running
+a counter. One application serves many shops, and the wording, palette, currency
+and menu change to match whichever shop you are standing in.
+
+There are three surfaces:
+
+- **The customer's phone** — a menu reached by scanning a code, a basket that
+  survives being put in a pocket, and a status page that buzzes when the order
+  is ready. No app, no account, no card details.
+- **The shop** — a till, an order queue, inventory, sales history and reports,
+  for owners, admins and cashiers.
+- **The platform console** — for whoever runs the installation, to create client
+  shops and step into one when something needs fixing.
+
+---
+
+## How an order actually flows
+
+```
+customer scans        staff see it            payment starts
+the code       ──>    on the queue     ──>    preparation      ──>   ready
+  /s/{shop}           within 5s              (becomes a sale)      (phone buzzes)
+```
+
+An order is **not** a sale. It becomes one at the moment it is paid for at the
+counter — that is when stock moves and revenue is recorded. Until then it is a
+request that can be rejected, cancelled by the customer, or left to expire.
+
+```
+placed ──> paid ──> ready ──> collected
+  │          └──────────────> collected    (nothing to prepare)
+  ├──> rejected     (staff refused it, with a reason)
+  ├──> cancelled    (customer changed their mind, before paying)
+  └──> expired      (nobody came to the till — swept every 5 minutes)
+```
+
+Each order gets a queue number that resets daily per shop, and an unguessable
+token that is the customer's address for it. There is no login on the customer
+side; the token is the authorisation.
 
 ---
 
 ## Features
 
-### POS Terminal
-- Fast product search by name, SKU, or barcode
-- Category filter pills for quick navigation
-- Real-time cart management with quantity controls
-- Discount support and multiple payment methods (Cash, GCash, Maya, Card, Other)
-- Automatic change calculation for cash payments
-- Receipt view after each transaction
-- Cart persistence across page refreshes (localStorage)
+### Customer ordering (QR)
 
-### Inventory Management
-- Full CRUD for products with cost/selling price tracking
-- Category-based organization
-- Stock level monitoring with configurable low-stock thresholds
-- Restock operations with audit logging
-- Soft-delete (deactivate) products to preserve sales history
+- A menu at `/s/{shop-slug}`, reached by scanning a printed card
+- Sections with a sticky rail that moves you through the menu rather than
+  filtering it, plus a search box for when you already know what you want
+- Sold-out items stay visible and marked, so a missing favourite reads as
+  "gone for today" rather than "no longer made"
+- Variants (sizes) and modifier groups (extras), priced as you choose them
+- A basket kept on the phone, per shop, that survives being backgrounded
+- Opening hours: outside them the menu still reads, but says when you can order
+- A status page that polls, announces itself to screen readers, and vibrates
+  and chimes the moment the order is ready
+- An estimate — "about 6 minutes to go" — counted down while it is being made
+- Cancel before paying
+- Link previews carry the shop's own name and logo when a menu URL is shared
 
-### Sales History
-- Filterable sales list (date range, status, payment method)
-- Sale detail modal with full item breakdown
-- Sale voiding with mandatory reason and stock restoration
-- Role-restricted void access (owner/admin only)
+### Point of sale
 
-### Reports & Analytics
-- **Daily Report**: Revenue, transactions, profit, discounts with hourly sales chart
-- **Date Range Report**: Multi-day aggregate with daily breakdown table and payment method distribution
-- **Top Products**: Ranked product performance by quantity sold
+- Search by name, SKU or barcode; category filters; keyboard shortcuts
+- Variants and modifiers, discounts, and five payment methods
+- Automatic change calculation, with a receipt that prints
+- A cart that survives a refresh
+- Lays out for a tablet as well as a desktop terminal
 
-### Roles & Access Control
-- Three roles: **Owner**, **Admin**, **Cashier**
-- Role-based access control on routes and UI elements
-- Cashiers see POS + Sales; Managers see Inventory, Reports, full Dashboard
-- Cost price hidden from non-manager roles via API Resources
-- Accounts are provisioned by seeder or tinker — there is no in-app user
-  management screen yet (see [Roadmap](#roadmap))
+### Order queue
+
+- Today's orders in three columns: awaiting payment, being made, ready
+- Settling an order turns it into a sale and moves stock, in one transaction
+- A chime for genuinely new arrivals — it watches for an arrival, not for a
+  count going up, so an order settled and another placed in the same moment
+  still sounds
+- The unacknowledged count is shared with every screen, so a cashier on the
+  till still sees an order arrive
+
+### Inventory
+
+- Products with cost and selling price, categories, images
+- Variants and modifier groups
+- Stock tracking with configurable low-stock thresholds, and restocking with
+  an audit log
+- Deactivating rather than deleting, so sales history stays intact
+
+### Sales and reports
+
+- Filterable sales history with a detail view, reprint, and CSV export
+- Voiding with a mandatory reason and stock restoration (managers only)
+- Daily, date-range and top-product reports
+- Every range report compares against the same span of days before it
+
+### Shops, staff and the platform
+
+- Staff accounts managed in-app: three roles, **Owner**, **Admin**, **Cashier**
+- Store settings: name, address, currency symbol, receipt footer, opening
+  hours, preparation time, accent colour, logo, and the ordering switch
+- Cost prices and profit never reach a cashier — the figures are not computed
+  for them, rather than computed and hidden in the markup
+- A platform console above tenancy for creating client shops and impersonating
+  one, with a banner that never lets you forget whose till you are in
 
 ---
 
-## Tech Stack
+## Design system
+
+The interface is built on tokens rather than utility values, and that is
+load-bearing rather than decorative.
+
+**Type is expressed as roles, not sizes.** `text-ui` means "the workhorse size
+for a control", not 13px. Each of the eight roles — `label meta ui body title
+heading figure hero` — carries two values: one for a counter terminal and one
+for a phone. A single `data-density` attribute on `<html>` switches the whole
+scale, so a customer reading a menu gets larger text than a cashier at a
+terminal, from the same components. No component asks which side of the counter
+it is on.
+
+**Colour is semantic.** Screens reach for `surface` `ink` `line` `action`
+`accent` `identity` and the reserved order-state trios `wait` `ready` `stop`,
+never a raw ramp step. That is what makes a palette change one file rather than
+an audit — and what makes the dark theme a block of values rather than a second
+stylesheet.
+
+**Three themes**: light, dark and follow-the-device, stamped before first paint
+so a late shift never gets a white flash on the way into a dark till.
+
+**Per-shop branding**: a café picks one hex colour and the whole accent palette
+is derived from it — tint, hairline, and a readable text variant — then applied
+to the customer pages only. A cashier working two shops sees the same till in
+both.
+
+All of this is enforced rather than remembered:
+
+```bash
+npm run lint:tokens
+```
+
+fails on a raw Tailwind size, a raw palette colour, `text-white`, an inert
+shadow, or a removed alias, and prints the role to use instead. It runs in CI.
+
+---
+
+## Vocabulary
+
+A café has a **Menu**; a sari-sari store has **Inventory**. The same screens
+say different words depending on the shop's type, resolved server-side from the
+store in context. Stepping into a client café switches the wording to theirs.
+
+---
+
+## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
 | **Backend** | Laravel 12, PHP 8.2+ |
 | **Frontend** | Vue 3 (Composition API + `<script setup>`) |
 | **Bridge** | Inertia.js v2 (SPA-like, no API needed) |
-| **Styling** | Tailwind CSS 3 with custom design tokens |
-| **Auth** | Laravel Breeze + Sanctum (session-based) |
+| **Styling** | Tailwind CSS 3 over a CSS custom property token layer |
+| **Auth** | Laravel Breeze + Sanctum, session-based, username not email |
 | **Build** | Vite 7 |
 | **Database** | SQLite (default) — MySQL 8+ / PostgreSQL also supported |
 | **Icons** | Heroicons (Vue) |
+
+Multi-tenancy is enforced by a global Eloquent scope plus middleware, not by
+remembering to add a `where` clause. Live updates are polling, not websockets —
+iOS only delivers web push to home-screen installs, so a notification would
+silently never arrive for a large share of customers.
 
 ---
 
 ## Requirements
 
-- PHP 8.2+ with the **GD** extension (product image resizing)
+- PHP 8.2+ with the **GD** extension (image resizing)
 - Composer 2+
 - Node.js 18+ / npm 9+
-- SQLite (bundled with PHP) — or MySQL 8.0+ / PostgreSQL if you prefer
+- SQLite (bundled with PHP) — or MySQL 8.0+ / PostgreSQL
 
 ---
 
 ## Installation
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/tindapos.git
-cd tindapos
+git clone https://github.com/Guanez/TindaPOS.git
+cd TindaPOS
 
-# 2. Install PHP dependencies
 composer install
-
-# 3. Install JS dependencies
 npm install
 
-# 4. Environment setup
 cp .env.example .env
 php artisan key:generate
 
-# 5. Database — SQLite works out of the box:
-#    DB_CONNECTION=sqlite
-#    DB_DATABASE=database/database.sqlite
-#    (create the file with: touch database/database.sqlite)
-#
-#    For MySQL instead, set DB_CONNECTION=mysql plus DB_DATABASE/USERNAME/PASSWORD.
+# SQLite works out of the box:
+#   DB_CONNECTION=sqlite
+#   DB_DATABASE=database/database.sqlite
+#   (create it with: touch database/database.sqlite)
 
-# 6. Run migrations and seed demo data
 php artisan migrate --seed
+php artisan storage:link      # images and logos 404 without this
 
-# 7. Link public storage (serves product images)
-php artisan storage:link
+npm run build                 # or: npm run dev
 
-# 8. Build frontend assets
-npm run build       # Production
-# OR
-npm run dev         # Development (with HMR)
-
-# 9. Start the server
 php artisan serve
 ```
 
-Visit **http://localhost:8000** and log in.
+Visit **http://localhost:8000** and sign in.
+
+**Set `APP_URL` correctly before printing any QR code.** The code is built from
+it, and a card generated against `localhost` prints and scans perfectly — it
+just resolves to nothing on a customer's phone. That failure has no symptom
+until someone is standing at a counter.
+
+Expiring unpaid orders needs the scheduler running:
+
+```bash
+php artisan schedule:work     # or a real cron entry in production
+```
 
 ---
 
-## Default Accounts
+## Default accounts
 
-Sign in with the **username**, not the email address.
+Sign in with the **username**, not an email address.
 
 | Role | Username | Password |
 |------|----------|----------|
@@ -120,85 +231,113 @@ Sign in with the **username**, not the email address.
 | Admin | `admin` | `owner123` |
 | Cashier | `cashier` | `owner123` |
 
-> **Change all default passwords before deploying to production.**
+These are seeded for local development and are deliberately **not** shown on
+the login screen. Change them before deploying anywhere.
 
 ---
 
-## Project Structure
+## Testing
+
+```bash
+php artisan test          # feature and unit suites
+npm run lint:tokens       # design system guard
+```
+
+The feature suite covers tenancy isolation, the order lifecycle, the queue,
+public ordering, reachability of a printed QR, role-based data exposure,
+branding, opening hours, vocabulary, density and currency.
+
+---
+
+## Project structure
 
 ```
 app/
-├── Enums/          # PHP 8.1 backed enums (UserRole)
-├── Exceptions/     # Domain-specific exceptions
+├── Enums/            # OrderStatus, UserRole
+├── Exceptions/       # Domain exceptions, rendered to friendly page errors
 ├── Http/
-│   ├── Controllers/  # Thin controllers, service delegation
-│   ├── Middleware/    # Auth, role-checking, Inertia
-│   ├── Requests/     # Form Request validation classes
-│   └── Resources/    # API Resources (role-based field visibility)
-├── Models/         # Eloquent models with scopes & relationships
-├── Providers/
-└── Services/       # Business logic (SaleService, InventoryService, ReportService)
+│   ├── Controllers/  # Thin; business logic lives in services
+│   ├── Middleware/    # Tenancy, roles, public store resolution, Inertia
+│   ├── Requests/     # Form Request validation
+│   └── Resources/    # Field visibility by audience (PublicMenuResource)
+├── Models/
+│   └── Concerns/     # BelongsToStore — the tenancy scope
+├── Services/         # SaleService, OrderService, ReportService, AccentPalette
+└── Support/          # StoreContext, OpeningHours, StoreVocabulary
 
-resources/js/
-├── Components/     # Reusable Vue components (StatCard, StockBadge, etc.)
-├── Composables/    # Shared logic (formatPeso, debounce, etc.)
-├── Layouts/        # AppLayout with sidebar navigation
-└── Pages/          # Inertia page components
-    ├── Dashboard.vue
-    ├── POS/
-    ├── Sales/
-    ├── Inventory/
-    └── Reports/
+resources/
+├── css/app.css       # The token layer: every colour, size, radius, duration
+└── js/
+    ├── Components/   # Dialog, Receipt, StatCard, StockBadge…
+    ├── Composables/  # currency, vocabulary, theme, queue alert
+    ├── Layouts/      # AppLayout (shop), PlatformLayout (console)
+    └── Pages/
+        ├── Public/   # Menu, Status — the customer's phone
+        ├── POS/ Orders/ Inventory/ Sales/ Reports/ Users/ Store/
+        └── Platform/ # The landlord's console
 
-database/
-├── factories/      # Model factories for tests and demo data
-├── migrations/     # Schema definitions
-└── seeders/        # Demo data (users, categories, products)
+scripts/check-tokens.mjs   # The design system guard
 ```
+
+---
+
+## Accessibility
+
+- One dialog component for the whole app: focus goes in, stays in, and returns
+  to the control that opened it
+- Skip links, and the closed sidebar is `inert` rather than merely off-screen
+- Every chart has a data-table equivalent
+- The customer's status page announces itself through a live region
+- Contrast is checked against WCAG AA — the lightest ink role is 5.59:1 on
+  white, chosen over a lighter shade that measured 3.42:1 and failed
 
 ---
 
 ## Security
 
-- **CSRF Protection**: All mutations use Inertia's built-in CSRF token handling
-- **Rate Limiting**: Checkout (30/min) and void (10/min) endpoints are throttled
-- **Role-Based Access**: Middleware-enforced route protection for manager-only features
-- **Data Exposure Control**: API Resources hide sensitive fields (cost_price) from non-managers
-- **Input Validation**: Strict Form Request validation with bounds on all monetary/quantity fields
-- **SQL Injection Prevention**: Eloquent ORM with parameterized queries throughout
-- **Database Transactions**: Atomic checkout and void operations with `lockForUpdate()`
-- **Custom Exceptions**: Domain-specific exception handling prevents information leakage
+- **Tenancy**: a global scope plus middleware, so a query cannot forget it
+- **Public pages**: the ordering routes are the only ones without `auth`, and
+  the store is resolved from the URL by middleware that 404s a shop with
+  ordering switched off
+- **Order tokens**: unguessable, so one customer cannot walk another's order
+- **Prices are never trusted from the client**: a basket arrives as ids and
+  quantities, and every peso is recomputed from the shop's own menu
+- **Data exposure**: cost-derived figures are not computed for roles that may
+  not see them
+- **Rate limiting** on checkout, void, order placement, cancellation and export
+- **CSRF**, Form Request validation, Eloquent parameterisation throughout
+- **Transactions** with `lockForUpdate()` on checkout, settle and void
 
 ---
 
-## Production Deployment Checklist
+## Production checklist
 
-- [ ] Set `APP_ENV=production` and `APP_DEBUG=false` in `.env`
-- [ ] Change all default user passwords
-- [ ] Set a strong `APP_KEY` (auto-generated via `php artisan key:generate`)
-- [ ] Configure proper database credentials
-- [ ] Run `npm run build` for optimized frontend assets
-- [ ] Run `php artisan config:cache && php artisan route:cache && php artisan view:cache`
-- [ ] Run `php artisan storage:link` — product images 404 without it
-- [ ] Set `APP_URL` to the public address; image and QR URLs are built from it
-- [ ] Set up HTTPS (required for secure session cookies)
-- [ ] Configure `SESSION_SECURE_COOKIE=true` in `.env`
-- [ ] Set up database backups (daily recommended)
-- [ ] Configure proper logging (`LOG_CHANNEL=daily` or external service)
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`
+- [ ] `APP_URL` set to the public address — QR codes and images are built from it
+- [ ] Change every seeded password
+- [ ] Real database credentials, and daily backups
+- [ ] `npm run build`
+- [ ] `php artisan config:cache && php artisan route:cache && php artisan view:cache`
+- [ ] `php artisan storage:link`
+- [ ] The scheduler running, or unpaid orders never expire
+- [ ] HTTPS, and `SESSION_SECURE_COOKIE=true`
+- [ ] `LOG_CHANNEL=daily` or an external service
 
 ---
 
-## Roadmap
+## Not built
 
-Not built yet — tracked here rather than implied elsewhere in this README:
+Tracked here rather than implied elsewhere in this README:
 
-- [ ] User management screen (create/deactivate cashiers, reset passwords)
-- [ ] Configurable store settings (store name, receipt footer, tax rate)
-- [ ] Receipt printing / PDF export
-- [ ] CSV export for sales and reports
-- [ ] Tablet-optimised POS layout
-- [ ] Per-store branding on the customer menu (accent colour, logo)
-- [ ] Menu sections with sticky headers, and a basket that survives a backgrounded phone
+- [ ] Paying online — payment happens at the counter, by design, and changing
+      that is a bigger decision than a feature
+- [ ] Tax / VAT handling
+- [ ] Scheduling an order for later, rather than as soon as possible
+- [ ] Push notifications (see the note on polling above)
+- [ ] Offline mode for a till on an unreliable connection
+- [ ] A kitchen display separate from the counter queue
+- [ ] Loyalty or customer accounts
+- [ ] Multiple languages
 
 ---
 
