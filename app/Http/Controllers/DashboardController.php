@@ -40,6 +40,10 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'stats' => $this->reportService->dashboard($isManager),
+            // How the queue has run today. The live counts arrive separately
+            // on the shared `queue` prop, which polls; this is the settled
+            // history behind them and does not need to.
+            'orderFlow' => $this->reportService->orderFlow(),
             'recentSales' => $recentSales,
             'lowStockProducts' => $isManager
                 ? ProductResource::collection(

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\OrderStatus;
 use App\Models\Concerns\BelongsToStore;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $store_id
  * @property OrderStatus $status
  * @property int $queue_number
+ * @property Carbon|null $placed_at
+ * @property Carbon|null $paid_at
+ * @property Carbon|null $ready_at
+ * @property Carbon|null $collected_at
  */
 class Order extends Model
 {

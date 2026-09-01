@@ -122,6 +122,11 @@ class PublicOrderController extends Controller
             'currency_symbol' => $store->currency_symbol,
             'receipt_footer' => $store->receipt_footer,
             'logo_url' => StoreLogoService::url($store->logo_path),
+            // The menu stays readable when the shop is shut — a customer
+            // deciding what to get tomorrow is a customer worth keeping — so
+            // this says what to do about it rather than hiding the page.
+            'is_open' => $store->isOpenNow(),
+            'next_opening' => $store->nextOpening(),
             // The whole palette, derived from the one colour the shop chose
             // and emitted as token overrides. Only ever on these pages: a
             // cashier working two shops should not have the till change

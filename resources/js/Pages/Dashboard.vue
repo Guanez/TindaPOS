@@ -27,14 +27,41 @@ const { money } = useCurrency();
 
 const props = defineProps({
     stats: Object,
+    orderFlow: { type: Object, default: () => ({}) },
     recentSales: Array,
     lowStockProducts: Object,
 });
 
 const words = useVocabulary();
+const page = usePage();
 
 // Resolve resource collection (handles {data:[...]} or plain [...])
 const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowStockProducts ?? []);
+
+// ── The queue ───────────────────────────────────────────────────────────
+// Live counts come from the shared prop rather than this page's own, so the
+// tiles move with the badge in the topbar instead of going stale until the
+// next navigation. Absent only for a platform admin outside any shop.
+const queue = computed(() => page.props.queue ?? null);
+
+// A shop that has never switched ordering on has no queue to report, and six
+// zeroes would read as a problem rather than as "not in use here". One order
+// ever placed is enough to keep the band on screen for the rest of the day.
+const hasQueue = computed(() =>
+    queue.value !== null && (
+        queue.value.awaiting > 0 ||
+        queue.value.preparing > 0 ||
+        queue.value.ready > 0 ||
+        (props.orderFlow.collected ?? 0) > 0 ||
+        (props.orderFlow.unfulfilled ?? 0) > 0
+    ),
+);
+
+const prepLabel = computed(() =>
+    props.orderFlow.avg_prep_minutes === null || props.orderFlow.avg_prep_minutes === undefined
+        ? '—'
+        : `${props.orderFlow.avg_prep_minutes} min`,
+);
 
 /*
  * A cashier lands here too, and half of this screen is not theirs: profit and
@@ -58,6 +85,86 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager ?? false
                     {{ new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
                 </p>
             </div>
+
+            <!--
+                The queue, above the money.
+
+                A cafe owner opening this in the morning wants to know what is
+                waiting before they want to know last night's margin, and a
+                cashier needs somewhere other than the queue screen that says
+                so. The three live figures come from the shared prop, so they
+                move with the topbar badge rather than going stale until the
+                next navigation.
+            -->
+            <section v-if="hasQueue" class="card overflow-hidden fade-in-up">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3.5">
+                    <h2 class="flex items-center gap-2 text-body font-semibold text-ink-1">
+                        <QueueListIcon class="h-4 w-4 text-ink-3" aria-hidden="true" />
+                        Today&rsquo;s orders
+                    </h2>
+                    <Link
+                        :href="route('orders.index')"
+                        class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:underline"
+                    >
+                        Open the queue
+                        <ArrowRightIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                    </Link>
+                </div>
+
+                <div class="grid grid-cols-2 divide-line sm:grid-cols-3 xl:grid-cols-6 xl:divide-x">
+                    <Link
+                        :href="route('orders.index')"
+                        class="border-b border-r border-line px-5 py-4 transition-colors hover:bg-surface-2 xl:border-b-0 xl:border-r-0"
+                        :class="queue.awaiting > 0 ? 'bg-wait-tint/40' : ''"
+                    >
+                        <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Awaiting payment</p>
+                        <p
+                            class="mt-1 text-figure font-bold tabular-nums"
+                            :class="queue.awaiting > 0 ? 'text-wait-ink' : 'text-ink-1'"
+                        >{{ queue.awaiting }}</p>
+                    </Link>
+
+                    <Link
+                        :href="route('orders.index')"
+                        class="border-b border-line px-5 py-4 transition-colors hover:bg-surface-2 sm:border-r xl:border-b-0 xl:border-r-0"
+                    >
+                        <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Being made</p>
+                        <p class="mt-1 text-figure font-bold tabular-nums text-ink-1">{{ queue.preparing }}</p>
+                    </Link>
+
+                    <Link
+                        :href="route('orders.index')"
+                        class="border-b border-r border-line px-5 py-4 transition-colors hover:bg-surface-2 sm:border-r-0 xl:border-b-0 xl:border-r-0"
+                        :class="queue.ready > 0 ? 'bg-ready-tint/40' : ''"
+                    >
+                        <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Ready for pickup</p>
+                        <p
+                            class="mt-1 text-figure font-bold tabular-nums"
+                            :class="queue.ready > 0 ? 'text-ready-ink' : 'text-ink-1'"
+                        >{{ queue.ready }}</p>
+                    </Link>
+
+                    <div class="border-b border-line px-5 py-4 sm:border-r xl:border-b-0 xl:border-r-0">
+                        <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Collected</p>
+                        <p class="mt-1 text-figure font-bold tabular-nums text-ink-1">{{ orderFlow.collected ?? 0 }}</p>
+                    </div>
+
+                    <div class="border-r border-line px-5 py-4 sm:border-r-0 xl:border-r-0">
+                        <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Avg. wait</p>
+                        <p class="mt-1 text-figure font-bold tabular-nums text-ink-1">{{ prepLabel }}</p>
+                        <p class="text-meta text-ink-3">paid to ready</p>
+                    </div>
+
+                    <div class="px-5 py-4">
+                        <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Never collected</p>
+                        <p
+                            class="mt-1 text-figure font-bold tabular-nums"
+                            :class="(orderFlow.unfulfilled ?? 0) > 0 ? 'text-stop-ink' : 'text-ink-1'"
+                        >{{ orderFlow.unfulfilled ?? 0 }}</p>
+                        <p class="text-meta text-ink-3">rejected or expired</p>
+                    </div>
+                </div>
+            </section>
 
             <!-- Stat Cards Grid — staggered entrance -->
             <div

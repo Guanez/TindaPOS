@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Claude Code session state, and any worktrees it creates under here.
+# Root-anchored /node_modules and /vendor above do not reach inside these.
+/.claude

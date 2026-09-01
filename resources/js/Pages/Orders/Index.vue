@@ -2,14 +2,12 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 
 import {
     BanknotesIcon,
     CheckCircleIcon,
     NoSymbolIcon,
-    QueueListIcon,
-    BellAlertIcon,
     XMarkIcon,
     ClockIcon,
 } from '@heroicons/vue/24/outline';
@@ -27,72 +25,30 @@ const ready = computed(() => props.orders.filter((o) => o.status === 'ready'));
 
 // ── Live refresh ────────────────────────────────────────────────────────
 // Polling rather than websockets: it needs no extra infrastructure and cafe
-// volume does not justify any. Only the orders prop is refetched.
+// volume does not justify any.
+//
+// `queue` rides along with the order detail so this one request keeps the
+// layout's badge and chime current too — AppLayout stands its own poller
+// down while this page is open rather than both of us asking every tick.
+//
+// The chime itself is no longer here. It moved to the layout, because the
+// person who needs to hear a new order is usually on the POS.
 const POLL_MS = 5000;
 let poller = null;
 const paused = ref(false);
 
 const refresh = () => {
-    if (paused.value) return;
-    router.reload({ only: ['orders', 'recentlyFinished'] });
+    if (paused.value || document.hidden) return;
+    router.reload({ only: ['orders', 'recentlyFinished', 'queue'] });
 };
 
-onMounted(() => { poller = setInterval(refresh, POLL_MS); });
-onUnmounted(() => clearInterval(poller));
-
-// ── Chime when something new arrives ────────────────────────────────────
-//
-// Remembered per device rather than per session: the queue screen navigates
-// away and back all shift, and a barista who turned the sound off should not
-// have to turn it off again every time they take a payment.
-const SOUND_KEY = 'tindapos_queue_sound';
-
-const soundOn = ref(true);
-
-try {
-    soundOn.value = localStorage.getItem(SOUND_KEY) !== 'off';
-} catch { /* private browsing — default to on */ }
-
-watch(soundOn, (on) => {
-    try {
-        localStorage.setItem(SOUND_KEY, on ? 'on' : 'off');
-    } catch { /* storage unavailable — the choice still holds for this page */ }
+onMounted(() => {
+    poller = setInterval(refresh, POLL_MS);
+    document.addEventListener('visibilitychange', refresh);
 });
-
-const chime = () => {
-    if (!soundOn.value) return;
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.5);
-    } catch {
-        /* Audio unavailable — the badge still updates. */
-    }
-};
-
-// Watches which orders are waiting, not how many.
-//
-// A count only moves when the net changes, so settling one order and
-// receiving another inside the same five-second poll left the total identical
-// and the counter silent — at exactly the rush the chime exists for. Comparing
-// the ids catches an arrival regardless of what left alongside it.
-const waitingIds = computed(() => awaitingPayment.value.map((o) => o.id));
-
-watch(waitingIds, (now, before) => {
-    if (before === undefined) return;
-
-    const known = new Set(before);
-    if (now.some((id) => ! known.has(id))) chime();
+onUnmounted(() => {
+    clearInterval(poller);
+    document.removeEventListener('visibilitychange', refresh);
 });
 
 // ── Settle ──────────────────────────────────────────────────────────────
@@ -104,11 +60,16 @@ const settleForm = useForm({
     discount: 0,
 });
 
+const cashInput = ref(null);
+
 const openSettle = (order) => {
     settling.value = order;
     settleForm.reset();
     settleForm.clearErrors();
     paused.value = true;
+
+    // Same reasoning as the POS: the cash field is why this dialog opened.
+    nextTick(() => cashInput.value?.focus());
 };
 
 const closeSettle = () => {
@@ -119,6 +80,32 @@ const closeSettle = () => {
 const settleTotal = computed(() => parseFloat(settling.value?.total ?? 0));
 const cashReceived = computed(() => parseFloat(settleForm.cash_received) || 0);
 const change = computed(() => Math.max(0, cashReceived.value - settleTotal.value));
+
+/*
+ * What the customer is likely to hand over, derived from what is owed rather
+ * than a fixed row of notes. Kept in step with the POS deliberately — it is
+ * the same act of taking cash, and the two screens disagreeing about which
+ * amounts to offer is how a cashier learns to distrust both.
+ */
+const PESO_NOTES = [20, 50, 100, 200, 500, 1000];
+
+const quickCash = computed(() => {
+    const due = settleTotal.value;
+    if (due <= 0) return [];
+
+    const amounts = new Set([
+        due,
+        Math.ceil(due / 50) * 50,
+        Math.ceil(due / 100) * 100,
+        Math.ceil(due / 500) * 500,
+        ...PESO_NOTES.filter((note) => note >= due),
+    ]);
+
+    return [...amounts]
+        .filter((amount) => amount >= due)
+        .sort((a, b) => a - b)
+        .slice(0, 5);
+});
 
 const canSettle = computed(
     () => settleForm.payment_method !== 'cash' || cashReceived.value >= settleTotal.value,
@@ -187,15 +174,11 @@ const waitingSince = (order) => {
                     </p>
                 </div>
 
-                <button
-                    class="flex items-center gap-2 rounded-control border border-line px-3 py-2 text-meta font-semibold text-ink-2 hover:bg-surface-2"
-                    style="transition: background-color var(--t-fast);"
-                    :aria-pressed="soundOn"
-                    @click="soundOn = !soundOn"
-                >
-                    <BellAlertIcon class="h-4 w-4" :class="soundOn ? 'text-accent-ink' : 'text-ink-3'" aria-hidden="true" />
-                    {{ soundOn ? 'Sound on' : 'Sound off' }}
-                </button>
+                <!--
+                    The sound toggle used to live here. It is in the topbar
+                    now, alongside the badge, because both belong to every
+                    screen rather than to this one.
+                -->
             </div>
 
             <!-- Columns -->
@@ -388,11 +371,31 @@ const waitingSince = (order) => {
                     <div v-if="settleForm.payment_method === 'cash'" class="mt-5">
                         <label class="text-ui font-semibold text-ink-2">Cash received</label>
                         <input
+                            ref="cashInput"
                             v-model="settleForm.cash_received"
                             type="number" step="0.01" min="0"
                             class="input-field mt-1.5 w-full text-right text-lg font-bold tabular-nums"
                             :placeholder="`Min: ${money(settleTotal)}`"
+                            @keyup.enter="submitSettle"
                         />
+
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <button
+                                v-for="(amount, index) in quickCash"
+                                :key="amount"
+                                type="button"
+                                :class="[
+                                    'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
+                                    cashReceived === amount
+                                        ? 'border-accent bg-accent-tint text-accent-ink'
+                                        : 'border-line text-ink-3 hover:bg-surface-2',
+                                ]"
+                                @click="settleForm.cash_received = amount"
+                            >
+                                {{ index === 0 ? 'Exact' : `₱${amount.toLocaleString('en-PH')}` }}
+                            </button>
+                        </div>
+
                         <div v-if="cashReceived >= settleTotal" class="mt-3 rounded-control bg-ready-tint p-3 text-center">
                             <p class="text-meta font-medium text-ready-ink">Change</p>
                             <p class="text-2xl font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>

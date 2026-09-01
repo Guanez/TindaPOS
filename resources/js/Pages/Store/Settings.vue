@@ -11,6 +11,44 @@ const props = defineProps({
     qrUnreachable: { type: Boolean, default: false },
 });
 
+// ── Opening hours ───────────────────────────────────────────────────────
+// Stored as a week keyed by day; edited as seven rows. A row with its toggle
+// off sends null, which is what the server reads as a closing day.
+const DAYS = [
+    { key: 'mon', label: 'Monday' },
+    { key: 'tue', label: 'Tuesday' },
+    { key: 'wed', label: 'Wednesday' },
+    { key: 'thu', label: 'Thursday' },
+    { key: 'fri', label: 'Friday' },
+    { key: 'sat', label: 'Saturday' },
+    { key: 'sun', label: 'Sunday' },
+];
+
+// A shop with no hours set is open around the clock, so the editor starts
+// from a plausible cafe week rather than from empty fields the owner has to
+// fill in fourteen times.
+const startingWeek = () => {
+    const saved = props.store.hours ?? null;
+
+    return Object.fromEntries(
+        DAYS.map(({ key }) => {
+            const entry = saved?.[key] ?? null;
+
+            return [key, {
+                enabled: saved === null ? true : entry !== null,
+                open: entry?.open ?? '07:00',
+                close: entry?.close ?? '18:00',
+            }];
+        }),
+    );
+};
+
+const week = ref(startingWeek());
+
+// Whether the shop keeps hours at all. Off means the menu never closes,
+// which is the behaviour every store had before this existed.
+const keepsHours = ref(props.store.hours !== null && props.store.hours !== undefined);
+
 const form = useForm({
     name: props.store.name,
     address: props.store.address ?? '',
@@ -21,7 +59,17 @@ const form = useForm({
     accent: props.store.accent ?? '',
     logo: null,
     remove_logo: false,
+    hours: props.store.hours ?? null,
 });
+
+// Copying Monday down is the difference between two inputs and fourteen.
+const applyMondayToAll = () => {
+    const monday = week.value.mon;
+
+    DAYS.slice(1).forEach(({ key }) => {
+        week.value[key] = { ...monday };
+    });
+};
 
 // ── Branding ────────────────────────────────────────────────────────────
 // Only ever applied to the customer menu. The till stays the same colour in
@@ -70,7 +118,24 @@ const accentReadable = computed(() => {
 
 const save = () =>
     form
-        .transform((data) => ({ ...data, _method: 'put' }))
+        .transform((data) => ({
+            ...data,
+            _method: 'put',
+            // Assembled at submit rather than kept in sync on every keystroke:
+            // the editor's shape (a row with an enabled flag) and the stored
+            // shape (a day or a null) are different things, and converting in
+            // one place is what keeps them from drifting.
+            hours: keepsHours.value
+                ? Object.fromEntries(
+                    DAYS.map(({ key }) => [
+                        key,
+                        week.value[key].enabled
+                            ? { open: week.value[key].open, close: week.value[key].close }
+                            : null,
+                    ]),
+                )
+                : null,
+        }))
         .post(route('store.update'), { preserveScroll: true });
 
 const copied = ref(false);
@@ -215,6 +280,84 @@ const copyLink = async () => {
                             </span>
                         </span>
                     </label>
+
+                    <!--
+                        Opening hours. Directly under the ordering switch
+                        because they answer two halves of the same question:
+                        whether a customer can order, and when.
+                    -->
+                    <div class="rounded-card border border-line bg-surface-2 p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                                <h3 class="text-ui font-bold text-ink-1">Opening hours</h3>
+                                <p class="mt-0.5 text-meta text-ink-3">
+                                    Outside these, the menu still opens but says you&rsquo;re closed
+                                    and takes no orders.
+                                </p>
+                            </div>
+                            <span
+                                v-if="store.hours"
+                                class="badge"
+                                :class="store.is_open ? 'badge-success' : 'badge-neutral'"
+                            >{{ store.is_open ? 'Open now' : 'Closed now' }}</span>
+                        </div>
+
+                        <label class="mt-3 flex items-start gap-3">
+                            <input v-model="keepsHours" type="checkbox" class="mt-0.5 rounded border-line-strong text-accent" />
+                            <span class="text-ui font-semibold text-ink-1">Set opening hours</span>
+                        </label>
+                        <p v-if="!keepsHours" class="mt-1.5 pl-7 text-meta text-ink-3">
+                            Off means the menu accepts orders at any hour.
+                        </p>
+
+                        <div v-if="keepsHours" class="mt-3 space-y-1.5">
+                            <div
+                                v-for="day in DAYS"
+                                :key="day.key"
+                                class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-control bg-surface-1 px-3 py-2"
+                            >
+                                <label class="flex w-32 shrink-0 items-center gap-2">
+                                    <input
+                                        v-model="week[day.key].enabled"
+                                        type="checkbox"
+                                        class="rounded border-line-strong text-accent"
+                                    />
+                                    <span class="text-ui font-medium text-ink-1">{{ day.label }}</span>
+                                </label>
+
+                                <template v-if="week[day.key].enabled">
+                                    <input
+                                        v-model="week[day.key].open"
+                                        type="time"
+                                        :aria-label="`${day.label} opening time`"
+                                        class="rounded-control border-line-strong bg-surface-1 px-2 py-1 text-ui tabular-nums text-ink-1"
+                                    />
+                                    <span class="text-meta text-ink-3">to</span>
+                                    <input
+                                        v-model="week[day.key].close"
+                                        type="time"
+                                        :aria-label="`${day.label} closing time`"
+                                        class="rounded-control border-line-strong bg-surface-1 px-2 py-1 text-ui tabular-nums text-ink-1"
+                                    />
+                                    <span
+                                        v-if="week[day.key].close <= week[day.key].open"
+                                        class="text-meta text-ink-3"
+                                    >past midnight</span>
+                                </template>
+                                <span v-else class="text-ui text-ink-3">Closed</span>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="pt-1 text-meta font-semibold text-accent-ink hover:underline"
+                                @click="applyMondayToAll"
+                            >
+                                Copy Monday to every day
+                            </button>
+                        </div>
+
+                        <p v-if="form.errors.hours" class="mt-2 text-meta text-stop-ink">{{ form.errors.hours }}</p>
+                    </div>
 
                     <div class="flex justify-end pt-1">
                         <button type="submit" :disabled="form.processing" class="btn-primary disabled:opacity-50">

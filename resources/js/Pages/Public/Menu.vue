@@ -23,6 +23,10 @@ const props = defineProps({
 
 const menu = computed(() => props.products?.data ?? []);
 
+// `is_open` is absent on a store that has never set hours, which is a store
+// that never closes — so only an explicit false shuts the ordering path.
+const isClosed = computed(() => props.store.is_open === false);
+
 // ── Sections ────────────────────────────────────────────────────────────
 // The rail used to filter the list, which meant reading the menu was a
 // series of decisions before you could see anything. Sections show the whole
@@ -148,6 +152,10 @@ const hasOptions = (product) =>
 const forChooser = (product) => ({ ...product, selling_price: product.price_from });
 
 const choose = (product) => {
+    // Nothing goes in a basket that cannot be sent. The tile stays readable
+    // rather than disabled — the menu is still worth reading when shut.
+    if (isClosed.value) return;
+
     if (hasOptions(product)) {
         chooser.value = forChooser(product);
         return;
@@ -201,7 +209,7 @@ const placing = ref(false);
 const errors = ref({});
 
 const place = () => {
-    if (basket.value.length === 0 || placing.value) return;
+    if (basket.value.length === 0 || placing.value || isClosed.value) return;
     placing.value = true;
 
     router.post(
@@ -252,7 +260,22 @@ const place = () => {
 
             <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
             <p v-if="store.address" class="mt-0.5 text-ui text-ink-3">{{ store.address }}</p>
-            <p class="mt-3 rounded-control bg-wait-tint px-3 py-2 text-meta font-medium text-wait-ink">
+
+            <!--
+                A shut shop says so and says when it opens. The menu below
+                stays readable on purpose — someone deciding what to get in
+                the morning is worth keeping — but nothing can be added to a
+                basket, so there is no way to reach a checkout that would only
+                reject them.
+            -->
+            <p
+                v-if="isClosed"
+                class="mt-3 rounded-control bg-surface-3 px-3 py-2.5 text-meta font-medium text-ink-2"
+            >
+                <span class="block font-bold text-ink-1">We&rsquo;re closed right now</span>
+                {{ store.next_opening ?? 'Come back during opening hours.' }} You can still look at the menu.
+            </p>
+            <p v-else class="mt-3 rounded-control bg-wait-tint px-3 py-2 text-meta font-medium text-wait-ink">
                 Order here, then pay at the counter. We start making it once you&rsquo;ve paid.
             </p>
         </header>
@@ -341,7 +364,8 @@ const place = () => {
                             <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.price_from) }}
                         </span>
                     </span>
-                    <span class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
+                    <!-- The add affordance goes when there is nothing to add to. -->
+                    <span v-if="!isClosed" class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-tint">
                         <PlusIcon class="h-4 w-4 text-accent-ink" aria-hidden="true" />
                     </span>
                 </button>
@@ -350,7 +374,7 @@ const place = () => {
         </main>
 
         <!-- Basket bar -->
-        <div v-if="basketCount > 0 && !showBasket" class="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md p-4">
+        <div v-if="basketCount > 0 && !showBasket && !isClosed" class="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md p-4">
             <button
                 class="flex w-full items-center gap-3 rounded-card bg-accent px-5 py-4 text-accent-fg shadow-overlay"
                 @click="showBasket = true"

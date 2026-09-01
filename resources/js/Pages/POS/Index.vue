@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 
 import {
     MagnifyingGlassIcon,
@@ -52,6 +52,11 @@ const showCheckout = ref(false);
 const showReceipt = ref(false);
 const lastSale = ref(null);
 const processing = ref(false);
+
+// Whether the cart sheet is up. Only consulted below `lg`, where the cart is
+// a sheet rather than a column — above it the panel is always on screen and
+// this is ignored.
+const cartOpen = ref(false);
 
 // Cart with localStorage persistence
 const CART_KEY = 'tindapos_cart';
@@ -194,11 +199,47 @@ const canCheckout = computed(() => {
     return true;
 });
 
+/*
+ * What the customer is actually likely to hand over.
+ *
+ * The old six buttons were fixed notes — 20, 50, 100, 200, 500, 1000 — which
+ * on a ₱237 total are all either useless or wrong, so the cashier typed the
+ * amount every time. These are derived from the total instead: the exact
+ * money, the next round 50 and 100, and the notes above that. For ₱237 it
+ * offers 237, 250, 300, 500, 1000, which is the real set.
+ */
+const PESO_NOTES = [20, 50, 100, 200, 500, 1000];
+
+const quickCash = computed(() => {
+    const due = total.value;
+    if (due <= 0) return [];
+
+    const amounts = new Set([
+        due,
+        Math.ceil(due / 50) * 50,
+        Math.ceil(due / 100) * 100,
+        Math.ceil(due / 500) * 500,
+        ...PESO_NOTES.filter((note) => note >= due),
+    ]);
+
+    return [...amounts]
+        .filter((amount) => amount >= due)
+        .sort((a, b) => a - b)
+        .slice(0, 5);
+});
+
 // Checkout
+const cashInput = ref(null);
+
 const openCheckout = () => {
     if (cart.value.length === 0) return;
     cashReceived.value = '';
+    cartOpen.value = false;
     showCheckout.value = true;
+
+    // The field this dialog exists for. Focused on open so the common path is
+    // F9, type, Enter — without a trip to the mouse in the middle of it.
+    nextTick(() => cashInput.value?.focus());
 };
 
 const processCheckout = () => {
@@ -257,11 +298,12 @@ const handleKeydown = (e) => {
     if (e.key === 'F2') { e.preventDefault(); searchInput.value?.focus(); }
     // F9: Open checkout
     if (e.key === 'F9' && cart.value.length > 0 && !showCheckout.value) { e.preventDefault(); openCheckout(); }
-    // Escape: Close modals
+    // Escape: close whatever is on top, innermost first
     if (e.key === 'Escape') {
         if (showReceipt.value) closeReceipt();
         else if (optionsProduct.value) optionsProduct.value = null;
         else if (showCheckout.value) showCheckout.value = false;
+        else if (cartOpen.value) cartOpen.value = false;
     }
 };
 
@@ -273,6 +315,12 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
     <AppLayout>
         <Head title="POS Terminal" />
 
+        <!--
+            Two panes side by side at the counter; one pane and a sheet on a
+            tablet held in one hand. The cart markup is the same in both — only
+            its box changes — because a second copy of it would be a second
+            place for the quantity controls to drift.
+        -->
         <div class="flex h-[calc(100vh-5.5rem)] gap-4 lg:h-[calc(100vh-6.5rem)]">
             <!-- LEFT: Product Grid -->
             <div class="flex flex-1 flex-col overflow-hidden card">
@@ -393,8 +441,30 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 </div>
             </div>
 
-            <!-- RIGHT: Cart Panel -->
-            <div class="flex w-80 flex-col overflow-hidden card xl:w-96">
+            <!-- Scrim, phone and tablet only -->
+            <div
+                v-if="cartOpen"
+                class="fixed inset-0 z-30 bg-ink-1/40 backdrop-blur-sm lg:hidden"
+                aria-hidden="true"
+                @click="cartOpen = false"
+            />
+
+            <!-- RIGHT: Cart Panel — a sheet below lg, a column above it -->
+            <div
+                class="z-40 flex-col overflow-hidden card
+                       fixed inset-x-0 bottom-0 max-h-[85vh] rounded-b-none rounded-t-sheet
+                       lg:static lg:z-auto lg:max-h-none lg:w-80 lg:rounded-card xl:w-96"
+                :class="cartOpen ? 'flex animate-sheet-up' : 'hidden lg:flex'"
+            >
+                <!-- Sheet grabber, phone and tablet only -->
+                <button
+                    class="flex w-full justify-center py-2 lg:hidden"
+                    aria-label="Close cart"
+                    @click="cartOpen = false"
+                >
+                    <span class="h-1 w-9 rounded-full bg-line-strong" />
+                </button>
+
                 <!-- Cart Header -->
                 <div class="flex items-center justify-between border-b border-line px-4 py-3">
                     <div class="flex items-center gap-2">
@@ -505,6 +575,29 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
             </div>
         </div>
 
+        <!--
+            The cart's stand-in while it is a sheet. Mirrors the customer
+            menu's basket bar deliberately: it is the same gesture on the same
+            size of screen, and staff who have used the customer side already
+            know what it does.
+        -->
+        <div
+            v-if="cart.length > 0 && !cartOpen"
+            class="fixed inset-x-0 bottom-0 z-30 p-3 lg:hidden"
+        >
+            <button
+                class="flex w-full items-center gap-3 rounded-card bg-accent px-4 py-3.5 text-accent-fg shadow-overlay active:scale-[0.99]"
+                style="transition: transform var(--t-fast);"
+                @click="cartOpen = true"
+            >
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-1/20 text-ui font-bold tabular-nums">
+                    {{ cartItemCount }}
+                </span>
+                <span class="flex-1 text-left text-body font-bold">View cart</span>
+                <span class="text-body font-bold tabular-nums">{{ money(total) }}</span>
+            </button>
+        </div>
+
         <!-- PRODUCT OPTIONS -->
         <ProductOptionsModal
             :show="optionsProduct !== null"
@@ -565,17 +658,19 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         <div class="relative mt-1.5">
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">&#8369;</span>
                             <input
+                                ref="cashInput"
                                 v-model="cashReceived"
                                 type="number" min="0" step="0.01"
                                 :placeholder="`Min: ${money(total)}`"
                                 class="w-full rounded-control border-line py-2.5 pl-8 pr-4 text-right text-lg font-bold text-ink-1 focus:border-accent focus:ring-accent/20"
+                                @keyup.enter="processCheckout"
                             />
                         </div>
 
-                        <!-- Quick cash buttons -->
+                        <!-- Quick cash — derived from the total, not fixed notes -->
                         <div class="mt-2 flex flex-wrap gap-1.5">
                             <button
-                                v-for="amount in [20, 50, 100, 200, 500, 1000]"
+                                v-for="(amount, index) in quickCash"
                                 :key="amount"
                                 @click="cashReceived = amount"
                                 :class="[
@@ -585,7 +680,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                         : 'border-line text-ink-3 hover:bg-surface-2'
                                 ]"
                             >
-                                &#8369;{{ amount }}
+                                {{ index === 0 ? 'Exact' : `₱${amount.toLocaleString('en-PH')}` }}
                             </button>
                         </div>
 

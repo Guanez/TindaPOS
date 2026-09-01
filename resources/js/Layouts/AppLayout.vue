@@ -15,8 +15,11 @@ import {
     UsersIcon,
     Cog6ToothIcon,
     ExclamationTriangleIcon,
+    BellAlertIcon,
+    BellSlashIcon,
 } from '@heroicons/vue/24/outline'
 import ThemeToggle from '@/Components/ThemeToggle.vue'
+import { useQueueAlert } from '@/Composables/queueAlert'
 
 const page = usePage()
 const user = computed(() => page.props.auth.user)
@@ -69,6 +72,45 @@ watch(
         if (f?.error)   triggerToast(f.error, 'error')
     },
     { immediate: true }
+)
+
+// ─── The queue, from wherever you are ───────────────────────────────────
+//
+// Shared by HandleInertiaRequests, so it is already on the page. Null for a
+// platform admin who has not stepped into a shop.
+const queue = computed(() => page.props.queue ?? null)
+
+// What the sidebar badge counts. Deliberately not the whole queue: an order
+// being made or waiting to be collected is work already acknowledged, and a
+// number that never falls to zero stops being read. This one is "orders
+// nobody has dealt with yet", which is the number worth interrupting for.
+const awaiting = computed(() => queue.value?.awaiting ?? 0)
+
+const { soundOn, setSound, chime } = useQueueAlert()
+
+// The queue screen runs its own poll for the order detail it renders, and
+// refreshes `queue` alongside it. Polling again from here would double every
+// request on the one page staff sit on longest.
+const queuePageIsDriving = () => route().current('orders.index')
+
+const QUEUE_POLL_MS = 5000
+let queuePoller = null
+
+const refreshQueue = () => {
+    // A backgrounded till is not being watched. Chrome throttles the timer
+    // anyway; skipping the work outright is honest about it.
+    if (document.hidden || queuePageIsDriving()) return
+    router.reload({ only: ['queue'] })
+}
+
+// Fires on a genuine arrival rather than on the count going up, so an order
+// settled and another placed inside one poll window still sounds.
+watch(
+    () => queue.value?.last_placed_at ?? null,
+    (now, before) => {
+        if (before === undefined || before === null || now === null) return
+        if (now > before) chime()
+    },
 )
 
 const iconMap = {
@@ -127,10 +169,19 @@ onMounted(() => {
     updateClock()
     clockInterval = setInterval(updateClock, 30000)
     document.addEventListener('keydown', handleKeydown)
+
+    if (queue.value !== null) {
+        queuePoller = setInterval(refreshQueue, QUEUE_POLL_MS)
+        // Coming back to a till that was left on another tab should not wait
+        // out the rest of a tick to show what arrived meanwhile.
+        document.addEventListener('visibilitychange', refreshQueue)
+    }
 })
 onUnmounted(() => {
     clearInterval(clockInterval)
+    clearInterval(queuePoller)
     document.removeEventListener('keydown', handleKeydown)
+    document.removeEventListener('visibilitychange', refreshQueue)
 })
 </script>
 
@@ -237,8 +288,18 @@ onUnmounted(() => {
                             style="transition: color var(--t-fast);"
                         />
                         {{ item.name }}
+
+                        <!--
+                            The count outranks the active dot: a barista needs
+                            to see three orders waiting whether or not they are
+                            already looking at the queue.
+                        -->
                         <span
-                            v-if="isActive(item.href)"
+                            v-if="item.href === 'orders.index' && awaiting > 0"
+                            class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-wait-solid px-1.5 text-label font-bold tabular-nums text-on-solid"
+                        >{{ awaiting }}</span>
+                        <span
+                            v-else-if="isActive(item.href)"
                             class="ml-auto h-1.5 w-1.5 rounded-full bg-accent"
                         />
                     </Link>
@@ -281,7 +342,38 @@ onUnmounted(() => {
                     <Bars3Icon class="h-5 w-5" aria-hidden="true" />
                 </button>
                 <slot name="header" />
-                <div class="ml-auto flex items-center gap-3">
+                <div class="ml-auto flex items-center gap-2 sm:gap-3">
+                    <!--
+                        The same count as the sidebar, for the screens where
+                        the sidebar is not on screen — which on a phone is all
+                        of them. Links rather than merely reports, because the
+                        only useful response to seeing it is to go there.
+                    -->
+                    <Link
+                        v-if="queue && awaiting > 0"
+                        :href="route('orders.index')"
+                        class="flex items-center gap-1.5 rounded-control bg-wait-tint px-2.5 py-1.5 text-meta font-bold text-wait-ink"
+                        style="transition: background-color var(--t-fast);"
+                        :aria-label="`${awaiting} order${awaiting === 1 ? '' : 's'} awaiting payment`"
+                    >
+                        <BellAlertIcon class="h-4 w-4" aria-hidden="true" />
+                        <span class="tabular-nums">{{ awaiting }}</span>
+                        <span class="hidden sm:inline">waiting</span>
+                    </Link>
+
+                    <button
+                        v-if="queue"
+                        type="button"
+                        class="rounded-control p-1.5 text-ink-3 hover:bg-surface-2 hover:text-ink-2"
+                        style="transition: background-color var(--t-fast), color var(--t-fast);"
+                        :aria-pressed="soundOn"
+                        :aria-label="soundOn ? 'Order sound on' : 'Order sound off'"
+                        :title="soundOn ? 'Order sound on' : 'Order sound off'"
+                        @click="setSound(!soundOn)"
+                    >
+                        <component :is="soundOn ? BellAlertIcon : BellSlashIcon" class="h-4 w-4" aria-hidden="true" />
+                    </button>
+
                     <span class="hidden text-ui font-medium tabular-nums text-ink-3 sm:inline">{{ clock }}</span>
                     <ThemeToggle />
                 </div>

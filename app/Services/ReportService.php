@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\OrderStatus;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use Illuminate\Database\Eloquent\Builder;
 
 class ReportService
 {
@@ -179,5 +182,71 @@ class ReportService
             ->get();
 
         return $products->toArray();
+    }
+
+    /**
+     * How today's online orders have flowed, for the dashboard.
+     *
+     * Separate from `dashboard()` because it counts a different thing. That
+     * method reports money that changed hands; this one reports work — and a
+     * cafe owner opening the app in the morning wants to know how long people
+     * are waiting well before they want to know the margin on a latte.
+     *
+     * Deliberately available to every role. A cashier being told the shop is
+     * running eight minutes behind is a cashier who can do something about
+     * it, and none of it is derived from cost.
+     *
+     * @return array<string, mixed>
+     */
+    public function orderFlow(): array
+    {
+        $today = Order::query()->today();
+
+        // Only orders that actually went through preparation can say how long
+        // preparation takes. An order collected straight off the counter has
+        // a ready_at, but one rejected at the till never had the work done.
+        $prepared = (clone $today)
+            ->whereNotNull('paid_at')
+            ->whereNotNull('ready_at');
+
+        $averageSeconds = $this->averagePrepSeconds($prepared);
+
+        return [
+            'collected' => (clone $today)->where('status', OrderStatus::Collected->value)->count(),
+            // Rejections and expiries together: both mean a customer ordered
+            // and did not get it, which is the number worth watching whatever
+            // the reason behind it.
+            'unfulfilled' => (clone $today)
+                ->whereIn('status', [OrderStatus::Rejected->value, OrderStatus::Expired->value])
+                ->count(),
+            // Null rather than zero when nothing has been made yet — "no data"
+            // and "instant" are different answers and the tile says so.
+            'avg_prep_minutes' => $averageSeconds === null
+                ? null
+                : (int) round($averageSeconds / 60),
+        ];
+    }
+
+    /**
+     * Mean seconds between payment and ready, across a prepared-orders query.
+     *
+     * The arithmetic is done in PHP rather than SQL because the three
+     * supported databases spell datetime subtraction three different ways —
+     * TIMESTAMPDIFF, EXTRACT(EPOCH FROM …) and strftime('%s', …) — and a
+     * cafe's daily order count is far too small for the round trip to matter.
+     *
+     * @param  Builder<Order>  $prepared
+     */
+    private function averagePrepSeconds(Builder $prepared): ?float
+    {
+        $rows = $prepared->get(['paid_at', 'ready_at']);
+
+        if ($rows->isEmpty()) {
+            return null;
+        }
+
+        return $rows->avg(
+            fn (Order $order) => $order->ready_at->getTimestamp() - $order->paid_at->getTimestamp()
+        );
     }
 }
