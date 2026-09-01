@@ -72,6 +72,7 @@ export default {
                 identity: {
                     DEFAULT: 'rgb(var(--identity) / <alpha-value>)',
                     tint: 'rgb(var(--identity-tint) / <alpha-value>)',
+                    solid: 'rgb(var(--identity-solid) / <alpha-value>)',
                 },
                 /*
                  * tint = the background, ink = text on it, mark = the signal

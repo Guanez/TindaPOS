@@ -21,6 +21,14 @@
  * and a hex custom property cannot produce one.
  */
 :root {
+    /*
+     * Tells the browser which way its own widgets should render — the select
+     * dropdown popup, the date picker, the scrollbar gutter. Without it a
+     * dark page still gets a white native dropdown with white text in it,
+     * and no amount of token work reaches inside those.
+     */
+    color-scheme: light;
+
     /* Type — counter density (staff terminals, mouse and keyboard) */
     --fs-label:   11px; --lh-label:   14px;
     --fs-meta:    12px; --lh-meta:    16px;
@@ -84,9 +92,16 @@
     --accent-line: 207 192 251;
     --on-accent: 255 255 255;
 
-    /* Kapé — identity only. Never an interactive colour. */
+    /*
+     * Kapé — identity only. Never an interactive colour.
+     *
+     * `identity` is the ink role and flips with the theme; `identity-solid`
+     * is the filled brand mark and stays dark in both, because it carries
+     * --on-solid text either way.
+     */
     --identity: 42 28 23;
     --identity-tint: 247 241 236;
+    --identity-solid: 42 28 23;
 
     /*
      * Order state. Reserved — no store, no theme may repurpose these.
@@ -144,6 +159,8 @@
  */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
+        color-scheme: dark;
+
         --surface-1: 26 22 34;
         --surface-2: 16 13 22;
         --surface-3: 44 37 57;
@@ -168,6 +185,7 @@
 
         --identity: 232 220 210;
         --identity-tint: 36 27 22;
+        --identity-solid: 74 50 38;
 
         /* Tints go deep, ink goes light, solid stays dark enough for white. */
         --wait-ink: 251 191 36;  --wait-mark: 245 158 11;  --wait-tint: 51 38 12;   --wait-solid: 180 83 9;
@@ -188,11 +206,17 @@
  * rule. light-dark() would collapse the two, but it needs a 2024 browser,
  * and a chunk of this audience is scanning QR codes on older Androids.
  *
- * Nothing sets data-theme yet — there is no toggle in the UI. It is here so
- * the dark palette can be exercised, and so adding that toggle later is a
- * button rather than a stylesheet.
+ * Set by the theme toggle, via useTheme(). Three states, not two: light,
+ * dark, and no attribute at all — which hands the question back to the OS
+ * and is the default a shop never has to think about.
+ *
+ * The guard on the media query above is what makes `light` a real choice
+ * rather than a no-op: without it, a staff member picking light on a phone
+ * that is in dark mode would be overruled by their own handset.
  */
 :root[data-theme='dark'] {
+    color-scheme: dark;
+
     --surface-1: 26 22 34;
     --surface-2: 16 13 22;
     --surface-3: 44 37 57;
@@ -216,6 +240,7 @@
 
     --identity: 232 220 210;
     --identity-tint: 36 27 22;
+    --identity-solid: 74 50 38;
 
     --wait-ink: 251 191 36;  --wait-mark: 245 158 11;  --wait-tint: 51 38 12;   --wait-solid: 180 83 9;
     --ready-ink: 52 211 153; --ready-mark: 16 185 129; --ready-tint: 12 44 34;  --ready-solid: 5 122 85;
@@ -256,6 +281,93 @@
     /* Tabular numbers for data columns */
     .tabular-nums {
         font-variant-numeric: tabular-nums;
+    }
+
+    /*
+     * ─── Form controls ──────────────────────────────────────────────────
+     *
+     * @tailwindcss/forms gives every control a hard-coded `background-color:
+     * #fff` and a grey border. In light that happens to equal --surface-1,
+     * so nobody noticed; in dark it is a white box carrying --ink-1 text,
+     * which is white on white. Every input in the product was invisible the
+     * moment the OS was set to dark.
+     *
+     * The binding lives here rather than in .input-field because most of the
+     * app's inputs never had that class — Platform/Stores, Inventory's
+     * modals and TextInput.vue all write raw <input>. A component class
+     * would have fixed the six fields on Store Settings and left the other
+     * eighty broken. An element selector fixes them by existing.
+     *
+     * checkbox, radio and range are excluded from the fill: the plugin draws
+     * their checked state with `background-color: currentColor`, and they
+     * take the border treatment below instead. File inputs are excluded
+     * because the control the user sees is the button, not the box.
+     */
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+    select,
+    textarea {
+        @apply border-line-strong bg-surface-1 text-ink-1;
+    }
+
+    /*
+     * Tied for specificity with the plugin's own placeholder rule, so this
+     * wins on order alone — it must stay inside @layer base and after it.
+     */
+    input::placeholder,
+    textarea::placeholder {
+        @apply text-ink-3;
+        opacity: 1;
+    }
+
+    [type='checkbox'],
+    [type='radio'] {
+        @apply border-line-strong bg-surface-1;
+    }
+
+    /*
+     * The plugin hard-codes a focus ring too: #2563eb for the ring itself,
+     * and for checkboxes a 2px offset in #fff — a white halo punched around
+     * every focused checkbox on a dark page. The blue is merely off-brand;
+     * the halo is the same class of bug as the white input box.
+     *
+     * This has to carry a :focus of its own to outrank the plugin's, which
+     * is why it cannot ride along on the binding above. The global default
+     * set further down handles everything that is not a form control.
+     */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        --tw-ring-color: rgb(var(--accent) / 0.25);
+        --tw-ring-offset-color: rgb(var(--surface-1));
+    }
+
+    /*
+     * Chrome paints autofilled fields with its own background and ignores
+     * `background-color` outright — the inset shadow is the only way to
+     * cover it, and -webkit-text-fill-color the only way to recolour the
+     * text it puts there. Without this a remembered username is the one
+     * field still unreadable in dark.
+     */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    select:-webkit-autofill {
+        -webkit-text-fill-color: rgb(var(--ink-1));
+        -webkit-box-shadow: 0 0 0 1000px rgb(var(--surface-1)) inset;
+        caret-color: rgb(var(--ink-1));
+    }
+
+    /*
+     * The gap between a control and its focus ring is drawn as a solid
+     * shadow, and Tailwind's default for it is #fff — so on a dark page
+     * every focused control got a white halo. It has to be a token, and it
+     * is surface-1 because that is what inputs sit on nearly everywhere.
+     */
+    *,
+    ::before,
+    ::after {
+        --tw-ring-offset-color: rgb(var(--surface-1));
     }
 
     /* Focus-visible: visible ring for keyboard, invisible for mouse */
@@ -350,9 +462,14 @@
                hover:bg-stop-mark;
     }
 
-    /* Input field */
+    /*
+     * Input field. The surface and ink are restated rather than left to the
+     * base rule so that this class is readable on its own — someone reaching
+     * for it should be able to see that it is a filled control, not have to
+     * know that a bare element selector is quietly holding it up.
+     */
     .input-field {
-        @apply w-full rounded-control border-line-strong py-2.5 px-3.5 text-body text-ink-1
+        @apply w-full rounded-control border-line-strong bg-surface-1 py-2.5 px-3.5 text-body text-ink-1
                placeholder-ink-3
                transition-colors duration-fast
                focus:border-accent focus:ring-accent/25;
@@ -360,7 +477,7 @@
 
     /* Select field */
     .select-field {
-        @apply rounded-control border-line-strong py-2.5 pl-3.5 pr-8 text-body text-ink-2
+        @apply rounded-control border-line-strong bg-surface-1 py-2.5 pl-3.5 pr-8 text-body text-ink-1
                transition-colors duration-fast
                focus:border-accent focus:ring-accent/25;
     }

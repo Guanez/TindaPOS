@@ -1,5 +1,6 @@
 <script setup>
 import { ShoppingCartIcon } from '@heroicons/vue/24/outline'
+import ThemeToggle from '@/Components/ThemeToggle.vue'
 </script>
 
 <template>
@@ -14,7 +15,7 @@ import { ShoppingCartIcon } from '@heroicons/vue/24/outline'
             <!-- Brand Header -->
             <div class="mb-8 text-center">
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-gradient-to-br from-accent to-accent-hover shadow-overlay shadow-rest/25">
-                    <ShoppingCartIcon class="h-6 w-6 text-white" aria-hidden="true" />
+                    <ShoppingCartIcon class="h-6 w-6 text-accent-fg" aria-hidden="true" />
                 </div>
                 <h1 class="mt-4 text-2xl font-bold tracking-tight text-ink-1">TindaPOS</h1>
                 <p class="mt-1 text-sm text-ink-3">Point of Sale</p>
@@ -23,6 +24,16 @@ import { ShoppingCartIcon } from '@heroicons/vue/24/outline'
             <!-- Content Card -->
             <div class="animate-fade-in-up rounded-card border border-line/80 bg-surface-1/80 p-6 shadow-overlay backdrop-blur-xl sm:p-8">
                 <slot />
+            </div>
+
+            <!--
+                Reachable before sign-in on purpose. The theme is stored per
+                device, not per account, and a shared till in a dim shop is
+                exactly where somebody wants to set it — which is a screen
+                they are looking at before they have a session.
+            -->
+            <div class="mt-6 flex justify-center">
+                <ThemeToggle />
             </div>
         </div>
     </div>
