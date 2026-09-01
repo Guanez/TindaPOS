@@ -165,10 +165,27 @@ const handleKeydown = (e) => {
     }
 }
 
+/*
+ * Below `lg` the sidebar is parked off-canvas with a transform, which moves it
+ * out of sight but not out of the tab order — so the first eleven presses of
+ * Tab on a phone went through invisible navigation before reaching the page.
+ * `inert` is the fix, but only while the sidebar is genuinely hidden: from
+ * `lg` up it is a static column that must stay reachable. The breakpoint has
+ * to be read rather than expressed as a class, since `inert` is a property
+ * and Tailwind cannot toggle it.
+ */
+const isDesktop = ref(true)
+let sidebarQuery = null
+const trackSidebarQuery = (e) => (isDesktop.value = e.matches)
+
 onMounted(() => {
     updateClock()
     clockInterval = setInterval(updateClock, 30000)
     document.addEventListener('keydown', handleKeydown)
+
+    sidebarQuery = window.matchMedia('(min-width: 1024px)')
+    isDesktop.value = sidebarQuery.matches
+    sidebarQuery.addEventListener('change', trackSidebarQuery)
 
     if (queue.value !== null) {
         queuePoller = setInterval(refreshQueue, QUEUE_POLL_MS)
@@ -182,11 +199,20 @@ onUnmounted(() => {
     clearInterval(queuePoller)
     document.removeEventListener('keydown', handleKeydown)
     document.removeEventListener('visibilitychange', refreshQueue)
+    sidebarQuery?.removeEventListener('change', trackSidebarQuery)
 })
 </script>
 
 <template>
     <div class="flex h-screen flex-col bg-surface-2/80">
+        <!--
+            First in the document and invisible until focused. A till has a
+            long sidebar and a topbar full of controls; without this, reaching
+            the page itself costs a keyboard user a dozen presses on every
+            single navigation.
+        -->
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+
         <!--
             Impersonation banner. Amber and full-bleed on purpose: everything
             below it is a real shop's real till, and the one mistake worth
@@ -242,6 +268,7 @@ onUnmounted(() => {
             :aria-label="'Main navigation'"
             class="fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col border-r border-line/60 bg-surface-1/95 backdrop-blur-xl lg:static lg:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            :inert="(!isDesktop && !sidebarOpen) || undefined"
             style="transition: transform var(--t-base) var(--ease-out);"
         >
             <!-- Brand -->
@@ -275,7 +302,7 @@ onUnmounted(() => {
                         :href="route(item.href)"
                         class="group mb-0.5 flex items-center gap-3 rounded-control px-3 py-2.5 text-ui font-medium"
                         :class="isActive(item.href)
-                            ? 'bg-accent-tint text-accent-ink shadow-rest shadow-rest/50'
+                            ? 'bg-accent-tint text-accent-ink shadow-rest'
                             : 'text-ink-3 hover:bg-surface-2 hover:text-ink-2'"
                         style="transition: background-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);"
                         @click="sidebarOpen = false"
@@ -380,7 +407,12 @@ onUnmounted(() => {
             </header>
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto p-4 lg:p-6" id="main-content">
+            <!--
+                `tabindex="-1"` so the skip link actually lands: following a
+                fragment moves the reading position but not focus unless the
+                target can hold it, which leaves the next Tab back at the top.
+            -->
+            <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-4 focus:outline-none lg:p-6">
                 <slot />
             </main>
         </div>

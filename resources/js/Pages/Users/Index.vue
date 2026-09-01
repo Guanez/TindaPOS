@@ -1,8 +1,9 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Dialog from '@/Components/Dialog.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { UserPlusIcon, PencilSquareIcon, NoSymbolIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { UserPlusIcon, PencilSquareIcon, NoSymbolIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     users: { type: Array, default: () => [] },
@@ -98,15 +99,67 @@ const roleClass = (role) => ({
             </div>
 
             <div class="card overflow-hidden">
-                <div class="overflow-x-auto">
+                <!-- Phone: one card per account -->
+                <ul class="divide-y divide-line md:hidden">
+                    <li v-for="user in users" :key="user.id" :class="['p-4', user.is_active ? '' : 'bg-surface-2/60']">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-ui font-semibold text-ink-1">
+                                    {{ user.name }}
+                                    <span v-if="user.is_self" class="ml-1 text-meta font-medium text-ink-3">you</span>
+                                </p>
+                                <p class="font-mono text-meta text-ink-3">{{ user.username }}</p>
+                                <p v-if="user.email" class="text-meta text-ink-3">{{ user.email }}</p>
+                            </div>
+                            <div class="flex shrink-0 flex-col items-end gap-1">
+                                <span class="badge" :class="roleClass(user.role)">{{ user.role_label }}</span>
+                                <span class="badge" :class="user.is_active ? 'badge-success' : 'badge-danger'">
+                                    {{ user.is_active ? 'Active' : 'Deactivated' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 flex gap-1.5">
+                            <button
+                                type="button"
+                                class="flex flex-1 items-center justify-center gap-1 rounded-control border border-line px-2.5 py-2 text-meta font-semibold text-ink-2 hover:bg-surface-2"
+                                style="transition: background-color var(--t-fast);"
+                                :aria-label="`Edit ${user.name}`"
+                                @click="openEdit(user)"
+                            >
+                                <PencilSquareIcon class="h-3.5 w-3.5" aria-hidden="true" /> Edit
+                            </button>
+                            <button
+                                v-if="user.is_active && !user.is_self"
+                                type="button"
+                                class="flex flex-1 items-center justify-center gap-1 rounded-control border px-2.5 py-2 text-meta font-semibold"
+                                :class="confirmingDeactivate === user.id
+                                    ? 'border-stop-mark bg-stop-solid text-on-solid'
+                                    : 'border-stop-tint text-stop-ink hover:bg-stop-tint'"
+                                style="transition: background-color var(--t-fast);"
+                                :aria-label="confirmingDeactivate === user.id
+                                    ? `Confirm deactivating ${user.name}`
+                                    : `Deactivate ${user.name}`"
+                                @click="deactivate(user)"
+                            >
+                                <NoSymbolIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                                {{ confirmingDeactivate === user.id ? 'Confirm' : 'Deactivate' }}
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+
+                <!-- Counter: the full roster -->
+                <div class="hidden overflow-x-auto md:block">
                     <table class="min-w-full divide-y divide-line">
+                        <caption class="sr-only">Everyone who can sign in to this store</caption>
                         <thead class="bg-surface-2/80">
                             <tr>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Name</th>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Username</th>
-                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Role</th>
-                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Status</th>
-                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Actions</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Name</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Username</th>
+                                <th scope="col" class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Role</th>
+                                <th scope="col" class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Status</th>
+                                <th scope="col" class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
@@ -127,16 +180,26 @@ const roleClass = (role) => ({
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-end gap-1.5">
-                                        <button class="flex items-center gap-1 rounded-control border border-line px-2.5 py-1.5 text-meta font-semibold text-ink-2 hover:bg-surface-2"
-                                            style="transition: background-color var(--t-fast);" @click="openEdit(user)">
+                                        <button type="button" class="flex items-center gap-1 rounded-control border border-line px-2.5 py-1.5 text-meta font-semibold text-ink-2 hover:bg-surface-2"
+                                            style="transition: background-color var(--t-fast);" :aria-label="`Edit ${user.name}`" @click="openEdit(user)">
                                             <PencilSquareIcon class="h-3.5 w-3.5" aria-hidden="true" /> Edit
                                         </button>
+                                        <!--
+                                            Two-step, so the label changes under
+                                            the pointer. The name is in the
+                                            accessible label because "Confirm"
+                                            on its own does not say confirm what.
+                                        -->
                                         <button v-if="user.is_active && !user.is_self"
+                                            type="button"
                                             class="flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-meta font-semibold"
                                             :class="confirmingDeactivate === user.id
                                                 ? 'border-stop-mark bg-stop-solid text-on-solid'
                                                 : 'border-stop-tint text-stop-ink hover:bg-stop-tint'"
                                             style="transition: background-color var(--t-fast);"
+                                            :aria-label="confirmingDeactivate === user.id
+                                                ? `Confirm deactivating ${user.name}`
+                                                : `Deactivate ${user.name}`"
                                             @click="deactivate(user)">
                                             <NoSymbolIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                             {{ confirmingDeactivate === user.id ? 'Confirm' : 'Deactivate' }}
@@ -156,86 +219,98 @@ const roleClass = (role) => ({
         </div>
 
         <!-- ADD / EDIT -->
-        <Teleport to="body">
-            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
-                role="dialog" aria-modal="true" :aria-label="editing ? 'Edit account' : 'Add account'">
-                <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-ink-1">{{ editing ? 'Edit account' : 'Add account' }}</h3>
-                        <button class="rounded-control p-1 text-ink-3 hover:bg-surface-2" aria-label="Close" @click="showModal = false">
-                            <XMarkIcon class="h-5 w-5" aria-hidden="true" />
-                        </button>
-                    </div>
-
-                    <form class="mt-5 space-y-4" @submit.prevent="save">
-                        <div>
-                            <label class="block text-ui font-semibold text-ink-2">Full name <span class="text-stop-ink">*</span></label>
-                            <input v-model="form.name" type="text" required class="input-field mt-1.5 w-full" />
-                            <p v-if="form.errors.name" class="mt-1 text-meta text-stop-ink">{{ form.errors.name }}</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-ui font-semibold text-ink-2">Username <span class="text-stop-ink">*</span></label>
-                            <input v-model="form.username" type="text" required autocomplete="off" class="input-field mt-1.5 w-full font-mono" />
-                            <p v-if="form.errors.username" class="mt-1 text-meta text-stop-ink">{{ form.errors.username }}</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-ui font-semibold text-ink-2">Email</label>
-                            <input v-model="form.email" type="email" class="input-field mt-1.5 w-full" placeholder="Optional" />
-                            <p v-if="form.errors.email" class="mt-1 text-meta text-stop-ink">{{ form.errors.email }}</p>
-                        </div>
-
-                        <fieldset>
-                            <legend class="text-ui font-semibold text-ink-2">Role</legend>
-                            <div class="mt-2 space-y-1.5">
-                                <label v-for="role in availableRoles()" :key="role.value"
-                                    class="flex cursor-pointer items-start gap-3 rounded-control border p-3"
-                                    :class="form.role === role.value ? 'border-accent bg-accent-tint/60' : 'border-line hover:bg-surface-2'"
-                                    style="transition: background-color var(--t-fast), border-color var(--t-fast);">
-                                    <input v-model="form.role" :value="role.value" type="radio" name="role"
-                                        class="mt-0.5 border-line-strong text-accent-ink focus:ring-accent" />
-                                    <span>
-                                        <span class="block text-ui font-semibold text-ink-1">{{ role.label }}</span>
-                                        <span class="block text-meta text-ink-3">{{ role.hint }}</span>
-                                    </span>
-                                </label>
-                            </div>
-                            <p v-if="form.errors.role" class="mt-1 text-meta text-stop-ink">{{ form.errors.role }}</p>
-                        </fieldset>
-
-                        <div>
-                            <label class="block text-ui font-semibold text-ink-2">
-                                {{ editing ? 'New password' : 'Password' }}
-                                <span v-if="!editing" class="text-stop-ink">*</span>
-                            </label>
-                            <input v-model="form.password" type="password" autocomplete="new-password"
-                                :required="!editing" class="input-field mt-1.5 w-full"
-                                :placeholder="editing ? 'Leave blank to keep the current one' : 'At least 8 characters'" />
-                            <p v-if="form.errors.password" class="mt-1 text-meta text-stop-ink">{{ form.errors.password }}</p>
-                        </div>
-
-                        <div v-if="form.password">
-                            <label class="block text-ui font-semibold text-ink-2">Confirm password</label>
-                            <input v-model="form.password_confirmation" type="password" autocomplete="new-password"
-                                class="input-field mt-1.5 w-full" />
-                        </div>
-
-                        <label v-if="editing && !editing.is_self" class="flex items-center gap-2.5">
-                            <input v-model="form.is_active" type="checkbox"
-                                class="rounded border-line-strong text-accent-ink focus:ring-accent" />
-                            <span class="text-ui text-ink-2">Account is active</span>
-                        </label>
-
-                        <div class="flex gap-3 pt-1">
-                            <button type="button" class="btn-secondary flex-1 justify-center" @click="showModal = false">Cancel</button>
-                            <button type="submit" :disabled="form.processing" class="btn-primary flex-1 justify-center disabled:opacity-50">
-                                {{ form.processing ? 'Saving…' : (editing ? 'Save changes' : 'Create account') }}
-                            </button>
-                        </div>
-                    </form>
+        <Dialog
+            :show="showModal"
+            :title="editing ? 'Edit account' : 'Add account'"
+            max-width="md"
+            close-button
+            @close="showModal = false"
+        >
+            <form id="account-form" class="space-y-4" @submit.prevent="save">
+                <div>
+                    <label for="account-name" class="block text-ui font-semibold text-ink-2">
+                        Full name <span class="text-stop-ink" aria-hidden="true">*</span>
+                    </label>
+                    <input id="account-name" v-model="form.name" data-autofocus type="text" required aria-required="true"
+                        :aria-invalid="form.errors.name ? 'true' : undefined"
+                        :aria-describedby="form.errors.name ? 'account-name-error' : undefined"
+                        class="input-field mt-1.5 w-full" />
+                    <p v-if="form.errors.name" id="account-name-error" class="mt-1 text-meta text-stop-ink">{{ form.errors.name }}</p>
                 </div>
-            </div>
-        </Teleport>
+
+                <div>
+                    <label for="account-username" class="block text-ui font-semibold text-ink-2">
+                        Username <span class="text-stop-ink" aria-hidden="true">*</span>
+                    </label>
+                    <input id="account-username" v-model="form.username" type="text" required aria-required="true" autocomplete="off"
+                        :aria-invalid="form.errors.username ? 'true' : undefined"
+                        :aria-describedby="form.errors.username ? 'account-username-error' : undefined"
+                        class="input-field mt-1.5 w-full font-mono" />
+                    <p v-if="form.errors.username" id="account-username-error" class="mt-1 text-meta text-stop-ink">{{ form.errors.username }}</p>
+                </div>
+
+                <div>
+                    <label for="account-email" class="block text-ui font-semibold text-ink-2">Email</label>
+                    <input id="account-email" v-model="form.email" type="email"
+                        :aria-invalid="form.errors.email ? 'true' : undefined"
+                        :aria-describedby="form.errors.email ? 'account-email-error' : undefined"
+                        class="input-field mt-1.5 w-full" placeholder="Optional" />
+                    <p v-if="form.errors.email" id="account-email-error" class="mt-1 text-meta text-stop-ink">{{ form.errors.email }}</p>
+                </div>
+
+                <fieldset>
+                    <legend class="text-ui font-semibold text-ink-2">Role</legend>
+                    <div class="mt-2 space-y-1.5">
+                        <label v-for="role in availableRoles()" :key="role.value"
+                            class="flex cursor-pointer items-start gap-3 rounded-control border p-3"
+                            :class="form.role === role.value ? 'border-accent bg-accent-tint/60' : 'border-line hover:bg-surface-2'"
+                            style="transition: background-color var(--t-fast), border-color var(--t-fast);">
+                            <input v-model="form.role" :value="role.value" type="radio" name="role"
+                                class="mt-0.5 border-line-strong text-accent-ink focus:ring-accent" />
+                            <span>
+                                <span class="block text-ui font-semibold text-ink-1">{{ role.label }}</span>
+                                <span class="block text-meta text-ink-3">{{ role.hint }}</span>
+                            </span>
+                        </label>
+                    </div>
+                    <p v-if="form.errors.role" class="mt-1 text-meta text-stop-ink">{{ form.errors.role }}</p>
+                </fieldset>
+
+                <div>
+                    <label for="account-password" class="block text-ui font-semibold text-ink-2">
+                        {{ editing ? 'New password' : 'Password' }}
+                        <span v-if="!editing" class="text-stop-ink" aria-hidden="true">*</span>
+                    </label>
+                    <input id="account-password" v-model="form.password" type="password" autocomplete="new-password"
+                        :required="!editing" :aria-required="!editing ? 'true' : undefined"
+                        :aria-invalid="form.errors.password ? 'true' : undefined"
+                        :aria-describedby="form.errors.password ? 'account-password-error' : undefined"
+                        class="input-field mt-1.5 w-full"
+                        :placeholder="editing ? 'Leave blank to keep the current one' : 'At least 8 characters'" />
+                    <p v-if="form.errors.password" id="account-password-error" class="mt-1 text-meta text-stop-ink">{{ form.errors.password }}</p>
+                </div>
+
+                <div v-if="form.password">
+                    <label for="account-password-confirm" class="block text-ui font-semibold text-ink-2">Confirm password</label>
+                    <input id="account-password-confirm" v-model="form.password_confirmation" type="password" autocomplete="new-password"
+                        class="input-field mt-1.5 w-full" />
+                </div>
+
+                <label v-if="editing && !editing.is_self" class="flex items-center gap-2.5">
+                    <input v-model="form.is_active" type="checkbox"
+                        class="rounded border-line-strong text-accent-ink focus:ring-accent" />
+                    <span class="text-ui text-ink-2">Account is active</span>
+                </label>
+            </form>
+
+            <template #footer>
+                <div class="flex gap-3">
+                    <button type="button" class="btn-secondary flex-1 justify-center" @click="showModal = false">Cancel</button>
+                    <button type="submit" form="account-form" :disabled="form.processing" class="btn-primary flex-1 justify-center disabled:opacity-50">
+                        {{ form.processing ? 'Saving&hellip;' : (editing ? 'Save changes' : 'Create account') }}
+                    </button>
+                </div>
+            </template>
+        </Dialog>
     </AppLayout>
 </template>

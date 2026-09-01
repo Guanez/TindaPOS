@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useCurrency } from '@/Composables/currency';
+import Dialog from '@/Components/Dialog.vue';
 
 import { XMarkIcon, PlusIcon } from '@heroicons/vue/24/outline';
 
@@ -103,129 +104,124 @@ const confirm = () => {
 </script>
 
 <template>
-    <Teleport to="body">
-        <div
-            v-if="show && product"
-            :class="[
-                'fixed inset-0 z-50 flex bg-scrim/50 backdrop-blur-sm',
-                isSheet ? 'items-end' : 'items-center justify-center p-4',
-            ]"
-            role="dialog"
-            aria-modal="true"
-            :aria-label="`Options for ${product.name}`"
-            @click.self="emit('close')"
-        >
-            <div
-                :class="[
-                    'flex w-full max-w-md flex-col overflow-hidden bg-surface-1 shadow-overlay',
-                    isSheet
-                        ? 'mx-auto max-h-[88vh] rounded-t-sheet animate-sheet-up'
-                        : 'max-h-[90vh] rounded-card animate-scale-in',
-                ]"
-            >
-                <!-- Header -->
-                <div class="flex items-start justify-between border-b border-line px-6 py-4">
-                    <div>
-                        <h3 class="text-lg font-bold text-ink-1">{{ product.name }}</h3>
-                        <p class="mt-0.5 text-meta text-ink-3">Choose options to add this to the cart</p>
-                    </div>
-                    <button
-                        class="rounded-control p-1 text-ink-3 hover:bg-surface-2 hover:text-ink-2"
-                        style="transition: background-color var(--t-fast), color var(--t-fast);"
-                        aria-label="Close"
-                        @click="emit('close')"
-                    >
-                        <XMarkIcon class="h-5 w-5" aria-hidden="true" />
-                    </button>
+    <Dialog
+        :show="show && !!product"
+        :title="product ? product.name : 'Options'"
+        :placement="isSheet ? 'bottom' : 'center'"
+        max-width="md"
+        @close="emit('close')"
+    >
+        <!--
+            Its own header, because this one carries a subtitle: the product
+            name alone does not say that a choice is being asked for.
+        -->
+        <template #header="{ close }">
+            <div class="flex shrink-0 items-start justify-between border-b border-line px-6 py-4">
+                <div>
+                    <h2 class="text-title font-bold text-ink-1">{{ product?.name }}</h2>
+                    <p class="mt-0.5 text-meta text-ink-3">Choose options to add this to the cart</p>
                 </div>
-
-                <!-- Body -->
-                <div class="flex-1 space-y-5 overflow-y-auto px-6 py-5" style="overscroll-behavior: contain;">
-                    <!-- Sizes -->
-                    <fieldset v-if="variants.length > 0">
-                        <legend class="text-label font-semibold uppercase tracking-wider text-ink-3">Size</legend>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            <button
-                                v-for="variant in variants"
-                                :key="variant.id"
-                                type="button"
-                                :aria-pressed="selectedVariantId === variant.id"
-                                :class="[
-                                    'rounded-control border px-3.5 py-2 text-left transition-all',
-                                    selectedVariantId === variant.id
-                                        ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
-                                        : 'border-line text-ink-2 hover:border-line-strong hover:bg-surface-2',
-                                ]"
-                                @click="selectedVariantId = variant.id"
-                            >
-                                <span class="block text-ui font-semibold">{{ variant.name }}</span>
-                                <span class="block text-meta tabular-nums opacity-70">{{ money(variant.selling_price) }}</span>
-                            </button>
-                        </div>
-                    </fieldset>
-
-                    <!-- Add-on groups -->
-                    <fieldset v-for="group in groups" :key="group.id">
-                        <legend class="flex items-baseline gap-2">
-                            <span class="text-label font-semibold uppercase tracking-wider text-ink-3">{{ group.name }}</span>
-                            <span v-if="group.min_select > 0" class="text-meta font-medium text-stop-ink">Required</span>
-                            <span v-else-if="group.max_select > 1" class="text-meta text-ink-3">up to {{ group.max_select }}</span>
-                        </legend>
-
-                        <div class="mt-2 space-y-1.5">
-                            <button
-                                v-for="modifier in group.modifiers"
-                                :key="modifier.id"
-                                type="button"
-                                :aria-pressed="isChosen(modifier)"
-                                :class="[
-                                    'flex w-full items-center gap-3 rounded-control border px-3.5 py-2.5 text-left transition-all',
-                                    isChosen(modifier)
-                                        ? 'border-accent bg-accent-tint'
-                                        : 'border-line hover:border-line-strong hover:bg-surface-2',
-                                ]"
-                                @click="toggleModifier(group, modifier)"
-                            >
-                                <span
-                                    :class="[
-                                        'flex h-4 w-4 shrink-0 items-center justify-center border',
-                                        group.max_select === 1 ? 'rounded-full' : 'rounded',
-                                        isChosen(modifier) ? 'border-accent bg-accent' : 'border-line-strong',
-                                    ]"
-                                >
-                                    <span v-if="isChosen(modifier)" class="block h-1.5 w-1.5 rounded-full bg-surface-1" />
-                                </span>
-
-                                <span class="flex-1 text-ui font-medium text-ink-2">{{ modifier.name }}</span>
-
-                                <span
-                                    v-if="parseFloat(modifier.price_delta) > 0"
-                                    class="text-meta font-semibold tabular-nums text-ink-3"
-                                >
-                                    +{{ money(modifier.price_delta) }}
-                                </span>
-                            </button>
-                        </div>
-                    </fieldset>
-                </div>
-
-                <!-- Footer -->
-                <div class="border-t border-line bg-surface-2/60 px-6 py-4">
-                    <p v-if="unmetGroup" class="mb-2 text-meta font-medium text-stop-ink">
-                        Choose at least {{ unmetGroup.min_select }} from {{ unmetGroup.name }}.
-                    </p>
-
-                    <button
-                        type="button"
-                        :disabled="!canAdd"
-                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg shadow-rest transition-colors hover:bg-accent-hover disabled:opacity-50"
-                        @click="confirm"
-                    >
-                        <PlusIcon class="h-4 w-4" aria-hidden="true" />
-                        Add to cart &mdash; {{ money(unitPrice) }}
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    class="rounded-control p-1 text-ink-3 hover:bg-surface-2 hover:text-ink-2"
+                    style="transition: background-color var(--t-fast), color var(--t-fast);"
+                    aria-label="Close"
+                    @click="close"
+                >
+                    <XMarkIcon class="h-5 w-5" aria-hidden="true" />
+                </button>
             </div>
+        </template>
+
+        <div v-if="product" class="space-y-5" style="overscroll-behavior: contain;">
+            <!-- Sizes -->
+            <fieldset v-if="variants.length > 0">
+                <legend class="text-label font-semibold uppercase tracking-wider text-ink-3">Size</legend>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    <button
+                        v-for="variant in variants"
+                        :key="variant.id"
+                        type="button"
+                        :aria-pressed="selectedVariantId === variant.id"
+                        :class="[
+                            'rounded-control border px-3.5 py-2 text-left transition-all',
+                            selectedVariantId === variant.id
+                                ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
+                                : 'border-line text-ink-2 hover:border-line-strong hover:bg-surface-2',
+                        ]"
+                        @click="selectedVariantId = variant.id"
+                    >
+                        <span class="block text-ui font-semibold">{{ variant.name }}</span>
+                        <span class="block text-meta tabular-nums opacity-70">{{ money(variant.selling_price) }}</span>
+                    </button>
+                </div>
+            </fieldset>
+
+            <!-- Add-on groups -->
+            <fieldset v-for="group in groups" :key="group.id">
+                <legend class="flex items-baseline gap-2">
+                    <span class="text-label font-semibold uppercase tracking-wider text-ink-3">{{ group.name }}</span>
+                    <span v-if="group.min_select > 0" class="text-meta font-medium text-stop-ink">Required</span>
+                    <span v-else-if="group.max_select > 1" class="text-meta text-ink-3">up to {{ group.max_select }}</span>
+                </legend>
+
+                <div class="mt-2 space-y-1.5">
+                    <button
+                        v-for="modifier in group.modifiers"
+                        :key="modifier.id"
+                        type="button"
+                        :aria-pressed="isChosen(modifier)"
+                        :class="[
+                            'flex w-full items-center gap-3 rounded-control border px-3.5 py-2.5 text-left transition-all',
+                            isChosen(modifier)
+                                ? 'border-accent bg-accent-tint'
+                                : 'border-line hover:border-line-strong hover:bg-surface-2',
+                        ]"
+                        @click="toggleModifier(group, modifier)"
+                    >
+                        <span
+                            :class="[
+                                'flex h-4 w-4 shrink-0 items-center justify-center border',
+                                group.max_select === 1 ? 'rounded-full' : 'rounded',
+                                isChosen(modifier) ? 'border-accent bg-accent' : 'border-line-strong',
+                            ]"
+                            aria-hidden="true"
+                        >
+                            <span v-if="isChosen(modifier)" class="block h-1.5 w-1.5 rounded-full bg-surface-1" />
+                        </span>
+
+                        <span class="flex-1 text-ui font-medium text-ink-2">{{ modifier.name }}</span>
+
+                        <span
+                            v-if="parseFloat(modifier.price_delta) > 0"
+                            class="text-meta font-semibold tabular-nums text-ink-3"
+                        >
+                            +{{ money(modifier.price_delta) }}
+                        </span>
+                    </button>
+                </div>
+            </fieldset>
         </div>
-    </Teleport>
+
+        <template #footer>
+            <!--
+                The unmet requirement is announced as well as shown: the button
+                going dim is the only other signal that the tap did nothing,
+                and that signal does not reach everyone.
+            -->
+            <p v-if="unmetGroup" role="status" aria-live="polite" class="mb-2 text-meta font-medium text-stop-ink">
+                Choose at least {{ unmetGroup.min_select }} from {{ unmetGroup.name }}.
+            </p>
+
+            <button
+                type="button"
+                :disabled="!canAdd"
+                class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-ui font-bold text-accent-fg shadow-rest transition-colors hover:bg-accent-hover disabled:opacity-50"
+                @click="confirm"
+            >
+                <PlusIcon class="h-4 w-4" aria-hidden="true" />
+                Add to cart &mdash; {{ money(unitPrice) }}
+            </button>
+        </template>
+    </Dialog>
 </template>

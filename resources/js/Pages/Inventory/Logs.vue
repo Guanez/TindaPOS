@@ -68,37 +68,65 @@ const goToPage = (url) => {
                 </div>
             </div>
 
-            <!-- Logs Table -->
+            <!-- Logs -->
             <div class="card overflow-hidden">
-                <div class="overflow-x-auto">
+                <!-- Phone -->
+                <ul v-if="logs.data.length" class="divide-y divide-line md:hidden">
+                    <li v-for="log in logs.data" :key="log.id" class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-ui font-semibold text-ink-1">{{ log.product?.name ?? '&mdash;' }}</p>
+                                <p class="mt-0.5 text-meta text-ink-3">
+                                    {{ formatDate(log.created_at) }} &middot; {{ log.user?.name ?? '&mdash;' }}
+                                </p>
+                            </div>
+                            <p class="shrink-0 text-ui font-semibold tabular-nums"
+                                :class="log.quantity_change > 0 ? 'text-ready-ink' : 'text-stop-ink'"
+                            >
+                                {{ log.quantity_change > 0 ? '+' : '' }}{{ log.quantity_change }}
+                            </p>
+                        </div>
+
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <span
+                                :class="typeBadgeClass(log.type)"
+                                class="inline-flex items-center rounded-full px-2 py-0.5 text-meta font-semibold ring-1 ring-inset"
+                            >
+                                {{ typeLabel(log.type) }}
+                            </span>
+                            <span class="text-meta tabular-nums text-ink-3">
+                                {{ log.stock_before }} &rarr; {{ log.stock_after }}
+                            </span>
+                        </div>
+
+                        <p v-if="log.reason" class="mt-1.5 text-meta text-ink-3">{{ log.reason }}</p>
+                    </li>
+                </ul>
+
+                <!-- Counter -->
+                <div class="hidden overflow-x-auto md:block">
                     <table class="min-w-full divide-y divide-line">
+                        <caption class="sr-only">Every stock movement, most recent first</caption>
                         <thead class="bg-surface-2/80">
                             <tr>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Date</th>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Product</th>
-                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Type</th>
-                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Change</th>
-                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Before</th>
-                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">After</th>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">User</th>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Reason</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Date</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Product</th>
+                                <th scope="col" class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Type</th>
+                                <th scope="col" class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Change</th>
+                                <th scope="col" class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Before</th>
+                                <th scope="col" class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">After</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">User</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Reason</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
-                            <tr v-if="!logs.data.length">
-                                <td colspan="8" class="px-4 py-12 text-center">
-                                    <ClockIcon aria-hidden="true" class="mx-auto h-10 w-10 text-ink-3" />
-                                    <p class="mt-2 text-sm font-medium text-ink-3">No stock logs yet</p>
-                                    <p class="mt-1 text-ui text-ink-3">Stock movements will appear here</p>
-                                </td>
-                            </tr>
                             <tr v-for="log in logs.data" :key="log.id" class="transition-colors hover:bg-surface-2/50">
                                 <td class="whitespace-nowrap px-4 py-3 text-ui text-ink-3">
                                     {{ formatDate(log.created_at) }}
                                 </td>
-                                <td class="px-4 py-3 text-ui font-semibold text-ink-1">
-                                    {{ log.product?.name ?? '—' }}
-                                </td>
+                                <th scope="row" class="px-4 py-3 text-left text-ui font-semibold text-ink-1">
+                                    {{ log.product?.name ?? '&mdash;' }}
+                                </th>
                                 <td class="px-4 py-3 text-center">
                                     <span
                                         :class="typeBadgeClass(log.type)"
@@ -119,26 +147,39 @@ const goToPage = (url) => {
                                     {{ log.stock_after }}
                                 </td>
                                 <td class="px-4 py-3 text-ui text-ink-3">
-                                    {{ log.user?.name ?? '—' }}
+                                    {{ log.user?.name ?? '&mdash;' }}
                                 </td>
                                 <td class="max-w-[200px] truncate px-4 py-3 text-ui text-ink-3">
-                                    {{ log.reason || '—' }}
+                                    {{ log.reason || '&mdash;' }}
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
+                <!--
+                    Out of the table rather than inside it as a spanning cell:
+                    an empty state is not a row, and announcing it as one told
+                    a screen-reader user there was data when there was none.
+                -->
+                <div v-if="!logs.data.length" class="flex flex-col items-center justify-center py-12 text-center">
+                    <ClockIcon aria-hidden="true" class="h-10 w-10 text-ink-3" />
+                    <p class="mt-2 text-ui font-medium text-ink-3">No stock logs yet</p>
+                    <p class="mt-1 text-ui text-ink-3">Stock movements will appear here</p>
+                </div>
+
                 <!-- Pagination -->
-                <div v-if="logs.last_page > 1" class="flex items-center justify-between border-t border-line px-4 py-3">
+                <nav v-if="logs.last_page > 1" aria-label="Stock log pages" class="flex items-center justify-between border-t border-line px-4 py-3">
                     <p class="text-ui text-ink-3">
-                        Showing {{ logs.from }}–{{ logs.to }} of {{ logs.total }}
+                        Showing {{ logs.from }}&ndash;{{ logs.to }} of {{ logs.total }}
                     </p>
                     <div class="flex gap-1">
                         <button
                             v-for="link in logs.links" :key="link.label"
+                            type="button"
                             @click="goToPage(link.url)"
                             :disabled="!link.url"
+                            :aria-current="link.active ? 'page' : undefined"
                             :class="[
                                 'rounded-control px-3 py-1.5 text-meta font-medium transition-all',
                                 link.active
@@ -150,7 +191,7 @@ const goToPage = (url) => {
                             v-html="link.label"
                         />
                     </div>
-                </div>
+                </nav>
             </div>
         </div>
     </AppLayout>

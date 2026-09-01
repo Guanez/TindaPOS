@@ -1,14 +1,14 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Dialog from '@/Components/Dialog.vue';
 import { useCurrency } from '@/Composables/currency';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 import {
     BanknotesIcon,
     CheckCircleIcon,
     NoSymbolIcon,
-    XMarkIcon,
     ClockIcon,
 } from '@heroicons/vue/24/outline';
 
@@ -60,16 +60,14 @@ const settleForm = useForm({
     discount: 0,
 });
 
-const cashInput = ref(null);
-
 const openSettle = (order) => {
     settling.value = order;
     settleForm.reset();
     settleForm.clearErrors();
     paused.value = true;
 
-    // Same reasoning as the POS: the cash field is why this dialog opened.
-    nextTick(() => cashInput.value?.focus());
+    // The cash field carries `data-autofocus`; Dialog puts focus there once
+    // the panel is mounted, and puts it back on the order card on close.
 };
 
 const closeSettle = () => {
@@ -329,138 +327,146 @@ const waitingSince = (order) => {
         </div>
 
         <!-- SETTLE -->
-        <Teleport to="body">
-            <div
-                v-if="settling"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Take payment"
-            >
-                <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
-                    <div class="flex items-center gap-2">
-                        <BanknotesIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
-                        <h3 class="text-lg font-bold text-ink-1">Order #{{ settling.queue_number }}</h3>
-                    </div>
+        <Dialog
+            :show="!!settling"
+            :title="settling ? `Order #${settling.queue_number}` : 'Order'"
+            :icon="BanknotesIcon"
+            max-width="md"
+            @close="closeSettle"
+        >
+            <p class="flex items-baseline justify-between rounded-control bg-surface-2 px-4 py-3">
+                <span class="text-ui text-ink-3">Total</span>
+                <span class="text-figure font-bold tabular-nums text-ink-1">{{ money(settling?.total) }}</span>
+            </p>
 
-                    <p class="mt-4 flex items-baseline justify-between rounded-control bg-surface-2 px-4 py-3">
-                        <span class="text-ui text-ink-3">Total</span>
-                        <span class="text-2xl font-bold tabular-nums text-ink-1">{{ money(settling.total) }}</span>
-                    </p>
-
-                    <div class="mt-5">
-                        <label class="text-ui font-semibold text-ink-2">Payment method</label>
-                        <div class="mt-2 grid grid-cols-5 gap-1.5">
-                            <button
-                                v-for="method in ['cash', 'gcash', 'maya', 'card', 'other']"
-                                :key="method"
-                                type="button"
-                                :class="[
-                                    'rounded-control border py-2 text-meta font-semibold capitalize transition-all',
-                                    settleForm.payment_method === method
-                                        ? 'border-accent bg-accent-tint text-accent-ink'
-                                        : 'border-line text-ink-3 hover:bg-surface-2',
-                                ]"
-                                @click="settleForm.payment_method = method"
-                            >
-                                {{ method }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div v-if="settleForm.payment_method === 'cash'" class="mt-5">
-                        <label class="text-ui font-semibold text-ink-2">Cash received</label>
-                        <input
-                            ref="cashInput"
-                            v-model="settleForm.cash_received"
-                            type="number" step="0.01" min="0"
-                            class="input-field mt-1.5 w-full text-right text-lg font-bold tabular-nums"
-                            :placeholder="`Min: ${money(settleTotal)}`"
-                            @keyup.enter="submitSettle"
-                        />
-
-                        <div class="mt-2 flex flex-wrap gap-1.5">
-                            <button
-                                v-for="(amount, index) in quickCash"
-                                :key="amount"
-                                type="button"
-                                :class="[
-                                    'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
-                                    cashReceived === amount
-                                        ? 'border-accent bg-accent-tint text-accent-ink'
-                                        : 'border-line text-ink-3 hover:bg-surface-2',
-                                ]"
-                                @click="settleForm.cash_received = amount"
-                            >
-                                {{ index === 0 ? 'Exact' : `₱${amount.toLocaleString('en-PH')}` }}
-                            </button>
-                        </div>
-
-                        <div v-if="cashReceived >= settleTotal" class="mt-3 rounded-control bg-ready-tint p-3 text-center">
-                            <p class="text-meta font-medium text-ready-ink">Change</p>
-                            <p class="text-2xl font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>
-                        </div>
-                    </div>
-
-                    <p v-if="settleForm.errors.order" class="mt-3 text-meta text-stop-ink">{{ settleForm.errors.order }}</p>
-                    <p v-if="settleForm.errors.checkout" class="mt-3 text-meta text-stop-ink">{{ settleForm.errors.checkout }}</p>
-
-                    <div class="mt-6 flex gap-3">
-                        <button type="button" class="btn-secondary flex-1 justify-center" @click="closeSettle">Cancel</button>
-                        <button
-                            type="button"
-                            :disabled="!canSettle || settleForm.processing"
-                            class="btn-primary flex-1 justify-center disabled:opacity-50"
-                            @click="submitSettle"
-                        >
-                            {{ settleForm.processing ? 'Saving…' : 'Confirm payment' }}
-                        </button>
-                    </div>
+            <!--
+                A group rather than a list of unrelated buttons: without the
+                grouping each one announces as a bare word, and "gcash" on its
+                own does not say what it is being asked. `aria-pressed` is what
+                carries the selection — the tinted background is invisible to
+                anyone not looking at it.
+            -->
+            <div class="mt-5" role="group" aria-labelledby="settle-method-label">
+                <span id="settle-method-label" class="text-ui font-semibold text-ink-2">Payment method</span>
+                <div class="mt-2 grid grid-cols-5 gap-1.5">
+                    <button
+                        v-for="method in ['cash', 'gcash', 'maya', 'card', 'other']"
+                        :key="method"
+                        type="button"
+                        :aria-pressed="settleForm.payment_method === method"
+                        :class="[
+                            'rounded-control border py-2 text-meta font-semibold capitalize transition-all',
+                            settleForm.payment_method === method
+                                ? 'border-accent bg-accent-tint text-accent-ink'
+                                : 'border-line text-ink-3 hover:bg-surface-2',
+                        ]"
+                        @click="settleForm.payment_method = method"
+                    >
+                        {{ method }}
+                    </button>
                 </div>
             </div>
-        </Teleport>
+
+            <div v-if="settleForm.payment_method === 'cash'" class="mt-5">
+                <label for="settle-cash" class="text-ui font-semibold text-ink-2">Cash received</label>
+                <input
+                    id="settle-cash"
+                    v-model="settleForm.cash_received"
+                    data-autofocus
+                    type="number" step="0.01" min="0"
+                    class="input-field mt-1.5 w-full text-right text-title font-bold tabular-nums"
+                    :placeholder="`Min: ${money(settleTotal)}`"
+                    @keyup.enter="submitSettle"
+                />
+
+                <div class="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Quick cash amounts">
+                    <button
+                        v-for="(amount, index) in quickCash"
+                        :key="amount"
+                        type="button"
+                        :aria-pressed="cashReceived === amount"
+                        :class="[
+                            'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
+                            cashReceived === amount
+                                ? 'border-accent bg-accent-tint text-accent-ink'
+                                : 'border-line text-ink-3 hover:bg-surface-2',
+                        ]"
+                        @click="settleForm.cash_received = amount"
+                    >
+                        {{ index === 0 ? 'Exact' : `₱${amount.toLocaleString('en-PH')}` }}
+                    </button>
+                </div>
+
+                <!--
+                    Announced, not just shown. The cashier is looking at the
+                    drawer and the customer's hand, not at the screen, and the
+                    change due is the one number that has to arrive.
+                -->
+                <div
+                    v-if="cashReceived >= settleTotal"
+                    role="status"
+                    aria-live="polite"
+                    class="mt-3 rounded-control bg-ready-tint p-3 text-center"
+                >
+                    <p class="text-meta font-medium text-ready-ink">Change</p>
+                    <p class="text-figure font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>
+                </div>
+            </div>
+
+            <p v-if="settleForm.errors.order" role="alert" class="mt-3 text-meta text-stop-ink">{{ settleForm.errors.order }}</p>
+            <p v-if="settleForm.errors.checkout" role="alert" class="mt-3 text-meta text-stop-ink">{{ settleForm.errors.checkout }}</p>
+
+            <template #footer>
+                <div class="flex gap-3">
+                    <button type="button" class="btn-secondary flex-1 justify-center" @click="closeSettle">Cancel</button>
+                    <button
+                        type="button"
+                        :disabled="!canSettle || settleForm.processing"
+                        class="btn-primary flex-1 justify-center disabled:opacity-50"
+                        @click="submitSettle"
+                    >
+                        {{ settleForm.processing ? 'Saving…' : 'Confirm payment' }}
+                    </button>
+                </div>
+            </template>
+        </Dialog>
 
         <!-- REJECT -->
-        <Teleport to="body">
-            <div
-                v-if="rejecting"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Reject order"
-            >
-                <div class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-ink-1">Reject #{{ rejecting.queue_number }}</h3>
-                        <button class="text-ink-3 hover:text-ink-3" aria-label="Close" @click="closeReject">
-                            <XMarkIcon class="h-5 w-5" aria-hidden="true" />
-                        </button>
-                    </div>
+        <Dialog
+            :show="!!rejecting"
+            :title="rejecting ? `Reject #${rejecting.queue_number}` : 'Reject order'"
+            max-width="sm"
+            close-button
+            @close="closeReject"
+        >
+            <p id="reject-help" class="text-ui text-ink-3">The customer sees this on their phone.</p>
 
-                    <p class="mt-1 text-ui text-ink-3">The customer sees this on their phone.</p>
+            <label for="reject-reason" class="mt-4 block text-ui font-semibold text-ink-2">Reason</label>
+            <input
+                id="reject-reason"
+                v-model="rejectForm.reason"
+                data-autofocus
+                type="text"
+                aria-describedby="reject-help"
+                class="input-field mt-1.5 w-full"
+                placeholder="e.g. Sold out of oat milk"
+                @keyup.enter="submitReject"
+            />
+            <p v-if="rejectForm.errors.reason" role="alert" class="mt-1 text-meta text-stop-ink">{{ rejectForm.errors.reason }}</p>
 
-                    <input
-                        v-model="rejectForm.reason"
-                        type="text"
-                        class="input-field mt-4 w-full"
-                        placeholder="e.g. Sold out of oat milk"
-                        @keyup.enter="submitReject"
-                    />
-                    <p v-if="rejectForm.errors.reason" class="mt-1 text-meta text-stop-ink">{{ rejectForm.errors.reason }}</p>
-
-                    <div class="mt-5 flex gap-3">
-                        <button type="button" class="btn-secondary flex-1 justify-center" @click="closeReject">Cancel</button>
-                        <button
-                            type="button"
-                            :disabled="rejectForm.processing"
-                            class="btn-danger flex-1 justify-center disabled:opacity-50"
-                            @click="submitReject"
-                        >
-                            Reject order
-                        </button>
-                    </div>
+            <template #footer>
+                <div class="flex gap-3">
+                    <button type="button" class="btn-secondary flex-1 justify-center" @click="closeReject">Cancel</button>
+                    <button
+                        type="button"
+                        :disabled="rejectForm.processing"
+                        class="btn-danger flex-1 justify-center disabled:opacity-50"
+                        @click="submitReject"
+                    >
+                        Reject order
+                    </button>
                 </div>
-            </div>
-        </Teleport>
+            </template>
+        </Dialog>
     </AppLayout>
 </template>

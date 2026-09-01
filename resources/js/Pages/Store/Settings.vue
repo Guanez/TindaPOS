@@ -188,24 +188,29 @@ const copyLink = async () => {
                 <!-- Details -->
                 <form class="card space-y-4 p-6 lg:col-span-3" @submit.prevent="save">
                     <div>
-                        <label class="block text-ui font-semibold text-ink-2">Store name <span class="text-stop-ink">*</span></label>
-                        <input v-model="form.name" type="text" required class="input-field mt-1.5 w-full" />
-                        <p v-if="form.errors.name" class="mt-1 text-meta text-stop-ink">{{ form.errors.name }}</p>
+                        <label for="store-name" class="block text-ui font-semibold text-ink-2">
+                            Store name <span class="text-stop-ink" aria-hidden="true">*</span>
+                        </label>
+                        <input id="store-name" v-model="form.name" type="text" required aria-required="true"
+                            :aria-invalid="form.errors.name ? 'true' : undefined"
+                            :aria-describedby="form.errors.name ? 'store-name-error' : undefined"
+                            class="input-field mt-1.5 w-full" />
+                        <p v-if="form.errors.name" id="store-name-error" class="mt-1 text-meta text-stop-ink">{{ form.errors.name }}</p>
                     </div>
 
                     <div>
-                        <label class="block text-ui font-semibold text-ink-2">Address</label>
-                        <input v-model="form.address" type="text" class="input-field mt-1.5 w-full" />
+                        <label for="store-address" class="block text-ui font-semibold text-ink-2">Address</label>
+                        <input id="store-address" v-model="form.address" type="text" autocomplete="street-address" class="input-field mt-1.5 w-full" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-ui font-semibold text-ink-2">Phone</label>
-                            <input v-model="form.phone" type="text" class="input-field mt-1.5 w-full" />
+                            <label for="store-phone" class="block text-ui font-semibold text-ink-2">Phone</label>
+                            <input id="store-phone" v-model="form.phone" type="tel" autocomplete="tel" class="input-field mt-1.5 w-full" />
                         </div>
                         <div>
-                            <label class="block text-ui font-semibold text-ink-2">Currency symbol</label>
-                            <input v-model="form.currency_symbol" type="text" maxlength="5" class="input-field mt-1.5 w-full" />
+                            <label for="store-currency" class="block text-ui font-semibold text-ink-2">Currency symbol</label>
+                            <input id="store-currency" v-model="form.currency_symbol" type="text" maxlength="5" class="input-field mt-1.5 w-full" />
                         </div>
                     </div>
 
@@ -232,6 +237,7 @@ const copyLink = async () => {
                                         type="text"
                                         maxlength="7"
                                         placeholder="#5B3FD9"
+                                        aria-label="Brand colour as a hex value"
                                         class="input-field font-mono uppercase"
                                     />
                                 </div>
@@ -249,10 +255,10 @@ const copyLink = async () => {
                                         <img v-if="logoPreview" :src="logoPreview" alt="" class="max-h-full max-w-full object-contain" />
                                         <span v-else class="text-label uppercase tracking-wider text-ink-3">None</span>
                                     </div>
-                                    <label class="btn-secondary cursor-pointer !py-2">
+                                    <label for="store-logo" class="btn-secondary cursor-pointer !py-2">
                                         {{ logoPreview ? 'Replace' : 'Upload' }}
-                                        <input type="file" class="sr-only" accept="image/png,image/webp,image/jpeg" @change="chooseLogo" />
                                     </label>
+                                    <input id="store-logo" type="file" class="sr-only" accept="image/png,image/webp,image/jpeg" @change="chooseLogo" />
                                     <button v-if="logoPreview" type="button"
                                         class="text-meta font-semibold text-stop-ink hover:underline" @click="clearLogo">
                                         Remove
@@ -264,8 +270,8 @@ const copyLink = async () => {
                     </div>
 
                     <div>
-                        <label class="block text-ui font-semibold text-ink-2">Receipt footer</label>
-                        <input v-model="form.receipt_footer" type="text" class="input-field mt-1.5 w-full"
+                        <label for="store-receipt-footer" class="block text-ui font-semibold text-ink-2">Receipt footer</label>
+                        <input id="store-receipt-footer" v-model="form.receipt_footer" type="text" class="input-field mt-1.5 w-full"
                             placeholder="Salamat po! Please come again." />
                     </div>
 

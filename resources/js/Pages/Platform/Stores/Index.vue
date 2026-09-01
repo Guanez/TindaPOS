@@ -1,6 +1,7 @@
 <script setup>
 import PlatformLayout from '@/Layouts/PlatformLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import Dialog from '@/Components/Dialog.vue';
 import { formatWith } from '@/Composables/currency';
 import { ref } from 'vue';
 import {
@@ -147,7 +148,7 @@ const confirmSuspension = () => {
                                 class="flex items-center gap-1.5 rounded-control border px-3 py-2 text-ui font-medium"
                                 :class="store.is_active
                                     ? 'border-line text-ink-2 hover:border-stop-tint hover:bg-stop-tint hover:text-stop-ink'
-                                    : 'border-ready-tint bg-ready-tint text-ready-ink hover:bg-ready-tint'"
+                                    : 'border-ready-tint bg-ready-tint text-ready-ink hover:bg-ready-mark/25'"
                                 style="transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);"
                             >
                                 <component
@@ -169,43 +170,46 @@ const confirmSuspension = () => {
         </div>
 
         <!-- Suspension confirmation -->
-        <Teleport to="body">
-            <div
-                v-if="pendingSuspend"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
-                @click.self="pendingSuspend = null"
-            >
-                <div role="dialog" aria-modal="true" class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
-                    <h3 class="text-body font-bold text-ink-1">
-                        {{ pendingSuspend.is_active ? 'Suspend' : 'Reactivate' }} {{ pendingSuspend.name }}?
-                    </h3>
-                    <p v-if="pendingSuspend.is_active" class="mt-2 text-ui leading-relaxed text-ink-2">
-                        Their {{ pendingSuspend.staff_count }} staff will be signed out on their next action
-                        and cannot sign back in. Their QR menu will stop working. Sales history is kept.
-                    </p>
-                    <p v-else class="mt-2 text-ui leading-relaxed text-ink-2">
-                        Their staff will be able to sign in again immediately.
-                    </p>
+        <Dialog
+            :show="pendingSuspend !== null"
+            :title="pendingSuspend
+                ? `${pendingSuspend.is_active ? 'Suspend' : 'Reactivate'} ${pendingSuspend.name}?`
+                : 'Confirm'"
+            max-width="md"
+            @close="pendingSuspend = null"
+        >
+            <template v-if="pendingSuspend">
+                <p v-if="pendingSuspend.is_active" class="text-ui leading-relaxed text-ink-2">
+                    Their {{ pendingSuspend.staff_count }} staff will be signed out on their next action
+                    and cannot sign back in. Their QR menu will stop working. Sales history is kept.
+                </p>
+                <p v-else class="text-ui leading-relaxed text-ink-2">
+                    Their staff will be able to sign in again immediately.
+                </p>
+            </template>
 
-                    <div class="mt-5 flex justify-end gap-2">
-                        <button
-                            @click="pendingSuspend = null"
-                            class="rounded-control border border-line px-4 py-2 text-ui font-medium text-ink-2 hover:bg-surface-2"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            @click="confirmSuspension"
-                            class="rounded-control px-4 py-2 text-ui font-semibold text-on-solid"
-                            :class="pendingSuspend.is_active
-                                ? 'bg-stop-solid hover:bg-stop-mark'
-                                : 'bg-ready-solid hover:bg-ready-mark'"
-                        >
-                            {{ pendingSuspend.is_active ? 'Suspend store' : 'Reactivate store' }}
-                        </button>
-                    </div>
+            <template #footer>
+                <div class="flex justify-end gap-2">
+                    <button
+                        type="button"
+                        @click="pendingSuspend = null"
+                        class="rounded-control border border-line px-4 py-2 text-ui font-medium text-ink-2 hover:bg-surface-2"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        v-if="pendingSuspend"
+                        type="button"
+                        @click="confirmSuspension"
+                        class="rounded-control px-4 py-2 text-ui font-semibold text-on-solid"
+                        :class="pendingSuspend.is_active
+                            ? 'bg-stop-solid hover:bg-stop-mark'
+                            : 'bg-ready-solid hover:bg-ready-mark'"
+                    >
+                        {{ pendingSuspend.is_active ? 'Suspend store' : 'Reactivate store' }}
+                    </button>
                 </div>
-            </div>
-        </Teleport>
+            </template>
+        </Dialog>
     </PlatformLayout>
 </template>

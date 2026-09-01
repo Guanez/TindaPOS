@@ -1,9 +1,10 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Dialog from '@/Components/Dialog.vue';
 import { useCurrency } from '@/Composables/currency';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
-import { formatDateTime, formatDate, debounce } from '@/Composables/helpers';
+import { formatDateTime, debounce } from '@/Composables/helpers';
 import {
     EyeIcon,
     XMarkIcon,
@@ -107,28 +108,28 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
             <!-- Filters -->
             <div class="card flex flex-wrap items-end gap-3 p-4">
                 <div>
-                    <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">From</label>
-                    <input v-model="dateFrom" type="date"
-                        class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
+                    <label for="sales-from" class="block text-label font-semibold uppercase tracking-wider text-ink-3">From</label>
+                    <input id="sales-from" v-model="dateFrom" type="date"
+                        class="mt-1 rounded-control border-line px-3 py-2 text-ui focus:border-accent focus:ring-accent/20" />
                 </div>
                 <div>
-                    <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">To</label>
-                    <input v-model="dateTo" type="date"
-                        class="mt-1 rounded-control border-line px-3 py-2 text-sm focus:border-accent focus:ring-accent/20" />
+                    <label for="sales-to" class="block text-label font-semibold uppercase tracking-wider text-ink-3">To</label>
+                    <input id="sales-to" v-model="dateTo" type="date"
+                        class="mt-1 rounded-control border-line px-3 py-2 text-ui focus:border-accent focus:ring-accent/20" />
                 </div>
                 <div>
-                    <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">Status</label>
-                    <select v-model="statusFilter"
-                        class="mt-1 rounded-control border-line py-2 pl-3 pr-8 text-sm focus:border-accent focus:ring-accent/20">
+                    <label for="sales-status" class="block text-label font-semibold uppercase tracking-wider text-ink-3">Status</label>
+                    <select id="sales-status" v-model="statusFilter"
+                        class="mt-1 rounded-control border-line py-2 pl-3 pr-8 text-ui focus:border-accent focus:ring-accent/20">
                         <option value="">All</option>
                         <option value="completed">Completed</option>
                         <option value="voided">Voided</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-label font-semibold uppercase tracking-wider text-ink-3">Payment</label>
-                    <select v-model="paymentFilter"
-                        class="mt-1 rounded-control border-line py-2 pl-3 pr-8 text-sm focus:border-accent focus:ring-accent/20">
+                    <label for="sales-payment" class="block text-label font-semibold uppercase tracking-wider text-ink-3">Payment</label>
+                    <select id="sales-payment" v-model="paymentFilter"
+                        class="mt-1 rounded-control border-line py-2 pl-3 pr-8 text-ui focus:border-accent focus:ring-accent/20">
                         <option value="">All</option>
                         <option value="cash">Cash</option>
                         <option value="gcash">GCash</option>
@@ -139,20 +140,77 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                 </div>
             </div>
 
-            <!-- Sales Table -->
+            <!--
+                Two renderings of the same list, not one squeezed into both.
+                Eight columns inside 360px is a horizontal scrollbar hiding the
+                total, and the total is the column anyone opens this page for.
+                The phone gets the four fields that answer "which sale was
+                that"; the counter gets the ledger.
+            -->
             <div class="card overflow-hidden">
-                <div class="overflow-x-auto">
+                <!-- Phone: one card per sale -->
+                <ul class="divide-y divide-line md:hidden">
+                    <li
+                        v-for="sale in sales.data" :key="sale.id"
+                        :class="['p-4', sale.status === 'voided' ? 'bg-stop-tint/30' : '']"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-mono text-ui font-semibold text-ink-1">{{ sale.receipt_number }}</p>
+                                <p class="mt-0.5 text-meta text-ink-3">{{ formatDateTime(sale.created_at) }}</p>
+                            </div>
+                            <p class="shrink-0 text-title font-bold tabular-nums text-ink-1">{{ money(sale.total) }}</p>
+                        </div>
+
+                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span :class="['badge', sale.status === 'completed' ? 'badge-success' : 'badge-danger']">
+                                {{ sale.status === 'completed' ? 'Completed' : 'Voided' }}
+                            </span>
+                            <span class="badge badge-neutral">{{ sale.payment_method.toUpperCase() }}</span>
+                            <span class="text-meta text-ink-3">
+                                {{ sale.item_count }} item{{ sale.item_count === 1 ? '' : 's' }}
+                                &middot; {{ sale.user?.name ?? '&mdash;' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3 flex gap-1.5">
+                            <button
+                                type="button"
+                                @click="viewSale(sale)"
+                                :aria-label="`View sale ${sale.receipt_number}`"
+                                class="flex flex-1 items-center justify-center gap-1 rounded-control border border-line px-2.5 py-2 text-meta font-semibold text-ink-2 hover:bg-surface-2"
+                                style="transition: background-color var(--t-fast);"
+                            >
+                                <EyeIcon class="h-3.5 w-3.5" aria-hidden="true" /> View
+                            </button>
+                            <button
+                                v-if="sale.status === 'completed' && isManager"
+                                type="button"
+                                @click="startVoid(sale.id)"
+                                :aria-label="`Void sale ${sale.receipt_number}`"
+                                class="flex flex-1 items-center justify-center gap-1 rounded-control border border-stop-tint px-2.5 py-2 text-meta font-semibold text-stop-ink hover:bg-stop-tint"
+                                style="transition: background-color var(--t-fast);"
+                            >
+                                <NoSymbolIcon class="h-3.5 w-3.5" aria-hidden="true" /> Void
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+
+                <!-- Counter: the full ledger -->
+                <div class="hidden overflow-x-auto md:block">
                     <table class="min-w-full divide-y divide-line">
+                        <caption class="sr-only">Sales, most recent first</caption>
                         <thead class="bg-surface-2/80">
                             <tr>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Receipt #</th>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Date &amp; Time</th>
-                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Items</th>
-                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Total</th>
-                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Payment</th>
-                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Status</th>
-                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Cashier</th>
-                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Actions</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Receipt #</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Date &amp; Time</th>
+                                <th scope="col" class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Items</th>
+                                <th scope="col" class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Total</th>
+                                <th scope="col" class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Payment</th>
+                                <th scope="col" class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Status</th>
+                                <th scope="col" class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Cashier</th>
+                                <th scope="col" class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
@@ -172,14 +230,20 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                                         {{ sale.status === 'completed' ? 'Completed' : 'Voided' }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-ui text-ink-3">{{ sale.user?.name ?? '—' }}</td>
+                                <td class="px-4 py-3 text-ui text-ink-3">{{ sale.user?.name ?? '&mdash;' }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-end gap-1.5">
-                                        <button @click="viewSale(sale)" aria-label="View sale details"
+                                        <!--
+                                            The receipt number is in the label
+                                            because a screen reader reads these
+                                            buttons out of the row that gives
+                                            "View" its meaning.
+                                        -->
+                                        <button type="button" @click="viewSale(sale)" :aria-label="`View sale ${sale.receipt_number}`"
                                             class="flex items-center gap-1 rounded-control border border-line px-2.5 py-1.5 text-meta font-semibold text-ink-2 hover:bg-surface-2" style="transition: background-color var(--t-fast);">
                                             <EyeIcon class="h-3.5 w-3.5" aria-hidden="true" /> View
                                         </button>
-                                        <button v-if="sale.status === 'completed' && isManager" @click="startVoid(sale.id)" aria-label="Void this sale"
+                                        <button v-if="sale.status === 'completed' && isManager" type="button" @click="startVoid(sale.id)" :aria-label="`Void sale ${sale.receipt_number}`"
                                             class="flex items-center gap-1 rounded-control border border-stop-tint px-2.5 py-1.5 text-meta font-semibold text-stop-ink hover:bg-stop-tint" style="transition: background-color var(--t-fast);">
                                             <NoSymbolIcon class="h-3.5 w-3.5" aria-hidden="true" /> Void
                                         </button>
@@ -193,20 +257,22 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                 <!-- Empty State -->
                 <div v-if="sales.data.length === 0" class="flex flex-col items-center justify-center py-14">
                     <div class="flex h-14 w-14 items-center justify-center rounded-card bg-surface-2">
-                        <ClipboardDocumentListIcon class="h-7 w-7 text-ink-3" />
+                        <ClipboardDocumentListIcon class="h-7 w-7 text-ink-3" aria-hidden="true" />
                     </div>
-                    <p class="mt-3 text-sm font-medium text-ink-3">No sales found</p>
+                    <p class="mt-3 text-ui font-medium text-ink-3">No sales found</p>
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="sales.last_page > 1" class="flex items-center justify-between border-t border-line px-4 py-3">
+                <nav v-if="sales.last_page > 1" aria-label="Sales pages" class="flex items-center justify-between border-t border-line px-4 py-3">
                     <p class="text-meta text-ink-3">
                         Showing {{ sales.from }}&ndash;{{ sales.to }} of {{ sales.total }}
                     </p>
                     <div class="flex gap-1">
                         <button
                             v-for="link in sales.links" :key="link.label"
+                            type="button"
                             @click="goToPage(link.url)" :disabled="!link.url"
+                            :aria-current="link.active ? 'page' : undefined"
                             :class="[
                                 'rounded-control px-3 py-1 text-meta font-medium transition-all',
                                 link.active ? 'bg-accent text-accent-fg' : link.url ? 'text-ink-3 hover:bg-surface-2' : 'text-ink-3 cursor-default'
@@ -214,142 +280,172 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                             v-html="link.label"
                         />
                     </div>
-                </div>
+                </nav>
             </div>
         </div>
 
-        <!-- SALE DETAIL MODAL -->
-        <Teleport to="body">
-            <div v-if="showDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale details">
-                <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in" style="overscroll-behavior: contain;">
-                    <div v-if="loadingDetail" class="flex flex-col items-center justify-center py-12">
-                        <svg class="h-8 w-8 animate-spin text-accent-ink" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                        <p class="mt-2 text-ui text-ink-3">Loading details…</p>
-                    </div>
-
-                    <template v-else-if="selectedSale">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-center gap-2">
-                                <DocumentTextIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
-                                <div>
-                                    <h3 class="text-lg font-bold text-ink-1">Sale Details</h3>
-                                    <p class="font-mono text-meta text-ink-3">{{ selectedSale.receipt_number }}</p>
-                                </div>
-                            </div>
-                            <span :class="['badge', selectedSale.status === 'completed' ? 'badge-success' : 'badge-danger']">
-                                {{ selectedSale.status === 'completed' ? 'Completed' : 'Voided' }}
-                            </span>
-                        </div>
-
-                        <!-- Info Grid -->
-                        <div class="mt-4 grid grid-cols-2 gap-3">
-                            <div>
-                                <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Date</p>
-                                <p class="mt-0.5 text-ui font-medium text-ink-2">{{ formatDateTime(selectedSale.created_at) }}</p>
-                            </div>
-                            <div>
-                                <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Cashier</p>
-                                <p class="mt-0.5 text-ui font-medium text-ink-2">{{ selectedSale.user?.name ?? '—' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Payment</p>
-                                <p class="mt-0.5 text-ui font-medium text-ink-2">{{ selectedSale.payment_method?.toUpperCase() }}</p>
-                            </div>
-                            <div v-if="selectedSale.cash_received">
-                                <p class="text-label font-semibold uppercase tracking-wider text-ink-3">Cash / Change</p>
-                                <p class="mt-0.5 text-ui font-medium text-ink-2">{{ money(selectedSale.cash_received) }} / {{ money(selectedSale.change_amount) }}</p>
-                            </div>
-                        </div>
-
-                        <!-- Items -->
-                        <div class="mt-4">
-                            <h4 class="text-ui font-semibold text-ink-2">Items</h4>
-                            <div class="mt-2 divide-y divide-line rounded-control border border-line">
-                                <div v-for="item in selectedSale.items" :key="item.id"
-                                    class="flex items-center justify-between px-3 py-2.5">
-                                    <div>
-                                        <p class="text-ui font-semibold text-ink-1">{{ item.product_name }}</p>
-                                        <p class="text-meta text-ink-3">{{ money(item.selling_price) }} x {{ item.quantity }}</p>
-                                    </div>
-                                    <p class="text-ui font-bold text-ink-1">{{ money(item.line_total) }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Totals -->
-                        <div class="mt-4 space-y-1 text-ui">
-                            <div class="flex justify-between text-ink-3">
-                                <span>Subtotal</span>
-                                <span>{{ money(selectedSale.subtotal) }}</span>
-                            </div>
-                            <div v-if="parseFloat(selectedSale.discount) > 0" class="flex justify-between text-ready-ink">
-                                <span>Discount</span>
-                                <span>-{{ money(selectedSale.discount) }}</span>
-                            </div>
-                            <div class="flex justify-between border-t border-line pt-2 text-lg font-bold text-ink-1">
-                                <span>Total</span>
-                                <span>{{ money(selectedSale.total) }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Void info -->
-                        <div v-if="selectedSale.status === 'voided'" class="mt-4 rounded-control bg-stop-tint p-3">
-                            <p class="text-ui font-semibold text-stop-ink">Voided</p>
-                            <p class="text-ui text-stop-ink">{{ selectedSale.void_reason }}</p>
-                            <p class="mt-1 text-meta text-stop-ink">
-                                By {{ selectedSale.voided_by_user?.name ?? '—' }} &middot; {{ formatDateTime(selectedSale.voided_at) }}
-                            </p>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="mt-6 flex gap-3">
-                            <button @click="closeSaleDetail"
-                                class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
-                                Close
-                            </button>
-                            <button v-if="selectedSale.status === 'completed' && isManager" @click="startVoid(selectedSale.id)"
-                                class="flex flex-1 items-center justify-center gap-1.5 rounded-control border border-stop-tint bg-stop-tint py-2.5 text-ui font-bold text-stop-ink transition-all hover:bg-stop-tint">
-                                <NoSymbolIcon class="h-4 w-4" /> Void Sale
-                            </button>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </Teleport>
-
-        <!-- VOID CONFIRMATION MODAL -->
-        <Teleport to="body">
-            <div v-if="confirmingVoid" class="fixed inset-0 z-[60] flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Confirm void sale">
-                <div class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay">
+        <!-- SALE DETAIL -->
+        <Dialog
+            :show="showDetail"
+            title="Sale Details"
+            max-width="lg"
+            @close="closeSaleDetail"
+        >
+            <template #header="{ close }">
+                <div class="flex shrink-0 items-start justify-between gap-3 px-6 pt-6">
                     <div class="flex items-center gap-2">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-control bg-stop-tint">
-                            <ExclamationTriangleIcon class="h-5 w-5 text-stop-ink" />
+                        <DocumentTextIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
+                        <div>
+                            <h2 class="text-title font-bold text-ink-1">Sale Details</h2>
+                            <p v-if="selectedSale" class="font-mono text-meta text-ink-3">{{ selectedSale.receipt_number }}</p>
                         </div>
-                        <h3 class="text-lg font-bold text-stop-ink">Void Sale</h3>
                     </div>
-                    <p class="mt-2 text-ui text-ink-3">
-                        This will mark the sale as voided and return all items to inventory. This action cannot be undone.
-                    </p>
-
-                    <div class="mt-4">
-                        <label class="block text-ui font-semibold text-ink-2">Reason <span class="text-stop-ink">*</span></label>
-                        <input v-model="voidReason" type="text" required
-                            class="mt-1.5 w-full rounded-control border-line py-2.5 text-sm focus:border-stop-mark focus:ring-stop-mark/25"
-                            placeholder="e.g. Customer returned items" />
-                    </div>
-
-                    <div class="mt-6 flex gap-3">
-                        <button @click="cancelVoid"
-                            class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
-                            Cancel
-                        </button>
-                        <button @click="confirmVoid" :disabled="!voidReason.trim()"
-                            class="flex-1 rounded-control bg-stop-solid py-2.5 text-ui font-bold text-on-solid transition-all hover:bg-stop-solid disabled:opacity-50">
-                            Confirm Void
+                    <div class="flex items-center gap-2">
+                        <span v-if="selectedSale" :class="['badge', selectedSale.status === 'completed' ? 'badge-success' : 'badge-danger']">
+                            {{ selectedSale.status === 'completed' ? 'Completed' : 'Voided' }}
+                        </span>
+                        <button
+                            type="button"
+                            class="shrink-0 rounded-control p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink-1"
+                            aria-label="Close dialog"
+                            @click="close"
+                        >
+                            <XMarkIcon class="h-5 w-5" aria-hidden="true" />
                         </button>
                     </div>
                 </div>
+            </template>
+
+            <div v-if="loadingDetail" role="status" class="flex flex-col items-center justify-center py-12">
+                <svg class="h-8 w-8 animate-spin text-accent-ink" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <p class="mt-2 text-ui text-ink-3">Loading details&hellip;</p>
             </div>
-        </Teleport>
+
+            <template v-else-if="selectedSale">
+                <!-- Info Grid -->
+                <dl class="grid grid-cols-2 gap-3">
+                    <div>
+                        <dt class="text-label font-semibold uppercase tracking-wider text-ink-3">Date</dt>
+                        <dd class="mt-0.5 text-ui font-medium text-ink-2">{{ formatDateTime(selectedSale.created_at) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-label font-semibold uppercase tracking-wider text-ink-3">Cashier</dt>
+                        <dd class="mt-0.5 text-ui font-medium text-ink-2">{{ selectedSale.user?.name ?? '&mdash;' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-label font-semibold uppercase tracking-wider text-ink-3">Payment</dt>
+                        <dd class="mt-0.5 text-ui font-medium text-ink-2">{{ selectedSale.payment_method?.toUpperCase() }}</dd>
+                    </div>
+                    <div v-if="selectedSale.cash_received">
+                        <dt class="text-label font-semibold uppercase tracking-wider text-ink-3">Cash / Change</dt>
+                        <dd class="mt-0.5 text-ui font-medium text-ink-2">{{ money(selectedSale.cash_received) }} / {{ money(selectedSale.change_amount) }}</dd>
+                    </div>
+                </dl>
+
+                <!-- Items -->
+                <div class="mt-4">
+                    <h3 class="text-ui font-semibold text-ink-2">Items</h3>
+                    <ul class="mt-2 divide-y divide-line rounded-control border border-line">
+                        <li v-for="item in selectedSale.items" :key="item.id"
+                            class="flex items-center justify-between px-3 py-2.5">
+                            <div>
+                                <p class="text-ui font-semibold text-ink-1">{{ item.product_name }}</p>
+                                <p class="text-meta text-ink-3">{{ money(item.selling_price) }} x {{ item.quantity }}</p>
+                            </div>
+                            <p class="text-ui font-bold text-ink-1">{{ money(item.line_total) }}</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Totals -->
+                <div class="mt-4 space-y-1 text-ui">
+                    <div class="flex justify-between text-ink-3">
+                        <span>Subtotal</span>
+                        <span>{{ money(selectedSale.subtotal) }}</span>
+                    </div>
+                    <div v-if="parseFloat(selectedSale.discount) > 0" class="flex justify-between text-ready-ink">
+                        <span>Discount</span>
+                        <span>-{{ money(selectedSale.discount) }}</span>
+                    </div>
+                    <div class="flex justify-between border-t border-line pt-2 text-title font-bold text-ink-1">
+                        <span>Total</span>
+                        <span>{{ money(selectedSale.total) }}</span>
+                    </div>
+                </div>
+
+                <!-- Void info -->
+                <div v-if="selectedSale.status === 'voided'" class="mt-4 rounded-control bg-stop-tint p-3">
+                    <p class="text-ui font-semibold text-stop-ink">Voided</p>
+                    <p class="text-ui text-stop-ink">{{ selectedSale.void_reason }}</p>
+                    <p class="mt-1 text-meta text-stop-ink">
+                        By {{ selectedSale.voided_by_user?.name ?? '&mdash;' }} &middot; {{ formatDateTime(selectedSale.voided_at) }}
+                    </p>
+                </div>
+            </template>
+
+            <template #footer>
+                <div class="flex gap-3">
+                    <button type="button" @click="closeSaleDetail"
+                        class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
+                        Close
+                    </button>
+                    <button v-if="selectedSale && selectedSale.status === 'completed' && isManager" type="button" @click="startVoid(selectedSale.id)"
+                        class="flex flex-1 items-center justify-center gap-1.5 rounded-control border border-stop-tint bg-stop-tint py-2.5 text-ui font-bold text-stop-ink transition-all hover:bg-stop-mark/20">
+                        <NoSymbolIcon class="h-4 w-4" aria-hidden="true" /> Void Sale
+                    </button>
+                </div>
+            </template>
+        </Dialog>
+
+        <!-- VOID CONFIRMATION -->
+        <Dialog
+            :show="confirmingVoid !== null"
+            title="Void Sale"
+            max-width="sm"
+            @close="cancelVoid"
+        >
+            <template #header>
+                <div class="flex shrink-0 items-center gap-2 px-6 pt-6">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-control bg-stop-tint">
+                        <ExclamationTriangleIcon class="h-5 w-5 text-stop-ink" aria-hidden="true" />
+                    </div>
+                    <h2 class="text-title font-bold text-stop-ink">Void Sale</h2>
+                </div>
+            </template>
+
+            <p id="void-help" class="text-ui text-ink-3">
+                This will mark the sale as voided and return all items to inventory. This action cannot be undone.
+            </p>
+
+            <div class="mt-4">
+                <label for="void-reason" class="block text-ui font-semibold text-ink-2">
+                    Reason <span class="text-stop-ink" aria-hidden="true">*</span>
+                </label>
+                <input
+                    id="void-reason"
+                    v-model="voidReason"
+                    data-autofocus
+                    type="text"
+                    required
+                    aria-required="true"
+                    aria-describedby="void-help"
+                    class="mt-1.5 w-full rounded-control border-line py-2.5 text-ui focus:border-stop-mark focus:ring-stop-mark/25"
+                    placeholder="e.g. Customer returned items"
+                />
+            </div>
+
+            <template #footer>
+                <div class="flex gap-3">
+                    <button type="button" @click="cancelVoid"
+                        class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2">
+                        Cancel
+                    </button>
+                    <button type="button" @click="confirmVoid" :disabled="!voidReason.trim()"
+                        class="flex-1 rounded-control bg-stop-solid py-2.5 text-ui font-bold text-on-solid transition-all hover:bg-stop-mark disabled:opacity-50">
+                        Confirm Void
+                    </button>
+                </div>
+            </template>
+        </Dialog>
     </AppLayout>
 </template>

@@ -414,6 +414,21 @@
 }
 
 @layer components {
+    /*
+     * Skip link. Out of the way until it is the thing you want: it occupies no
+     * space and is unreadable to the eye, then becomes an ordinary primary
+     * button the moment it takes focus. Above every other layer, because it
+     * has to be visible over a sticky topbar and an impersonation banner.
+     */
+    .skip-link {
+        @apply sr-only;
+    }
+    .skip-link:focus {
+        @apply not-sr-only fixed left-4 top-4 z-[100] rounded-control bg-action px-4 py-2.5
+               text-ui font-bold text-action-fg shadow-overlay
+               ring-2 ring-accent ring-offset-2 ring-offset-surface-1;
+    }
+
     /* Shared card style */
     .card {
         @apply rounded-card border border-line bg-surface-1 shadow-rest;

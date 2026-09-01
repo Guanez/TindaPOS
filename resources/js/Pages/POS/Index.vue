@@ -1,9 +1,10 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
+import Dialog from '@/Components/Dialog.vue';
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 import {
     MagnifyingGlassIcon,
@@ -229,17 +230,15 @@ const quickCash = computed(() => {
 });
 
 // Checkout
-const cashInput = ref(null);
-
 const openCheckout = () => {
     if (cart.value.length === 0) return;
     cashReceived.value = '';
     cartOpen.value = false;
     showCheckout.value = true;
 
-    // The field this dialog exists for. Focused on open so the common path is
-    // F9, type, Enter — without a trip to the mouse in the middle of it.
-    nextTick(() => cashInput.value?.focus());
+    // The cash field carries `data-autofocus`, so Dialog puts focus there on
+    // open and returns it to the Charge button on close: the common path stays
+    // F9, type, Enter, with no trip to the mouse in the middle of it.
 };
 
 const processCheckout = () => {
@@ -298,12 +297,10 @@ const handleKeydown = (e) => {
     if (e.key === 'F2') { e.preventDefault(); searchInput.value?.focus(); }
     // F9: Open checkout
     if (e.key === 'F9' && cart.value.length > 0 && !showCheckout.value) { e.preventDefault(); openCheckout(); }
-    // Escape: close whatever is on top, innermost first
-    if (e.key === 'Escape') {
-        if (showReceipt.value) closeReceipt();
-        else if (optionsProduct.value) optionsProduct.value = null;
-        else if (showCheckout.value) showCheckout.value = false;
-        else if (cartOpen.value) cartOpen.value = false;
+    // Escape only has the cart sheet left to close. Every dialog on this page
+    // now handles its own, topmost first, from the shared stack in Dialog.
+    if (e.key === 'Escape' && cartOpen.value && !showCheckout.value && !showReceipt.value && !optionsProduct.value) {
+        cartOpen.value = false;
     }
 };
 
@@ -327,11 +324,13 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 <!-- Search & Category Filter -->
                 <div class="border-b border-line p-4">
                     <div class="relative">
+                        <label for="pos-search" class="sr-only">Search products, SKU, or barcode</label>
                         <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden="true" />
                         <input
+                            id="pos-search"
                             ref="searchInput"
                             v-model="search"
-                            type="text"
+                            type="search"
                             placeholder="Search products, SKU, or barcode… (F2)"
                             class="input-field pl-10 pr-4"
                         />
@@ -444,7 +443,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
             <!-- Scrim, phone and tablet only -->
             <div
                 v-if="cartOpen"
-                class="fixed inset-0 z-30 bg-ink-1/40 backdrop-blur-sm lg:hidden"
+                class="fixed inset-0 z-30 bg-scrim/50 backdrop-blur-sm lg:hidden"
                 aria-hidden="true"
                 @click="cartOpen = false"
             />
@@ -515,6 +514,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                     :value="item.quantity"
                                     @change="updateQuantity(item, $event.target.value)"
                                     type="number" min="1" :max="item.stock ?? undefined"
+                                    :aria-label="`${item.name} quantity`"
                                     class="h-7 w-9 rounded-control border-line text-center text-meta font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 />
                                 <button @click="incrementQty(item)" :disabled="item.stock !== null && item.quantity >= item.stock" :aria-label="`Increase ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-control border border-line text-ink-3 hover:bg-surface-2 disabled:opacity-40" style="transition: background-color var(--t-fast);">
@@ -538,10 +538,11 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 <!-- Cart Footer / Totals -->
                 <div v-if="cart.length > 0" class="border-t border-line bg-surface-2/50 p-4 space-y-3">
                     <div class="flex items-center gap-2">
-                        <label class="text-meta font-semibold text-ink-3">Discount</label>
+                        <label for="pos-discount" class="text-meta font-semibold text-ink-3">Discount</label>
                         <div class="relative">
-                            <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-meta text-ink-3">&#8369;</span>
+                            <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-meta text-ink-3" aria-hidden="true">&#8369;</span>
                             <input
+                                id="pos-discount"
                                 v-model="discount" type="number" min="0" step="0.01"
                                 class="h-8 w-24 rounded-control border-line pl-6 pr-2 text-right text-meta font-semibold focus:border-accent focus:ring-accent/20"
                             />
@@ -606,204 +607,238 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
             @confirm="confirmOptions"
         />
 
-        <!-- CHECKOUT MODAL -->
-        <Teleport to="body">
-            <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checkout">
-                <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay" style="overscroll-behavior: contain;">
-                    <div class="flex items-center gap-2">
-                        <CreditCardIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
-                        <h3 class="text-lg font-bold text-ink-1">Checkout</h3>
-                    </div>
-
-                    <!-- Order Summary -->
-                    <div class="mt-4 rounded-control bg-surface-2 p-3 space-y-1 text-ui">
-                        <div class="flex justify-between text-ink-3">
-                            <span>{{ cartItemCount }} item{{ cartItemCount !== 1 ? 's' : '' }}</span>
-                            <span>{{ money(subtotal) }}</span>
-                        </div>
-                        <div v-if="discountAmount > 0" class="flex justify-between text-ready-ink">
-                            <span>Discount</span>
-                            <span>-{{ money(discountAmount) }}</span>
-                        </div>
-                        <div class="flex justify-between border-t border-line pt-1.5 text-lg font-bold tabular-nums text-ink-1">
-                            <span>Total</span>
-                            <span>{{ money(total) }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Payment Method -->
-                    <div class="mt-5">
-                        <label class="text-ui font-semibold text-ink-2">Payment Method</label>
-                        <div class="mt-2 grid grid-cols-5 gap-1.5">
-                            <button
-                                v-for="pm in paymentMethods"
-                                :key="pm.value"
-                                @click="paymentMethod = pm.value"
-                                :class="[
-                                    'flex flex-col items-center gap-1 rounded-control border py-2.5 text-meta font-semibold transition-all',
-                                    paymentMethod === pm.value
-                                        ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
-                                        : 'border-line text-ink-3 hover:border-line-strong hover:bg-surface-2'
-                                ]"
-                            >
-                                <component :is="pm.icon" class="h-4 w-4" />
-                                {{ pm.label }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Cash Received -->
-                    <div v-if="paymentMethod === 'cash'" class="mt-5">
-                        <label class="text-ui font-semibold text-ink-2">Cash Received</label>
-                        <div class="relative mt-1.5">
-                            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">&#8369;</span>
-                            <input
-                                ref="cashInput"
-                                v-model="cashReceived"
-                                type="number" min="0" step="0.01"
-                                :placeholder="`Min: ${money(total)}`"
-                                class="w-full rounded-control border-line py-2.5 pl-8 pr-4 text-right text-lg font-bold text-ink-1 focus:border-accent focus:ring-accent/20"
-                                @keyup.enter="processCheckout"
-                            />
-                        </div>
-
-                        <!-- Quick cash — derived from the total, not fixed notes -->
-                        <div class="mt-2 flex flex-wrap gap-1.5">
-                            <button
-                                v-for="(amount, index) in quickCash"
-                                :key="amount"
-                                @click="cashReceived = amount"
-                                :class="[
-                                    'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
-                                    cashReceivedNum === amount
-                                        ? 'border-accent bg-accent-tint text-accent-ink'
-                                        : 'border-line text-ink-3 hover:bg-surface-2'
-                                ]"
-                            >
-                                {{ index === 0 ? 'Exact' : `₱${amount.toLocaleString('en-PH')}` }}
-                            </button>
-                        </div>
-
-                        <!-- Change display -->
-                        <div v-if="cashReceivedNum >= total" class="mt-3 rounded-control bg-ready-tint p-3 text-center">
-                            <p class="text-meta font-medium text-ready-ink">Change</p>
-                            <p class="text-2xl font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="mt-6 flex gap-3">
-                        <button
-                            @click="showCheckout = false"
-                            class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            @click="processCheckout"
-                            :disabled="!canCheckout || processing"
-                            class="flex flex-1 items-center justify-center gap-2 rounded-control bg-accent py-2.5 text-ui font-bold text-accent-fg transition-all hover:bg-accent-hover disabled:opacity-50"
-                        >
-                            <svg v-if="processing" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                            {{ processing ? 'Processing...' : `Pay ${money(total)}` }}
-                        </button>
-                    </div>
+        <!-- CHECKOUT -->
+        <Dialog
+            :show="showCheckout"
+            title="Checkout"
+            :icon="CreditCardIcon"
+            max-width="md"
+            @close="showCheckout = false"
+        >
+            <!-- Order Summary -->
+            <div class="rounded-control bg-surface-2 p-3 space-y-1 text-ui">
+                <div class="flex justify-between text-ink-3">
+                    <span>{{ cartItemCount }} item{{ cartItemCount !== 1 ? 's' : '' }}</span>
+                    <span>{{ money(subtotal) }}</span>
+                </div>
+                <div v-if="discountAmount > 0" class="flex justify-between text-ready-ink">
+                    <span>Discount</span>
+                    <span>-{{ money(discountAmount) }}</span>
+                </div>
+                <div class="flex justify-between border-t border-line pt-1.5 text-title font-bold tabular-nums text-ink-1">
+                    <span>Total</span>
+                    <span>{{ money(total) }}</span>
                 </div>
             </div>
-        </Teleport>
 
-        <!-- RECEIPT MODAL -->
-        <Teleport to="body">
-            <div v-if="showReceipt && lastSale" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale complete">
-                <div id="receipt" class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
-                    <div class="text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ready-tint print:hidden">
-                            <CheckCircleIcon class="h-7 w-7 text-ready-ink" aria-hidden="true" />
-                        </div>
-                        <h3 class="mt-3 text-lg font-bold text-ink-1 print:mt-0 print:text-xl">
-                            {{ store.name || 'Sale Complete' }}
-                        </h3>
-                        <p v-if="store.address" class="text-meta leading-snug text-ink-3">{{ store.address }}</p>
-                        <p v-if="store.phone" class="text-meta text-ink-3">{{ store.phone }}</p>
+            <!--
+                A group, not five loose buttons. Each one announces as a bare
+                word otherwise, and "Maya" on its own does not say what is
+                being asked. `aria-pressed` carries the selection, which the
+                tinted background alone never did.
+            -->
+            <div class="mt-5" role="group" aria-labelledby="checkout-method-label">
+                <span id="checkout-method-label" class="text-ui font-semibold text-ink-2">Payment Method</span>
+                <div class="mt-2 grid grid-cols-5 gap-1.5">
+                    <button
+                        v-for="pm in paymentMethods"
+                        :key="pm.value"
+                        type="button"
+                        :aria-pressed="paymentMethod === pm.value"
+                        @click="paymentMethod = pm.value"
+                        :class="[
+                            'flex flex-col items-center gap-1 rounded-control border py-2.5 text-meta font-semibold transition-all',
+                            paymentMethod === pm.value
+                                ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
+                                : 'border-line text-ink-3 hover:border-line-strong hover:bg-surface-2'
+                        ]"
+                    >
+                        <component :is="pm.icon" class="h-4 w-4" aria-hidden="true" />
+                        {{ pm.label }}
+                    </button>
+                </div>
+            </div>
 
-                        <p class="mt-2 font-mono text-ui text-ink-3">{{ lastSale.receipt_number }}</p>
-                        <p class="text-meta text-ink-3">
-                            {{ receiptPrintedAt }}<span v-if="page.props.auth?.user"> &middot; {{ page.props.auth.user.name }}</span>
-                        </p>
+            <!-- Cash Received -->
+            <div v-if="paymentMethod === 'cash'" class="mt-5">
+                <label for="checkout-cash" class="text-ui font-semibold text-ink-2">Cash Received</label>
+                <div class="relative mt-1.5">
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3" aria-hidden="true">&#8369;</span>
+                    <input
+                        id="checkout-cash"
+                        v-model="cashReceived"
+                        data-autofocus
+                        type="number" min="0" step="0.01"
+                        :placeholder="`Min: ${money(total)}`"
+                        class="w-full rounded-control border-line py-2.5 pl-8 pr-4 text-right text-title font-bold text-ink-1 focus:border-accent focus:ring-accent/20"
+                        @keyup.enter="processCheckout"
+                    />
+                </div>
+
+                <!-- Quick cash, derived from the total rather than fixed notes -->
+                <div class="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Quick cash amounts">
+                    <button
+                        v-for="(amount, index) in quickCash"
+                        :key="amount"
+                        type="button"
+                        :aria-pressed="cashReceivedNum === amount"
+                        @click="cashReceived = amount"
+                        :class="[
+                            'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
+                            cashReceivedNum === amount
+                                ? 'border-accent bg-accent-tint text-accent-ink'
+                                : 'border-line text-ink-3 hover:bg-surface-2'
+                        ]"
+                    >
+                        {{ index === 0 ? 'Exact' : `&#8369;${amount.toLocaleString('en-PH')}` }}
+                    </button>
+                </div>
+
+                <!--
+                    Announced, not merely shown. The cashier is looking at the
+                    drawer and the customer, not at the screen, and the change
+                    due is the one number that has to arrive.
+                -->
+                <div
+                    v-if="cashReceivedNum >= total"
+                    role="status"
+                    aria-live="polite"
+                    class="mt-3 rounded-control bg-ready-tint p-3 text-center"
+                >
+                    <p class="text-meta font-medium text-ready-ink">Change</p>
+                    <p class="text-figure font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>
+                </div>
+            </div>
+
+            <template #footer>
+                <div class="flex gap-3">
+                    <button
+                        type="button"
+                        @click="showCheckout = false"
+                        class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="processCheckout"
+                        :disabled="!canCheckout || processing"
+                        class="flex flex-1 items-center justify-center gap-2 rounded-control bg-accent py-2.5 text-ui font-bold text-accent-fg transition-all hover:bg-accent-hover disabled:opacity-50"
+                    >
+                        <svg v-if="processing" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {{ processing ? 'Processing...' : `Pay ${money(total)}` }}
+                    </button>
+                </div>
+            </template>
+        </Dialog>
+
+        <!--
+            RECEIPT
+
+            Headerless because the receipt opens with the shop name, and a
+            dialog title stacked above that would be a receipt from a dialog.
+            The accessible name still comes from `title`.
+        -->
+        <Dialog
+            :show="showReceipt && !!lastSale"
+            title="Sale complete"
+            max-width="sm"
+            headerless
+            @close="closeReceipt"
+        >
+            <div v-if="lastSale" id="receipt">
+                <div class="text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ready-tint print:hidden">
+                        <CheckCircleIcon class="h-7 w-7 text-ready-ink" aria-hidden="true" />
                     </div>
+                    <h2 class="mt-3 text-title font-bold text-ink-1 print:mt-0">
+                        {{ store.name || 'Sale Complete' }}
+                    </h2>
+                    <p v-if="store.address" class="text-meta leading-snug text-ink-3">{{ store.address }}</p>
+                    <p v-if="store.phone" class="text-meta text-ink-3">{{ store.phone }}</p>
 
-                    <!-- What was actually sold -->
-                    <ul v-if="lastSale.items?.length" class="mt-4 space-y-1.5 border-t border-line pt-3">
-                        <li v-for="item in lastSale.items" :key="item.id" class="flex items-start gap-2 text-meta">
-                            <span class="font-semibold tabular-nums text-ink-3">{{ item.quantity }}&times;</span>
-                            <span class="min-w-0 flex-1 text-ink-2">
-                                {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
-                                <span v-if="item.modifiers?.length" class="block text-meta text-ink-3">
-                                    + {{ item.modifiers.map(m => m.name).join(', ') }}
-                                </span>
-                            </span>
-                            <span class="tabular-nums text-ink-2">{{ money(item.line_total) }}</span>
-                        </li>
-                    </ul>
-
-                    <div class="mt-5 space-y-2 rounded-control bg-surface-2 p-4 text-ui">
-                        <div class="flex justify-between text-ink-3">
-                            <span>Items</span>
-                            <span class="font-medium text-ink-2">{{ lastSale.item_count }}</span>
-                        </div>
-                        <div class="flex justify-between text-ink-3">
-                            <span>Subtotal</span>
-                            <span class="text-ink-2">{{ money(lastSale.subtotal) }}</span>
-                        </div>
-                        <div v-if="parseFloat(lastSale.discount) > 0" class="flex justify-between text-ready-ink">
-                            <span>Discount</span>
-                            <span>-{{ money(lastSale.discount) }}</span>
-                        </div>
-                        <div class="flex justify-between border-t border-line pt-2 text-lg font-bold text-ink-1">
-                            <span>Total</span>
-                            <span>{{ money(lastSale.total) }}</span>
-                        </div>
-                        <div class="flex justify-between text-ink-3">
-                            <span>Payment</span>
-                            <span class="font-medium text-ink-2">{{ lastSale.payment_method?.toUpperCase() }}</span>
-                        </div>
-                        <div v-if="lastSale.cash_received" class="flex justify-between text-ink-3">
-                            <span>Cash Received</span>
-                            <span class="text-ink-2">{{ money(lastSale.cash_received) }}</span>
-                        </div>
-                        <div v-if="lastSale.change_amount" class="flex justify-between font-bold text-ready-ink">
-                            <span>Change</span>
-                            <span>{{ money(lastSale.change_amount) }}</span>
-                        </div>
-                    </div>
-
-                    <p v-if="store.receipt_footer" class="mt-4 text-center text-meta italic text-ink-3">
-                        {{ store.receipt_footer }}
+                    <p class="mt-2 font-mono text-ui text-ink-3">{{ lastSale.receipt_number }}</p>
+                    <p class="text-meta text-ink-3">
+                        {{ receiptPrintedAt }}<span v-if="page.props.auth?.user"> &middot; {{ page.props.auth.user.name }}</span>
                     </p>
+                </div>
 
-                    <div class="mt-5 flex gap-2 print:hidden">
-                        <button
-                            @click="printReceipt"
-                            class="flex flex-1 items-center justify-center gap-2 rounded-control border border-line py-3 text-sm font-semibold text-ink-2 hover:bg-surface-2"
-                            style="transition: background-color var(--t-fast);"
-                        >
-                            <PrinterIcon class="h-4 w-4" aria-hidden="true" />
-                            Print
-                        </button>
-                        <button
-                            @click="closeReceipt"
-                            class="flex flex-[2] items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg transition-all hover:bg-accent-hover"
-                        >
-                            <PlusIcon class="h-4 w-4" />
-                            New Transaction
-                        </button>
+                <!-- What was actually sold -->
+                <ul v-if="lastSale.items?.length" class="mt-4 space-y-1.5 border-t border-line pt-3">
+                    <li v-for="item in lastSale.items" :key="item.id" class="flex items-start gap-2 text-meta">
+                        <span class="font-semibold tabular-nums text-ink-3">{{ item.quantity }}&times;</span>
+                        <span class="min-w-0 flex-1 text-ink-2">
+                            {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
+                            <span v-if="item.modifiers?.length" class="block text-meta text-ink-3">
+                                + {{ item.modifiers.map(m => m.name).join(', ') }}
+                            </span>
+                        </span>
+                        <span class="tabular-nums text-ink-2">{{ money(item.line_total) }}</span>
+                    </li>
+                </ul>
+
+                <div class="mt-5 space-y-2 rounded-control bg-surface-2 p-4 text-ui">
+                    <div class="flex justify-between text-ink-3">
+                        <span>Items</span>
+                        <span class="font-medium text-ink-2">{{ lastSale.item_count }}</span>
+                    </div>
+                    <div class="flex justify-between text-ink-3">
+                        <span>Subtotal</span>
+                        <span class="text-ink-2">{{ money(lastSale.subtotal) }}</span>
+                    </div>
+                    <div v-if="parseFloat(lastSale.discount) > 0" class="flex justify-between text-ready-ink">
+                        <span>Discount</span>
+                        <span>-{{ money(lastSale.discount) }}</span>
+                    </div>
+                    <div class="flex justify-between border-t border-line pt-2 text-title font-bold text-ink-1">
+                        <span>Total</span>
+                        <span>{{ money(lastSale.total) }}</span>
+                    </div>
+                    <div class="flex justify-between text-ink-3">
+                        <span>Payment</span>
+                        <span class="font-medium text-ink-2">{{ lastSale.payment_method?.toUpperCase() }}</span>
+                    </div>
+                    <div v-if="lastSale.cash_received" class="flex justify-between text-ink-3">
+                        <span>Cash Received</span>
+                        <span class="text-ink-2">{{ money(lastSale.cash_received) }}</span>
+                    </div>
+                    <div v-if="lastSale.change_amount" class="flex justify-between font-bold text-ready-ink">
+                        <span>Change</span>
+                        <span>{{ money(lastSale.change_amount) }}</span>
                     </div>
                 </div>
+
+                <p v-if="store.receipt_footer" class="mt-4 text-center text-meta italic text-ink-3">
+                    {{ store.receipt_footer }}
+                </p>
             </div>
-        </Teleport>
+
+            <template #footer>
+                <div class="flex gap-2 print:hidden">
+                    <button
+                        type="button"
+                        @click="printReceipt"
+                        class="flex flex-1 items-center justify-center gap-2 rounded-control border border-line py-3 text-ui font-semibold text-ink-2 hover:bg-surface-2"
+                        style="transition: background-color var(--t-fast);"
+                    >
+                        <PrinterIcon class="h-4 w-4" aria-hidden="true" />
+                        Print
+                    </button>
+                    <button
+                        type="button"
+                        data-autofocus
+                        @click="closeReceipt"
+                        class="flex flex-[2] items-center justify-center gap-2 rounded-control bg-accent py-3 text-ui font-bold text-accent-fg transition-all hover:bg-accent-hover"
+                    >
+                        <PlusIcon class="h-4 w-4" aria-hidden="true" />
+                        New Transaction
+                    </button>
+                </div>
+            </template>
+        </Dialog>
     </AppLayout>
 </template>
 

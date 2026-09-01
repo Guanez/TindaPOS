@@ -27,12 +27,17 @@ const finished = computed(() =>
 );
 
 const refresh = () => {
-    if (finished.value) return;
+    if (finished.value || document.hidden) return;
     router.reload({ only: ['order'] });
 };
 
 onMounted(() => {
     poller = setInterval(refresh, POLL_MS);
+
+    // A phone in a pocket is not being read, and this page is open for the
+    // length of a queue. Picking it back up asks straight away rather than
+    // showing a stale number for the rest of the tick.
+    document.addEventListener('visibilitychange', refresh);
 
     try {
         if (finished.value) localStorage.removeItem(TOKEN_KEY);
@@ -40,7 +45,10 @@ onMounted(() => {
     } catch { /* private browsing */ }
 });
 
-onUnmounted(() => clearInterval(poller));
+onUnmounted(() => {
+    clearInterval(poller);
+    document.removeEventListener('visibilitychange', refresh);
+});
 
 // ── Alert the customer the moment it is ready ───────────────────────────
 const celebrate = () => {
@@ -121,6 +129,16 @@ const subline = computed(() => {
         style="transition: background-color var(--t-slow);"
     >
         <Head :title="`Order #${order.queue_number} · ${store.name}`" />
+
+        <!--
+            The page rewrites itself under a customer who may never look at it
+            again until it buzzes. A polite live region is what turns a silent
+            repaint into something announced, and it carries the queue number
+            because "Ready" on its own does not say whose.
+        -->
+        <p class="sr-only" role="status" aria-live="polite">
+            Order {{ order.queue_number }}: {{ headline }}. {{ subline }}
+        </p>
 
         <div class="mx-auto max-w-md">
             <!-- Queue number -->

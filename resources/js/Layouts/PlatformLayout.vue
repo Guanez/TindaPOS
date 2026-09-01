@@ -65,6 +65,8 @@ onUnmounted(() => clearInterval(clockInterval))
 
 <template>
     <div class="flex min-h-screen flex-col bg-surface-3">
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+
         <!--
             The console wears the action surface rather than raw ink, because
             `ink-1` is the *text* colour and inverts with the theme: filled
@@ -107,7 +109,11 @@ onUnmounted(() => clearInterval(clockInterval))
             </div>
         </header>
 
-        <main class="mx-auto w-full max-w-6xl flex-1 p-4 lg:p-6" id="main-content">
+        <main
+            id="main-content"
+            tabindex="-1"
+            class="mx-auto w-full max-w-6xl flex-1 p-4 focus:outline-none lg:p-6"
+        >
             <slot />
         </main>
 
