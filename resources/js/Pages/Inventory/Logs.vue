@@ -23,9 +23,9 @@ const typeLabel = (type) => {
 
 const typeBadgeClass = (type) => {
     const classes = {
-        restock: 'bg-ready-tint text-ready-ink ring-emerald-600/20',
+        restock: 'bg-ready-tint text-ready-ink ring-ready-mark/30',
         sale: 'bg-accent-tint text-accent-ink ring-accent/20',
-        void: 'bg-wait-tint text-wait-ink ring-amber-600/20',
+        void: 'bg-wait-tint text-wait-ink ring-wait-mark/30',
         adjustment: 'bg-surface-2 text-ink-2 ring-ink-2/20',
     };
     return classes[type] || 'bg-surface-2 text-ink-2 ring-ink-2/20';

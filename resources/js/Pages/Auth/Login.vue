@@ -7,6 +7,9 @@ import { ref } from 'vue';
 
 defineProps({
     status: { type: String },
+    // Only ever sent in local development — see the controller for why the
+    // server decides this rather than the template.
+    demoCredentials: { type: String, default: null },
 });
 
 const form = useForm({
@@ -97,10 +100,10 @@ const submit = () => {
                 {{ form.processing ? 'Signing in…' : 'Sign In' }}
             </button>
 
-            <!-- Demo credentials -->
-            <div class="rounded-control bg-surface-2 p-3 text-center">
+            <!-- Demo credentials — sent by the server in local only -->
+            <div v-if="demoCredentials" class="rounded-control bg-surface-2 p-3 text-center">
                 <p class="text-meta font-medium text-ink-3">Demo credentials</p>
-                <p class="mt-0.5 font-mono text-xs text-ink-3">owner / owner123</p>
+                <p class="mt-0.5 font-mono text-meta text-ink-3">{{ demoCredentials }}</p>
             </div>
         </form>
     </GuestLayout>

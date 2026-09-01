@@ -180,7 +180,7 @@ watch(currentTab, (tab) => {
                                     class="absolute -bottom-5 left-1/2 -translate-x-1/2 text-label text-ink-3">
                                     {{ h.hour }}
                                 </span>
-                                <div class="pointer-events-none absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-control bg-ink-1 px-2 py-1 text-meta text-white shadow-overlay group-hover:block">
+                                <div class="pointer-events-none absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-control bg-action px-2 py-1 text-meta text-action-fg shadow-overlay group-hover:block">
                                     <p class="font-bold">{{ h.hour }}:00</p>
                                     <p>{{ money(h.revenue) }}</p>
                                     <p>{{ h.transactions }} txn</p>

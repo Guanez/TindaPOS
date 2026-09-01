@@ -107,7 +107,7 @@ const confirm = () => {
         <div
             v-if="show && product"
             :class="[
-                'fixed inset-0 z-50 flex bg-ink-1/40 backdrop-blur-sm',
+                'fixed inset-0 z-50 flex bg-scrim/50 backdrop-blur-sm',
                 isSheet ? 'items-end' : 'items-center justify-center p-4',
             ]"
             role="dialog"

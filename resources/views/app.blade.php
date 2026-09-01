@@ -11,9 +11,44 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#100d16" media="(prefers-color-scheme: dark)">
         <meta name="color-scheme" content="light dark">
+        <meta name="theme-color" content="#f6f5f9">
+
+        {{--
+            Stamps the saved theme before the first paint.
+
+            This has to be inline and it has to be up here. Anything loaded
+            from the bundle runs after the browser has already painted a
+            frame, and that frame is a white flash on the way into a dark
+            till — which is exactly the thing somebody working a late shift
+            notices and nobody can explain away.
+
+            The key and the two accepted values are shared with
+            Composables/theme.js. A missing entry means "follow the device",
+            which is why that case writes nothing and stamps nothing.
+        --}}
+        <script>
+            (function () {
+                try {
+                    var choice = localStorage.getItem('tindapos-theme');
+                    var explicit = choice === 'light' || choice === 'dark';
+
+                    if (explicit) {
+                        document.documentElement.setAttribute('data-theme', choice);
+                    }
+
+                    var dark = choice === 'dark' || (! explicit
+                        && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+                    if (dark) {
+                        document.querySelector('meta[name="theme-color"]')
+                            .setAttribute('content', '#100d16');
+                    }
+                } catch (e) {
+                    // Unreadable storage just means the device decides.
+                }
+            })();
+        </script>
 
         <title inertia>{{ config('app.name', 'TindaPOS') }}</title>
 

@@ -124,10 +124,7 @@ const subline = computed(() => {
 
         <div class="mx-auto max-w-md">
             <!-- Queue number -->
-            <div
-                class="rounded-sheet p-8 text-center shadow-rest"
-                :class="isReady ? 'bg-surface-1' : 'bg-surface-1'"
-            >
+            <div class="rounded-sheet bg-surface-1 p-8 text-center shadow-rest">
                 <p class="text-label font-semibold uppercase tracking-widest" :class="isReady ? 'text-ready-ink' : 'text-ink-3'">
                     {{ store.name }}
                 </p>
@@ -163,7 +160,7 @@ const subline = computed(() => {
                     class="flex items-center gap-3 rounded-control bg-surface-1/90 px-4 py-3"
                 >
                     <span
-                        class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-label font-bold text-white"
+                        class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-label font-bold text-on-solid"
                         :class="index <= stepIndex ? 'bg-ready-solid' : 'bg-line-strong'"
                     >
                         <CheckCircleIcon v-if="index <= stepIndex" class="h-3.5 w-3.5" aria-hidden="true" />
@@ -211,7 +208,7 @@ const subline = computed(() => {
                 Back to the menu
             </Link>
 
-            <p v-if="store.receipt_footer" class="mt-6 text-center text-meta" :class="isReady ? 'text-white/80' : 'text-ink-3'">
+            <p v-if="store.receipt_footer" class="mt-6 text-center text-meta" :class="isReady ? 'text-on-solid/80' : 'text-ink-3'">
                 {{ store.receipt_footer }}
             </p>
         </div>

@@ -367,7 +367,7 @@ const place = () => {
         <Teleport to="body">
             <div
                 v-if="showBasket"
-                class="fixed inset-0 z-50 flex items-end bg-ink-1/40 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-end bg-scrim/50 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Your basket"

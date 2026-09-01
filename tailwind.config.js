@@ -72,6 +72,7 @@ export default {
                 identity: {
                     DEFAULT: 'rgb(var(--identity) / <alpha-value>)',
                     tint: 'rgb(var(--identity-tint) / <alpha-value>)',
+                    solid: 'rgb(var(--identity-solid) / <alpha-value>)',
                 },
                 /*
                  * tint = the background, ink = text on it, mark = the signal
@@ -96,6 +97,12 @@ export default {
                     solid: 'rgb(var(--stop-solid) / <alpha-value>)',
                 },
                 'on-solid': 'rgb(var(--on-solid) / <alpha-value>)',
+
+                /*
+                 * The wash behind a modal. Deliberately not an ink step: a
+                 * scrim darkens in both themes, where every ink role inverts.
+                 */
+                scrim: 'rgb(var(--scrim) / <alpha-value>)',
 
                 /*
                  * The ramps the semantic tokens will point at from phase 3.

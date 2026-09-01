@@ -13,31 +13,42 @@ class ReportService
     /**
      * Dashboard summary — today's stats at a glance.
      *
+     * `$withMargins` decides whether the cost-derived figures are computed at
+     * all, rather than computing them and trusting the page not to render
+     * them. Profit is (selling_price - cost_price) summed over the day, so
+     * publishing it to a cashier hands them the buy price of everything they
+     * sold — which is exactly what ProductResource goes to some trouble to
+     * withhold from the same person on the next screen.
+     *
+     * Low stock rides along with it: the only thing to do about a low count
+     * is restock, and that whole surface is behind `role:owner,admin`.
+     *
      * @return array<string, mixed>
      */
-    public function dashboard(): array
+    public function dashboard(bool $withMargins = true): array
     {
         $todaySales = Sale::completed()->today();
 
-        $revenue = (float) $todaySales->sum('total');
-        $transactions = $todaySales->count();
-        $discounts = (float) $todaySales->sum('discount');
+        $stats = [
+            'revenue' => (float) $todaySales->sum('total'),
+            'transactions' => $todaySales->count(),
+            'discounts' => (float) $todaySales->sum('discount'),
+            'total_products' => Product::active()->count(),
+        ];
+
+        if (! $withMargins) {
+            return $stats;
+        }
 
         // Profit: sum of (selling_price - cost_price) * quantity for today's sale items
         $profit = (float) SaleItem::whereHas('sale', fn ($q) => $q->completed()->today())
             ->selectRaw('SUM((selling_price - cost_price) * quantity) as profit')
             ->value('profit') ?? 0;
 
-        $lowStockCount = Product::lowStock()->count();
-        $totalProducts = Product::active()->count();
-
         return [
-            'revenue' => $revenue,
-            'transactions' => $transactions,
+            ...$stats,
             'profit' => $profit,
-            'discounts' => $discounts,
-            'low_stock_count' => $lowStockCount,
-            'total_products' => $totalProducts,
+            'low_stock_count' => Product::lowStock()->count(),
         ];
     }
 

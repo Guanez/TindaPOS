@@ -157,7 +157,7 @@ const roleClass = (role) => ({
 
         <!-- ADD / EDIT -->
         <Teleport to="body">
-            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
+            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
                 role="dialog" aria-modal="true" :aria-label="editing ? 'Edit account' : 'Add account'">
                 <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="flex items-center justify-between">

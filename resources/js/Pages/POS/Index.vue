@@ -376,7 +376,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             <p
                                 v-else
                                 class="mt-1.5 text-meta font-medium"
-                                :class="product.stock_quantity <= 0 ? 'text-stop-ink' : product.stock_quantity <= product.low_stock_threshold ? 'text-amber-500' : 'text-ink-3'"
+                                :class="product.stock_quantity <= 0 ? 'text-stop-ink' : product.stock_quantity <= product.low_stock_threshold ? 'text-wait-ink' : 'text-ink-3'"
                             >
                                 {{ product.stock_quantity <= 0 ? 'Out of stock' : `${product.stock_quantity} in stock` }}
                             </p>
@@ -408,7 +408,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         v-if="cart.length > 0"
                         @click="clearCart"
                         aria-label="Clear cart"
-                        class="flex items-center gap-1 text-meta font-medium text-stop-ink hover:text-stop-ink" style="transition: color var(--t-fast);"
+                        class="flex items-center gap-1 text-meta font-medium text-stop-ink hover:text-stop-mark" style="transition: color var(--t-fast);"
                     >
                         <TrashIcon class="h-3.5 w-3.5" aria-hidden="true" />
                         Clear
@@ -515,7 +515,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
         <!-- CHECKOUT MODAL -->
         <Teleport to="body">
-            <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checkout">
+            <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checkout">
                 <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay" style="overscroll-behavior: contain;">
                     <div class="flex items-center gap-2">
                         <CreditCardIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
@@ -622,7 +622,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
         <!-- RECEIPT MODAL -->
         <Teleport to="body">
-            <div v-if="showReceipt && lastSale" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale complete">
+            <div v-if="showReceipt && lastSale" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale complete">
                 <div id="receipt" class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="text-center">
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ready-tint print:hidden">

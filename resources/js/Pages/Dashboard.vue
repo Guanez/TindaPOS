@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
 import StatCard from '@/Components/StatCard.vue';
 import StockBadge from '@/Components/StockBadge.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { formatDateTime } from '@/Composables/helpers';
 import { useVocabulary } from '@/Composables/vocabulary';
 import {
@@ -17,6 +17,7 @@ import {
     ClipboardDocumentListIcon,
     ChartBarIcon,
     ArrowRightIcon,
+    QueueListIcon,
 } from '@heroicons/vue/24/outline';
 
 import { computed } from 'vue';
@@ -34,6 +35,15 @@ const words = useVocabulary();
 
 // Resolve resource collection (handles {data:[...]} or plain [...])
 const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowStockProducts ?? []);
+
+/*
+ * A cashier lands here too, and half of this screen is not theirs: profit and
+ * low stock are cost-and-restock information, and two of the quick actions
+ * point at routes behind `role:owner,admin`. The controller already withholds
+ * the figures; this withholds the tiles and the links, so nobody is offered a
+ * shortcut to a 403.
+ */
+const isManager = computed(() => usePage().props.auth?.user?.is_manager ?? false);
 </script>
 
 <template>
@@ -50,24 +60,27 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
             </div>
 
             <!-- Stat Cards Grid — staggered entrance -->
-            <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+            <div
+                class="grid grid-cols-2 gap-3 lg:grid-cols-3"
+                :class="isManager ? 'xl:grid-cols-6' : 'xl:grid-cols-4'"
+            >
                 <div class="fade-in-up delay-1"><StatCard label="Revenue Today" :value="money(stats.revenue)" :icon="BanknotesIcon" color="success" /></div>
                 <div class="fade-in-up delay-2"><StatCard label="Transactions" :value="stats.transactions" :icon="ReceiptPercentIcon" /></div>
-                <div class="fade-in-up delay-3"><StatCard label="Profit" :value="money(stats.profit)" :icon="ArrowTrendingUpIcon" color="success" /></div>
+                <div v-if="isManager" class="fade-in-up delay-3"><StatCard label="Profit" :value="money(stats.profit)" :icon="ArrowTrendingUpIcon" color="success" /></div>
                 <div class="fade-in-up delay-4"><StatCard label="Discounts Given" :value="money(stats.discounts)" :icon="TagIcon" color="warning" /></div>
-                <div class="fade-in-up delay-5"><StatCard label="Low Stock Items" :value="stats.low_stock_count" :icon="ExclamationTriangleIcon" :color="stats.low_stock_count > 0 ? 'danger' : 'default'" /></div>
+                <div v-if="isManager" class="fade-in-up delay-5"><StatCard label="Low Stock Items" :value="stats.low_stock_count" :icon="ExclamationTriangleIcon" :color="stats.low_stock_count > 0 ? 'danger' : 'default'" /></div>
                 <div class="fade-in-up delay-6"><StatCard :label="`Total ${words.items}`" :value="stats.total_products" :icon="CubeIcon" /></div>
             </div>
 
             <!-- Two-Column Layout -->
-            <div class="grid gap-6 lg:grid-cols-2">
+            <div class="grid gap-6" :class="isManager ? 'lg:grid-cols-2' : ''">
                 <!-- Recent Sales -->
                 <div class="card overflow-hidden fade-in-up" style="animation-delay: 200ms;">
                     <div class="flex items-center justify-between border-b border-line px-5 py-4">
                         <h2 class="text-body font-semibold text-ink-1">Recent Sales</h2>
                         <Link
                             :href="route('sales.index')"
-                            class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:text-accent-ink"
+                            class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:underline"
                         >
                             View all
                             <ArrowRightIcon class="h-3.5 w-3.5" aria-hidden="true" />
@@ -79,7 +92,7 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                             <ClipboardDocumentListIcon class="h-6 w-6 text-ink-3" aria-hidden="true" />
                         </div>
                         <p class="mt-3 text-sm text-ink-3">No sales yet today</p>
-                        <Link :href="route('pos.index')" class="mt-2 text-ui font-medium text-accent-ink hover:text-accent-ink">
+                        <Link :href="route('pos.index')" class="mt-2 text-ui font-medium text-accent-ink hover:underline">
                             Open POS to start selling
                         </Link>
                     </div>
@@ -115,13 +128,14 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                     </div>
                 </div>
 
-                <!-- Low Stock Products -->
-                <div class="card overflow-hidden fade-in-up" style="animation-delay: 250ms;">
+                <!-- Low Stock Products — restocking is a manager's job, and
+                     "Manage" below goes somewhere a cashier cannot follow. -->
+                <div v-if="isManager" class="card overflow-hidden fade-in-up" style="animation-delay: 250ms;">
                     <div class="flex items-center justify-between border-b border-line px-5 py-4">
                         <h2 class="text-body font-semibold text-ink-1">Low Stock Alert</h2>
                         <Link
                             :href="route('inventory.index')"
-                            class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:text-accent-ink"
+                            class="flex items-center gap-1 text-ui font-medium text-accent-ink transition-colors hover:underline"
                         >
                             Manage
                             <ArrowRightIcon class="h-3.5 w-3.5" aria-hidden="true" />
@@ -154,13 +168,21 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                 </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <!--
+                Quick Actions. Driven off the same role check the sidebar uses:
+                two of these are behind `role:owner,admin`, and offering a
+                cashier the most prominent button on their landing screen only
+                to answer with a 403 is worse than not offering it.
+            -->
+            <div
+                class="grid grid-cols-2 gap-3"
+                :class="isManager ? 'sm:grid-cols-3 lg:grid-cols-5' : 'sm:grid-cols-3'"
+            >
                 <Link
                     :href="route('pos.index')"
                     class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 300ms;"
                 >
-                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-accent-tint group-hover:bg-accent-tint" style="transition: background-color var(--t-fast);">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-accent-tint" style="transition: background-color var(--t-fast);">
                         <ShoppingCartIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                     </div>
                     <div>
@@ -169,22 +191,22 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                     </div>
                 </Link>
                 <Link
-                    :href="route('inventory.index')"
+                    :href="route('orders.index')"
                     class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 350ms;"
                 >
-                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-wait-tint group-hover:bg-wait-tint" style="transition: background-color var(--t-fast);">
-                        <CubeIcon class="h-5 w-5 text-wait-ink" aria-hidden="true" />
+                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-wait-tint" style="transition: background-color var(--t-fast);">
+                        <QueueListIcon class="h-5 w-5 text-wait-ink" aria-hidden="true" />
                     </div>
                     <div>
-                        <p class="text-ui font-semibold text-ink-1">Inventory</p>
-                        <p class="text-meta text-ink-3">Manage stock</p>
+                        <p class="text-ui font-semibold text-ink-1">Order Queue</p>
+                        <p class="text-meta text-ink-3">Take payment</p>
                     </div>
                 </Link>
                 <Link
                     :href="route('sales.index')"
                     class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 400ms;"
                 >
-                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-ready-tint group-hover:bg-ready-tint" style="transition: background-color var(--t-fast);">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-ready-tint" style="transition: background-color var(--t-fast);">
                         <ClipboardDocumentListIcon class="h-5 w-5 text-ready-ink" aria-hidden="true" />
                     </div>
                     <div>
@@ -193,10 +215,24 @@ const lowStockList = computed(() => props.lowStockProducts?.data ?? props.lowSto
                     </div>
                 </Link>
                 <Link
-                    :href="route('reports.index')"
+                    v-if="isManager"
+                    :href="route('inventory.index')"
                     class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 450ms;"
                 >
-                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-accent-tint group-hover:bg-accent-tint" style="transition: background-color var(--t-fast);">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-surface-3" style="transition: background-color var(--t-fast);">
+                        <CubeIcon class="h-5 w-5 text-ink-2" aria-hidden="true" />
+                    </div>
+                    <div>
+                        <p class="text-ui font-semibold text-ink-1">{{ words.catalogue }}</p>
+                        <p class="text-meta text-ink-3">Manage stock</p>
+                    </div>
+                </Link>
+                <Link
+                    v-if="isManager"
+                    :href="route('reports.index')"
+                    class="card card-hover group flex items-center gap-3 p-4 fade-in-up" style="animation-delay: 500ms;"
+                >
+                    <div class="flex h-10 w-10 items-center justify-center rounded-control bg-accent-tint" style="transition: background-color var(--t-fast);">
                         <ChartBarIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
                     </div>
                     <div>

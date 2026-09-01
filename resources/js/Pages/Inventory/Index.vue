@@ -326,7 +326,7 @@ const goToPage = (url) => {
                                             :class="[
                                                 'flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-meta font-semibold',
                                                 confirmingDelete === product.id
-                                                    ? 'border-red-300 bg-stop-tint text-stop-ink'
+                                                    ? 'border-stop-mark bg-stop-tint text-stop-ink'
                                                     : 'border-line text-ink-2 hover:bg-surface-2'
                                             ]"
                                         >
@@ -370,7 +370,7 @@ const goToPage = (url) => {
 
         <!-- ADD/EDIT PRODUCT MODAL -->
         <Teleport to="body">
-            <div v-if="showProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" :aria-label="editingProduct ? 'Edit product' : 'Add product'">
+            <div v-if="showProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" :aria-label="editingProduct ? 'Edit product' : 'Add product'">
                 <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in" style="overscroll-behavior: contain;">
                     <div class="flex items-center gap-2">
                         <component :is="editingProduct ? PencilSquareIcon : PlusIcon" aria-hidden="true" class="h-5 w-5 text-accent-ink" />
@@ -683,7 +683,7 @@ const goToPage = (url) => {
                                         </button>
                                     </div>
                                     <p v-if="groupForm.errors.modifiers" class="text-meta text-stop-ink">{{ groupForm.errors.modifiers }}</p>
-                                    <button type="button" class="text-meta font-semibold text-accent-ink hover:text-accent-ink" @click="addGroupOption">
+                                    <button type="button" class="text-meta font-semibold text-accent-ink hover:underline" @click="addGroupOption">
                                         + Add option
                                     </button>
                                 </div>
@@ -721,7 +721,7 @@ const goToPage = (url) => {
 
         <!-- RESTOCK MODAL -->
         <Teleport to="body">
-            <div v-if="showRestockModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Restock product">
+            <div v-if="showRestockModal" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Restock product">
                 <div class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="flex items-center gap-2">
                         <ArrowPathIcon aria-hidden="true" class="h-5 w-5 text-ready-ink" />

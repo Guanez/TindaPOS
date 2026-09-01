@@ -220,7 +220,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
 
         <!-- SALE DETAIL MODAL -->
         <Teleport to="body">
-            <div v-if="showDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale details">
+            <div v-if="showDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale details">
                 <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in" style="overscroll-behavior: contain;">
                     <div v-if="loadingDetail" class="flex flex-col items-center justify-center py-12">
                         <svg class="h-8 w-8 animate-spin text-accent-ink" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
@@ -319,7 +319,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
 
         <!-- VOID CONFIRMATION MODAL -->
         <Teleport to="body">
-            <div v-if="confirmingVoid" class="fixed inset-0 z-[60] flex items-center justify-center bg-ink-1/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Confirm void sale">
+            <div v-if="confirmingVoid" class="fixed inset-0 z-[60] flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Confirm void sale">
                 <div class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay">
                     <div class="flex items-center gap-2">
                         <div class="flex h-9 w-9 items-center justify-center rounded-control bg-stop-tint">
@@ -334,7 +334,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager);
                     <div class="mt-4">
                         <label class="block text-ui font-semibold text-ink-2">Reason <span class="text-stop-ink">*</span></label>
                         <input v-model="voidReason" type="text" required
-                            class="mt-1.5 w-full rounded-control border-line py-2.5 text-sm focus:border-stop-mark focus:ring-red-500/20"
+                            class="mt-1.5 w-full rounded-control border-line py-2.5 text-sm focus:border-stop-mark focus:ring-stop-mark/25"
                             placeholder="e.g. Customer returned items" />
                     </div>
 

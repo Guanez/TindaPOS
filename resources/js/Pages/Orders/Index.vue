@@ -41,7 +41,23 @@ onMounted(() => { poller = setInterval(refresh, POLL_MS); });
 onUnmounted(() => clearInterval(poller));
 
 // ── Chime when something new arrives ────────────────────────────────────
+//
+// Remembered per device rather than per session: the queue screen navigates
+// away and back all shift, and a barista who turned the sound off should not
+// have to turn it off again every time they take a payment.
+const SOUND_KEY = 'tindapos_queue_sound';
+
 const soundOn = ref(true);
+
+try {
+    soundOn.value = localStorage.getItem(SOUND_KEY) !== 'off';
+} catch { /* private browsing — default to on */ }
+
+watch(soundOn, (on) => {
+    try {
+        localStorage.setItem(SOUND_KEY, on ? 'on' : 'off');
+    } catch { /* storage unavailable — the choice still holds for this page */ }
+});
 
 const chime = () => {
     if (!soundOn.value) return;
@@ -64,10 +80,20 @@ const chime = () => {
     }
 };
 
-watch(
-    () => awaitingPayment.value.length,
-    (now, before) => { if (before !== undefined && now > before) chime(); },
-);
+// Watches which orders are waiting, not how many.
+//
+// A count only moves when the net changes, so settling one order and
+// receiving another inside the same five-second poll left the total identical
+// and the counter silent — at exactly the rush the chime exists for. Comparing
+// the ids catches an arrival regardless of what left alongside it.
+const waitingIds = computed(() => awaitingPayment.value.map((o) => o.id));
+
+watch(waitingIds, (now, before) => {
+    if (before === undefined) return;
+
+    const known = new Set(before);
+    if (now.some((id) => ! known.has(id))) chime();
+});
 
 // ── Settle ──────────────────────────────────────────────────────────────
 const settling = ref(null);
@@ -189,7 +215,7 @@ const waitingSince = (order) => {
                         <article
                             v-for="order in awaitingPayment"
                             :key="order.id"
-                            class="rounded-control border border-amber-200 bg-surface-1 p-3 shadow-rest"
+                            class="rounded-control border border-wait-mark/40 bg-surface-1 p-3 shadow-rest"
                         >
                             <div class="flex items-baseline justify-between">
                                 <span class="text-lg font-bold tabular-nums text-ink-1">#{{ order.queue_number }}</span>
@@ -323,7 +349,7 @@ const waitingSince = (order) => {
         <Teleport to="body">
             <div
                 v-if="settling"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Take payment"
@@ -395,7 +421,7 @@ const waitingSince = (order) => {
         <Teleport to="body">
             <div
                 v-if="rejecting"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Reject order"

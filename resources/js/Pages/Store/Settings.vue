@@ -205,9 +205,9 @@ const copyLink = async () => {
                     </div>
 
                     <label class="flex items-start gap-3 rounded-control border p-3"
-                        :class="form.online_ordering_enabled ? 'border-emerald-300 bg-ready-tint/60' : 'border-line'">
+                        :class="form.online_ordering_enabled ? 'border-ready-mark/50 bg-ready-tint/60' : 'border-line'">
                         <input v-model="form.online_ordering_enabled" type="checkbox"
-                            class="mt-0.5 rounded border-line-strong text-ready-ink focus:ring-emerald-500" />
+                            class="mt-0.5 rounded border-line-strong text-ready-ink focus:ring-ready-mark" />
                         <span>
                             <span class="block text-ui font-semibold text-ink-1">Accept customer QR orders</span>
                             <span class="block text-meta text-ink-3">
@@ -312,7 +312,7 @@ const copyLink = async () => {
                                 <input
                                     v-model="addressForm.confirm"
                                     type="checkbox"
-                                    class="mt-0.5 rounded border-amber-400 text-wait-ink focus:ring-amber-500"
+                                    class="mt-0.5 rounded border-wait-mark text-wait-ink focus:ring-wait-mark"
                                 />
                                 <span class="text-meta leading-relaxed text-wait-ink">
                                     I understand every printed card showing

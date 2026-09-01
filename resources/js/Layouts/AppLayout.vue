@@ -16,6 +16,7 @@ import {
     Cog6ToothIcon,
     ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
+import ThemeToggle from '@/Components/ThemeToggle.vue'
 
 const page = usePage()
 const user = computed(() => page.props.auth.user)
@@ -30,16 +31,35 @@ const leaveStore = () => router.post(route('platform.leave'))
 
 const sidebarOpen = ref(false)
 
-// Toast notification system
+/*
+ * Toasts.
+ *
+ * Success dismisses itself; an error waits to be dismissed. Four seconds is
+ * plenty to confirm that a payment saved, and nowhere near enough to read why
+ * one failed while you are counting change — and the message is the only
+ * account of the failure anyone gets. The close button was always there; it
+ * is the only way out of an error now, and the alert role says as much.
+ */
 const showToast = ref(false)
 const toastMessage = ref('')
 const toastType = ref('success')
 
+let toastTimer = null
+
+const dismissToast = () => {
+    clearTimeout(toastTimer)
+    showToast.value = false
+}
+
 const triggerToast = (msg, type = 'success') => {
+    clearTimeout(toastTimer)
     toastMessage.value = msg
     toastType.value = type
     showToast.value = true
-    setTimeout(() => showToast.value = false, 4000)
+
+    if (type === 'success') {
+        toastTimer = setTimeout(() => { showToast.value = false }, 4000)
+    }
 }
 
 watch(
@@ -120,11 +140,19 @@ onUnmounted(() => {
             Impersonation banner. Amber and full-bleed on purpose: everything
             below it is a real shop's real till, and the one mistake worth
             engineering against is forgetting whose.
+
+            Filled with `wait-solid` rather than `wait-mark`, because the two
+            look alike and only one of them can carry text. mark over ink
+            measured 2.35:1 in light and 1.29:1 in dark — the loudest control
+            in the product was the one nobody could read, and in dark it had
+            all but disappeared. `solid` is the role that exists for a filled
+            surface: it stays dark in both themes so `on-solid` always lands
+            on it, here at 5.02:1.
         -->
         <div
             v-if="actingAs"
             role="alert"
-            class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 bg-wait-mark px-4 py-2 text-ui font-medium text-wait-ink"
+            class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 bg-wait-solid px-4 py-2 text-ui font-medium text-on-solid"
         >
             <ExclamationTriangleIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
@@ -133,7 +161,7 @@ onUnmounted(() => {
             </span>
             <button
                 @click="leaveStore"
-                class="ml-auto rounded-control bg-amber-950/10 px-3 py-1 text-meta font-semibold text-wait-ink hover:bg-amber-950/20"
+                class="ml-auto rounded-control bg-on-solid/15 px-3 py-1 text-meta font-semibold text-on-solid hover:bg-on-solid/25"
                 style="transition: background-color var(--t-fast);"
             >
                 Leave store
@@ -152,7 +180,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="sidebarOpen"
-                class="fixed inset-0 z-30 bg-ink-1/40 backdrop-blur-sm lg:hidden"
+                class="fixed inset-0 z-30 bg-scrim/50 backdrop-blur-sm lg:hidden"
                 aria-hidden="true"
                 @click="sidebarOpen = false"
             />
@@ -167,8 +195,8 @@ onUnmounted(() => {
         >
             <!-- Brand -->
             <div class="flex h-16 items-center gap-3 border-b border-line px-5">
-                <div class="flex h-9 w-9 items-center justify-center rounded-control bg-gradient-to-br from-accent to-accent-hover shadow-rest shadow-rest/20">
-                    <ShoppingCartIcon class="h-5 w-5 text-white" />
+                <div class="flex h-9 w-9 items-center justify-center rounded-control bg-identity-solid shadow-rest">
+                    <ShoppingCartIcon class="h-5 w-5 text-on-solid" />
                 </div>
                 <div>
                     <!--
@@ -204,7 +232,7 @@ onUnmounted(() => {
                         <component
                             :is="iconMap[item.href]"
                             class="h-[18px] w-[18px] shrink-0"
-                            :class="isActive(item.href) ? 'text-accent-ink' : 'text-ink-3 group-hover:text-ink-3'"
+                            :class="isActive(item.href) ? 'text-accent-ink' : 'text-ink-3 group-hover:text-ink-2'"
                             aria-hidden="true"
                             style="transition: color var(--t-fast);"
                         />
@@ -220,7 +248,7 @@ onUnmounted(() => {
             <!-- User Footer -->
             <div class="border-t border-line p-4">
                 <div class="flex items-center gap-3">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover text-sm font-bold text-accent-fg shadow-rest">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-3 text-sm font-bold text-ink-2">
                         {{ user?.name?.charAt(0)?.toUpperCase() }}
                     </div>
                     <div class="min-w-0 flex-1">
@@ -255,6 +283,7 @@ onUnmounted(() => {
                 <slot name="header" />
                 <div class="ml-auto flex items-center gap-3">
                     <span class="hidden text-ui font-medium tabular-nums text-ink-3 sm:inline">{{ clock }}</span>
+                    <ThemeToggle />
                 </div>
             </header>
 
@@ -264,9 +293,17 @@ onUnmounted(() => {
             </main>
         </div>
 
-        <!-- Toast Notification -->
+        <!--
+            Toast. The live region is `assertive` for an error and `polite` for
+            a success, so a failed checkout interrupts rather than queueing
+            behind whatever the screen reader was already saying.
+        -->
         <Teleport to="body">
-            <div aria-live="polite" aria-atomic="true" class="fixed bottom-5 right-5 z-50">
+            <div
+                :aria-live="toastType === 'error' ? 'assertive' : 'polite'"
+                aria-atomic="true"
+                class="fixed bottom-5 right-5 z-50"
+            >
                 <Transition
                     enter-active-class="transition duration-300 ease-out"
                     enter-from-class="translate-y-3 opacity-0 scale-95"
@@ -277,8 +314,8 @@ onUnmounted(() => {
                 >
                     <div
                         v-if="showToast"
-                        role="status"
-                        class="flex items-center gap-2.5 rounded-control px-4 py-3 text-ui font-medium text-white shadow-overlay"
+                        :role="toastType === 'error' ? 'alert' : 'status'"
+                        class="flex items-center gap-2.5 rounded-control px-4 py-3 text-ui font-medium text-on-solid shadow-overlay"
                         :class="toastType === 'success' ? 'bg-ready-solid' : 'bg-stop-solid'"
                     >
                         <svg v-if="toastType === 'success'" class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -289,8 +326,8 @@ onUnmounted(() => {
                         </svg>
                         {{ toastMessage }}
                         <button
-                            @click="showToast = false"
-                            class="ml-1 rounded-control p-0.5 hover:bg-surface-1/20"
+                            @click="dismissToast"
+                            class="ml-1 rounded-control p-0.5 hover:bg-on-solid/20"
                             aria-label="Dismiss notification"
                         >
                             <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />

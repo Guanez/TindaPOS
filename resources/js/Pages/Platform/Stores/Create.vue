@@ -249,7 +249,7 @@ const submit = () => form.post(route('platform.stores.store'));
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="rounded-control bg-ink-1 px-5 py-2.5 text-ui font-semibold text-white hover:bg-ink-1 disabled:opacity-50"
+                        class="rounded-control bg-action px-5 py-2.5 text-ui font-semibold text-action-fg hover:bg-action-hover disabled:opacity-50"
                         style="transition: background-color var(--t-fast);"
                     >
                         {{ form.processing ? 'Creating…' : 'Create store' }}

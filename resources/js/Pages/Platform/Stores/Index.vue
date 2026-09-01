@@ -48,7 +48,7 @@ const confirmSuspension = () => {
                 </div>
                 <Link
                     :href="route('platform.stores.create')"
-                    class="flex items-center gap-2 rounded-control bg-ink-1 px-4 py-2.5 text-ui font-semibold text-white shadow-rest hover:bg-ink-1"
+                    class="flex items-center gap-2 rounded-control bg-action px-4 py-2.5 text-ui font-semibold text-action-fg shadow-rest hover:bg-action-hover"
                     style="transition: background-color var(--t-fast);"
                 >
                     <PlusIcon class="h-4 w-4" aria-hidden="true" />
@@ -99,7 +99,7 @@ const confirmSuspension = () => {
                                 >
                                     <span
                                         class="h-1.5 w-1.5 rounded-full"
-                                        :class="store.is_active ? 'bg-emerald-500' : 'bg-stop-solid'"
+                                        :class="store.is_active ? 'bg-ready-mark' : 'bg-stop-solid'"
                                     />
                                     {{ store.is_active ? 'Active' : 'Suspended' }}
                                 </span>
@@ -172,7 +172,7 @@ const confirmSuspension = () => {
         <Teleport to="body">
             <div
                 v-if="pendingSuspend"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-ink-1/40 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
                 @click.self="pendingSuspend = null"
             >
                 <div role="dialog" aria-modal="true" class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
@@ -196,10 +196,10 @@ const confirmSuspension = () => {
                         </button>
                         <button
                             @click="confirmSuspension"
-                            class="rounded-control px-4 py-2 text-ui font-semibold text-white"
+                            class="rounded-control px-4 py-2 text-ui font-semibold text-on-solid"
                             :class="pendingSuspend.is_active
-                                ? 'bg-stop-solid hover:bg-stop-solid'
-                                : 'bg-ready-solid hover:bg-ready-solid'"
+                                ? 'bg-stop-solid hover:bg-stop-mark'
+                                : 'bg-ready-solid hover:bg-ready-mark'"
                         >
                             {{ pendingSuspend.is_active ? 'Suspend store' : 'Reactivate store' }}
                         </button>
