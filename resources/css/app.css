@@ -2,6 +2,285 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * ─── Design tokens ──────────────────────────────────────────────────────
+ *
+ * One place to change any colour, size, radius or duration in the product.
+ *
+ * Type is expressed as roles rather than sizes. `--fs-ui` is "the workhorse
+ * size for a control", not "13px" — which is what stops the next screen from
+ * inventing text-[14px] because 13 looked a touch small that day.
+ *
+ * Each role carries two values because the same components render on a
+ * counter terminal and on a customer's phone, and 13px is right on one and
+ * cramped on the other. One attribute on <html> switches the whole set; no
+ * component ever asks which side of the counter it is on.
+ *
+ * Colours are stored as space-separated RGB channels rather than hex so that
+ * Tailwind's opacity modifiers keep working: `bg-scrim/50` is a modal scrim,
+ * and a hex custom property cannot produce one.
+ */
+:root {
+    /*
+     * Tells the browser which way its own widgets should render — the select
+     * dropdown popup, the date picker, the scrollbar gutter. Without it a
+     * dark page still gets a white native dropdown with white text in it,
+     * and no amount of token work reaches inside those.
+     */
+    color-scheme: light;
+
+    /* Type — counter density (staff terminals, mouse and keyboard) */
+    --fs-label:   11px; --lh-label:   14px;
+    --fs-meta:    12px; --lh-meta:    16px;
+    --fs-ui:      13px; --lh-ui:      18px;
+    --fs-body:    15px; --lh-body:    22px;
+    --fs-title:   18px; --lh-title:   24px;
+    --fs-heading: 22px; --lh-heading: 28px;
+    --fs-figure:  28px; --lh-figure:  32px;
+    --fs-hero:    56px; --lh-hero:    56px;
+
+    /*
+     * Ash — one neutral family, biased toward violet so it sits with the
+     * accent instead of reading as a different system. Replaces slate and
+     * gray, which were both in use for the same job.
+     */
+    --surface-1: 255 255 255;
+    --surface-2: 246 245 249;
+    --surface-3: 235 232 241;
+    --line: 228 225 236;
+    --line-strong: 216 212 226;
+
+    /*
+     * Three ink levels, and the lightest one still passes AA on white.
+     * The old text-slate-400 carried stock counts and timestamps at 2.56:1;
+     * --ink-3 is 5.59:1 and still reads as clearly secondary.
+     *
+     * Note this is ash-500, not the ash-400 the design proposal named —
+     * ash-400 measures 3.42:1 on white, which fails AA for body text. The
+     * proposal was wrong; the contrast requirement wins.
+     */
+    --ink-1: 21 18 28;
+    --ink-2: 74 68 89;
+    --ink-3: 107 100 128;
+
+    /*
+     * Action is separate from accent on purpose. The order queue spends
+     * amber, emerald and red on order state, and those are signals a barista
+     * reads across a counter — so a primary button that is also a hue
+     * competes with them. Ink competes with nothing, and survives the glare
+     * of a shop that is half outdoors.
+     */
+    --action-bg: 31 26 43;
+    --action-bg-hover: 21 18 28;
+    --action-fg: 255 255 255;
+
+    /*
+     * Ube — spent only on focus and selection, where it means "the system is
+     * pointing at this". On the customer menu this is the one token a shop
+     * overrides to make the page its own.
+     */
+    --accent: 91 63 217;
+    /*
+     * The accent used AS text. Split from the fill because a shop's brand
+     * colour has to survive being a button (where --on-accent handles the
+     * contrast) and being a word on the page (where nothing can save it
+     * but the colour itself). AccentPalette derives this per shop.
+     */
+    --accent-ink: 74 47 184;
+    --accent-hover: 74 47 184;
+    --accent-tint: 243 239 254;
+    --accent-line: 207 192 251;
+    --on-accent: 255 255 255;
+
+    /*
+     * Kapé — identity only. Never an interactive colour.
+     *
+     * `identity` is the ink role and flips with the theme; `identity-solid`
+     * is the filled brand mark and stays dark in both, because it carries
+     * --on-solid text either way.
+     */
+    --identity: 42 28 23;
+    --identity-tint: 247 241 236;
+    --identity-solid: 42 28 23;
+
+    /*
+     * Order state. Reserved — no store, no theme may repurpose these.
+     *
+     * Three roles each, and mixing them up is what breaks a theme:
+     *   tint  — the background of a badge or panel
+     *   ink   — text sitting ON that tint, so it inverts with the theme
+     *   mark  — a dot, bar or border; the signal at its most saturated
+     *   solid — a filled button, which always carries --on-solid text
+     *
+     * `ink` and `solid` look similar in light mode and are not the same
+     * thing: ink flips light when the page goes dark, and a button filled
+     * with it would put white text on a pale green.
+     */
+    --wait-ink: 180 83 9;   --wait-mark: 245 158 11;  --wait-tint: 254 243 199;  --wait-solid: 180 83 9;
+    --ready-ink: 4 120 87;  --ready-mark: 16 185 129; --ready-tint: 209 250 229; --ready-solid: 4 120 87;
+    --stop-ink: 185 28 28;  --stop-mark: 239 68 68;   --stop-tint: 254 226 226;  --stop-solid: 185 28 28;
+    --on-solid: 255 255 255;
+
+    /*
+     * The wash behind a modal. Its own token because it is the one surface
+     * that must NOT invert: every dialog in the app reached for --ink-1 at
+     * 40%, which is correct in light and is a milky white veil in dark, laid
+     * over a dark page and under a card darker than itself. A scrim darkens,
+     * in both themes, by definition.
+     */
+    --scrim: 21 18 28;
+
+    /* Form. Three radii named for what they wrap, not how round they are. */
+    --r-control: 0.625rem;
+    --r-card: 1rem;
+    --r-sheet: 1.5rem;
+
+    /*
+     * Hairline-first: a border does most of the elevation work, because a
+     * soft shadow simply vanishes on a bright counter screen.
+     */
+    --e-rest: 0 1px 2px 0 rgb(21 18 28 / 0.06);
+    --e-raised: 0 4px 12px -2px rgb(21 18 28 / 0.10), 0 1px 2px rgb(21 18 28 / 0.04);
+    --e-overlay: 0 24px 48px -12px rgb(21 18 28 / 0.22);
+
+    /* Motion */
+    --t-fast: 150ms;
+    --t-base: 200ms;
+    --t-slow: 320ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+ * ─── Dark ───────────────────────────────────────────────────────────────
+ *
+ * Only the tokens are redefined; not one component rule appears in here.
+ * That is the whole return on the token layer — a second theme costs a
+ * block of values rather than a second stylesheet.
+ *
+ * Two surfaces genuinely need it: a café counter running dim through a late
+ * shift, and a customer reading a menu on their phone at night with the
+ * screen at its lowest brightness.
+ *
+ * The surfaces do not invert naively. In light, surface-1 is the raised card
+ * and surface-2 is the page beneath it; in dark the same relationship holds
+ * with the page as the darkest thing, so a card still reads as lifted rather
+ * than as a hole.
+ */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        color-scheme: dark;
+
+        --surface-1: 26 22 34;
+        --surface-2: 16 13 22;
+        --surface-3: 44 37 57;
+        --line: 51 44 68;
+        --line-strong: 69 60 89;
+
+        --ink-1: 244 242 248;
+        --ink-2: 192 186 209;
+        --ink-3: 143 135 164;
+
+        /* Ink-first inverts: the button becomes the light thing on a dark page. */
+        --action-bg: 244 242 248;
+        --action-bg-hover: 255 255 255;
+        --action-fg: 21 18 28;
+
+        --accent: 156 125 255;
+        --accent-ink: 182 155 255;
+        --accent-hover: 182 155 255;
+        --accent-tint: 36 28 61;
+        --accent-line: 61 49 99;
+        --on-accent: 23 16 43;
+
+        --identity: 232 220 210;
+        --identity-tint: 36 27 22;
+        --identity-solid: 74 50 38;
+
+        /* Tints go deep, ink goes light, solid stays dark enough for white. */
+        --wait-ink: 251 191 36;  --wait-mark: 245 158 11;  --wait-tint: 51 38 12;   --wait-solid: 180 83 9;
+        --ready-ink: 52 211 153; --ready-mark: 16 185 129; --ready-tint: 12 44 34;  --ready-solid: 5 122 85;
+        --stop-ink: 252 165 165; --stop-mark: 239 68 68;   --stop-tint: 51 22 22;   --stop-solid: 185 28 28;
+
+        /* Already dark underneath, so the scrim goes to black — a card
+           has to keep reading as lifted rather than as a hole. */
+        --scrim: 0 0 0;
+
+        --e-rest: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+        --e-raised: 0 4px 12px -2px rgb(0 0 0 / 0.50), 0 1px 2px rgb(0 0 0 / 0.30);
+        --e-overlay: 0 24px 48px -12px rgb(0 0 0 / 0.70);
+    }
+}
+
+/*
+ * The same values again, for an explicit choice rather than the OS one.
+ *
+ * The duplication is deliberate and unavoidable: no selector can express
+ * "the OS is dark", so a media query and a stamped attribute cannot share a
+ * rule. light-dark() would collapse the two, but it needs a 2024 browser,
+ * and a chunk of this audience is scanning QR codes on older Androids.
+ *
+ * Set by the theme toggle, via useTheme(). Three states, not two: light,
+ * dark, and no attribute at all — which hands the question back to the OS
+ * and is the default a shop never has to think about.
+ *
+ * The guard on the media query above is what makes `light` a real choice
+ * rather than a no-op: without it, a staff member picking light on a phone
+ * that is in dark mode would be overruled by their own handset.
+ */
+:root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --surface-1: 26 22 34;
+    --surface-2: 16 13 22;
+    --surface-3: 44 37 57;
+    --line: 51 44 68;
+    --line-strong: 69 60 89;
+
+    --ink-1: 244 242 248;
+    --ink-2: 192 186 209;
+    --ink-3: 143 135 164;
+
+    --action-bg: 244 242 248;
+    --action-bg-hover: 255 255 255;
+    --action-fg: 21 18 28;
+
+    --accent: 156 125 255;
+    --accent-ink: 182 155 255;
+    --accent-hover: 182 155 255;
+    --accent-tint: 36 28 61;
+    --accent-line: 61 49 99;
+    --on-accent: 23 16 43;
+
+    --identity: 232 220 210;
+    --identity-tint: 36 27 22;
+    --identity-solid: 74 50 38;
+
+    --wait-ink: 251 191 36;  --wait-mark: 245 158 11;  --wait-tint: 51 38 12;   --wait-solid: 180 83 9;
+    --ready-ink: 52 211 153; --ready-mark: 16 185 129; --ready-tint: 12 44 34;  --ready-solid: 5 122 85;
+    --stop-ink: 252 165 165; --stop-mark: 239 68 68;   --stop-tint: 51 22 22;   --stop-solid: 185 28 28;
+
+    --scrim: 0 0 0;
+
+    --e-rest: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+    --e-raised: 0 4px 12px -2px rgb(0 0 0 / 0.50), 0 1px 2px rgb(0 0 0 / 0.30);
+    --e-overlay: 0 24px 48px -12px rgb(0 0 0 / 0.70);
+}
+
+/*
+ * Touch density — the customer's phone, set from the route by
+ * HandleInertiaRequests. Staff terminals stay on the counter scale above.
+ */
+[data-density='touch'] {
+    --fs-label:   12px; --lh-label:   16px;
+    --fs-meta:    13px; --lh-meta:    18px;
+    --fs-ui:      15px; --lh-ui:      22px;
+    --fs-body:    16px; --lh-body:    24px;
+    --fs-title:   20px; --lh-title:   28px;
+    --fs-heading: 24px; --lh-heading: 32px;
+    --fs-figure:  32px; --lh-figure:  36px;
+    --fs-hero:    80px; --lh-hero:    80px;
+}
+
 @layer base {
     html {
         touch-action: manipulation;
@@ -10,7 +289,7 @@
     }
 
     body {
-        @apply antialiased text-slate-700;
+        @apply antialiased bg-surface-2 text-ink-2;
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
 
@@ -19,9 +298,96 @@
         font-variant-numeric: tabular-nums;
     }
 
+    /*
+     * ─── Form controls ──────────────────────────────────────────────────
+     *
+     * @tailwindcss/forms gives every control a hard-coded `background-color:
+     * #fff` and a grey border. In light that happens to equal --surface-1,
+     * so nobody noticed; in dark it is a white box carrying --ink-1 text,
+     * which is white on white. Every input in the product was invisible the
+     * moment the OS was set to dark.
+     *
+     * The binding lives here rather than in .input-field because most of the
+     * app's inputs never had that class — Platform/Stores, Inventory's
+     * modals and TextInput.vue all write raw <input>. A component class
+     * would have fixed the six fields on Store Settings and left the other
+     * eighty broken. An element selector fixes them by existing.
+     *
+     * checkbox, radio and range are excluded from the fill: the plugin draws
+     * their checked state with `background-color: currentColor`, and they
+     * take the border treatment below instead. File inputs are excluded
+     * because the control the user sees is the button, not the box.
+     */
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+    select,
+    textarea {
+        @apply border-line-strong bg-surface-1 text-ink-1;
+    }
+
+    /*
+     * Tied for specificity with the plugin's own placeholder rule, so this
+     * wins on order alone — it must stay inside @layer base and after it.
+     */
+    input::placeholder,
+    textarea::placeholder {
+        @apply text-ink-3;
+        opacity: 1;
+    }
+
+    [type='checkbox'],
+    [type='radio'] {
+        @apply border-line-strong bg-surface-1;
+    }
+
+    /*
+     * The plugin hard-codes a focus ring too: #2563eb for the ring itself,
+     * and for checkboxes a 2px offset in #fff — a white halo punched around
+     * every focused checkbox on a dark page. The blue is merely off-brand;
+     * the halo is the same class of bug as the white input box.
+     *
+     * This has to carry a :focus of its own to outrank the plugin's, which
+     * is why it cannot ride along on the binding above. The global default
+     * set further down handles everything that is not a form control.
+     */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        --tw-ring-color: rgb(var(--accent) / 0.25);
+        --tw-ring-offset-color: rgb(var(--surface-1));
+    }
+
+    /*
+     * Chrome paints autofilled fields with its own background and ignores
+     * `background-color` outright — the inset shadow is the only way to
+     * cover it, and -webkit-text-fill-color the only way to recolour the
+     * text it puts there. Without this a remembered username is the one
+     * field still unreadable in dark.
+     */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    select:-webkit-autofill {
+        -webkit-text-fill-color: rgb(var(--ink-1));
+        -webkit-box-shadow: 0 0 0 1000px rgb(var(--surface-1)) inset;
+        caret-color: rgb(var(--ink-1));
+    }
+
+    /*
+     * The gap between a control and its focus ring is drawn as a solid
+     * shadow, and Tailwind's default for it is #fff — so on a dark page
+     * every focused control got a white halo. It has to be a token, and it
+     * is surface-1 because that is what inputs sit on nearly everywhere.
+     */
+    *,
+    ::before,
+    ::after {
+        --tw-ring-offset-color: rgb(var(--surface-1));
+    }
+
     /* Focus-visible: visible ring for keyboard, invisible for mouse */
     :focus-visible {
-        @apply outline-none ring-2 ring-brand-500/40 ring-offset-2;
+        @apply outline-none ring-2 ring-accent/60 ring-offset-2;
     }
     :focus:not(:focus-visible) {
         @apply outline-none ring-0;
@@ -35,91 +401,100 @@
         @apply bg-transparent;
     }
     ::-webkit-scrollbar-thumb {
-        @apply rounded-full bg-slate-300;
+        @apply rounded-full bg-line-strong;
     }
     ::-webkit-scrollbar-thumb:hover {
-        @apply bg-slate-400;
+        @apply bg-ink-3;
     }
 
     /* Selection color */
     ::selection {
-        @apply bg-brand-500/15 text-brand-900;
+        @apply bg-accent/15 text-ink-1;
     }
 }
 
 @layer components {
     /* Shared card style */
     .card {
-        @apply rounded-2xl border border-slate-200/80 bg-white shadow-card;
+        @apply rounded-card border border-line bg-surface-1 shadow-rest;
     }
     .card-hover {
-        @apply transition-shadow duration-200 hover:shadow-card-hover;
+        @apply transition-shadow duration-base hover:shadow-raised;
     }
 
     /* POS-specific utilities */
     .pos-grid-item {
         @apply card card-hover cursor-pointer select-none p-3 text-left
-               active:scale-[0.97] active:shadow-card;
-        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+               active:scale-[0.97] active:shadow-rest;
+        transition: transform var(--t-fast) var(--ease-out),
+                    box-shadow var(--t-base) var(--ease-out);
     }
 
     /* Badge styles */
     .badge {
-        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-label font-bold uppercase tracking-wider;
     }
-    .badge-success { @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10; }
-    .badge-warning { @apply bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10; }
-    .badge-danger  { @apply bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10; }
-    .badge-info    { @apply bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/10; }
-    .badge-neutral { @apply bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10; }
+    .badge-success { @apply bg-ready-tint text-ready-ink; }
+    .badge-warning { @apply bg-wait-tint text-wait-ink; }
+    .badge-danger  { @apply bg-stop-tint text-stop-ink; }
+    .badge-info    { @apply bg-accent-tint text-accent; }
+    .badge-neutral { @apply bg-surface-3 text-ink-2; }
 
     /* Slide-in animation */
     .slide-in {
-        animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: slideIn var(--t-slow) var(--ease-out) both;
     }
 
     /* Fade-in animation for staggered reveals */
     .fade-in-up {
-        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: fadeInUp 0.4s var(--ease-out) both;
     }
 
-    /* Btn primary */
+    /*
+     * Primary action. Ink rather than a hue, so it never competes with the
+     * order-state colours it sits beside on the queue board.
+     */
     .btn-primary {
-        @apply flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5
-               text-[13px] font-semibold text-white shadow-sm
-               transition-colors duration-150
-               hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500/40;
+        @apply flex items-center justify-center gap-1.5 rounded-control bg-action px-4 py-2.5
+               text-ui font-bold text-action-fg shadow-rest
+               transition-colors duration-fast
+               hover:bg-action-hover;
     }
 
     /* Btn secondary */
     .btn-secondary {
-        @apply flex items-center justify-center gap-1.5 rounded-xl border border-slate-200
-               bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-700 shadow-sm
-               transition-colors duration-150
-               hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-500/20;
+        @apply flex items-center justify-center gap-1.5 rounded-control border border-line-strong
+               bg-surface-1 px-4 py-2.5 text-ui font-bold text-ink-1 shadow-rest
+               transition-colors duration-fast
+               hover:bg-surface-2;
     }
 
     /* Btn danger */
     .btn-danger {
-        @apply flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5
-               text-[13px] font-semibold text-white shadow-sm
-               transition-colors duration-150
-               hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500/40;
+        @apply flex items-center justify-center gap-1.5 rounded-control bg-stop-solid px-4 py-2.5
+               text-ui font-bold text-on-solid shadow-rest
+               transition-colors duration-fast
+               hover:bg-stop-mark;
     }
 
-    /* Input field */
+    /*
+     * Input field. The surface and ink are restated rather than left to the
+     * base rule so that this class is readable on its own — someone reaching
+     * for it should be able to see that it is a filled control, not have to
+     * know that a bare element selector is quietly holding it up.
+     */
     .input-field {
-        @apply w-full rounded-xl border-slate-200 py-2.5 px-3.5 text-sm placeholder-slate-400
-               transition-colors duration-150
-               focus:border-brand-500 focus:ring-brand-500/20;
+        @apply w-full rounded-control border-line-strong bg-surface-1 py-2.5 px-3.5 text-body text-ink-1
+               placeholder-ink-3
+               transition-colors duration-fast
+               focus:border-accent focus:ring-accent/25;
     }
 
     /* Select field */
     .select-field {
-        @apply rounded-xl border-slate-200 py-2.5 pl-3.5 pr-8 text-sm text-slate-600
-               transition-colors duration-150
-               focus:border-brand-500 focus:ring-brand-500/20;
+        @apply rounded-control border-line-strong bg-surface-1 py-2.5 pl-3.5 pr-8 text-body text-ink-1
+               transition-colors duration-fast
+               focus:border-accent focus:ring-accent/25;
     }
 }
 

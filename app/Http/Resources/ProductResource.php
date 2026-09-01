@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Services\ProductImageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,6 +24,10 @@ class ProductResource extends JsonResource
             'sku' => $this->sku,
             'barcode' => $this->barcode,
             'description' => $this->description,
+            // URLs, never the stored path — the layout on disk is this
+            // application's business and nothing a client should learn.
+            'image_thumb_url' => ProductImageService::url($this->image_path, 'thumb'),
+            'image_card_url' => ProductImageService::url($this->image_path, 'card'),
             'cost_price' => $this->when($isManager, $this->cost_price),
             'selling_price' => $this->selling_price,
             'stock_quantity' => $this->stock_quantity,

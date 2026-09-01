@@ -14,6 +14,25 @@ it('shows the login screen', function () {
     $this->get('/login')->assertStatus(200);
 });
 
+/*
+ * The seeder's password used to be hard-coded into the login template, which
+ * meant it shipped in the production bundle whether or not the card rendered.
+ * The server decides now, so there is nothing to hide client-side.
+ */
+it('offers demo credentials in local development', function () {
+    app()->detectEnvironment(fn () => 'local');
+
+    $this->get('/login')
+        ->assertInertia(fn ($page) => $page->where('demoCredentials', 'owner / owner123'));
+});
+
+it('never sends demo credentials outside local', function () {
+    app()->detectEnvironment(fn () => 'production');
+
+    $this->get('/login')
+        ->assertInertia(fn ($page) => $page->where('demoCredentials', null));
+});
+
 it('authenticates with valid username and password', function () {
     // Arrange
     $user = User::factory()->create(['username' => 'cashier1']);

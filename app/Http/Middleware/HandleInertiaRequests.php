@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Enums\OrderStatus;
+use App\Models\Order;
 use App\Models\Store;
 use App\Support\Impersonation;
 use App\Support\StoreContext;
@@ -71,11 +73,85 @@ class HandleInertiaRequests extends Middleware
             // context, so stepping into a client cafe switches the wording to
             // theirs, which is the whole point of standing inside it.
             'words' => fn () => StoreVocabulary::for($this->currentStore()['type'] ?? null),
+            // Which side of the counter this page is on. Every type role
+            // carries a counter value and a phone value, so this one string
+            // switches the entire scale — a component never asks where it is.
+            'density' => $this->density($request),
+            // Today's queue, in three numbers. Shared rather than owned by the
+            // queue screen because an order that arrives while the cashier is
+            // ringing someone up on the POS is exactly the one they must not
+            // miss — the badge and the chime both read this, from any page.
+            'queue' => fn () => $this->queueState($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'sale' => fn () => $request->session()->get('sale'),
             ],
+        ];
+    }
+
+    /**
+     * Keyed off the route rather than the page component, because the surface
+     * is the thing that matters: everything under the public prefix is a
+     * customer holding a phone, and everything else is staff at a terminal.
+     */
+    private function density(Request $request): string
+    {
+        return $request->routeIs('public.*') ? 'touch' : 'counter';
+    }
+
+    /**
+     * Today's open orders, counted by state, plus when the newest one landed.
+     *
+     * One grouped aggregate rather than three counts: this is polled from
+     * every staff page, and a badge is not worth three round trips a tick.
+     *
+     * `last_placed_at` is what the chime listens to. A count cannot answer
+     * "did something new arrive" on its own — settle one order and receive
+     * another inside the same poll window and the count is unchanged, which
+     * is precisely the moment the shop is busy enough to need telling. A
+     * timestamp that only ever moves forward on a genuine arrival can.
+     *
+     * Null for a customer and for a platform admin who has not stepped into
+     * a shop: neither has a queue of their own.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function queueState(Request $request): ?array
+    {
+        if ($request->user() === null || app(StoreContext::class)->id() === null) {
+            return null;
+        }
+
+        // COUNT(CASE WHEN …) rather than SUM(status = …), which reads more
+        // neatly but is MySQL/SQLite-only — this stays true on Postgres.
+        $row = Order::query()
+            ->today()
+            ->open()
+            ->selectRaw(
+                'COUNT(CASE WHEN status = ? THEN 1 END) as awaiting,'
+                .'COUNT(CASE WHEN status = ? THEN 1 END) as preparing,'
+                .'COUNT(CASE WHEN status = ? THEN 1 END) as ready,'
+                .'MAX(placed_at) as last_placed_at',
+                [
+                    OrderStatus::Placed->value,
+                    OrderStatus::Paid->value,
+                    OrderStatus::Ready->value,
+                ]
+            )
+            ->first();
+
+        return [
+            'awaiting' => (int) ($row->awaiting ?? 0),
+            'preparing' => (int) ($row->preparing ?? 0),
+            'ready' => (int) ($row->ready ?? 0),
+            // A Unix timestamp, not the raw column: the client compares this
+            // for "later than last time", and comparing formatted datetime
+            // strings is a bug waiting for a database that formats them
+            // differently.
+            'last_placed_at' => $row?->last_placed_at === null
+                ? null
+                : strtotime((string) $row->last_placed_at),
         ];
     }
 

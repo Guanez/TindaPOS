@@ -8,7 +8,9 @@ use App\Http\Requests\UpdateStoreAddressRequest;
 use App\Http\Requests\UpdateStoreRequest;
 use App\Models\RetiredStoreSlug;
 use App\Models\Store;
+use App\Services\AccentPalette;
 use App\Services\QrCodeService;
+use App\Services\StoreLogoService;
 use App\Support\StoreContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,7 @@ class StoreController extends Controller
     public function __construct(
         private readonly QrCodeService $qrCodes,
         private readonly StoreContext $context,
+        private readonly StoreLogoService $logos,
     ) {}
 
     public function edit(): Response
@@ -31,10 +34,22 @@ class StoreController extends Controller
         $store = $this->currentStore();
 
         return Inertia::render('Store/Settings', [
-            'store' => $store->only([
-                'id', 'name', 'slug', 'type', 'address', 'phone',
-                'receipt_footer', 'currency_symbol', 'online_ordering_enabled',
-            ]),
+            'store' => [
+                ...$store->only([
+                    'id', 'name', 'slug', 'type', 'address', 'phone',
+                    'receipt_footer', 'currency_symbol', 'online_ordering_enabled',
+                    'accent', 'hours',
+                ]),
+                'logo_url' => StoreLogoService::url($store->logo_path),
+                // So the form can show the shop what its own hours currently
+                // mean, rather than leaving them to work it out from a grid.
+                'is_open' => $store->isOpenNow(),
+                'next_opening' => $store->nextOpening(),
+                // So the form can say "this colour is too pale to read as
+                // text, we will darken it there" before they commit to it,
+                // rather than leaving them to discover it on the menu.
+                'accent_readable' => AccentPalette::isReadableAsText($store->accent),
+            ],
             'orderUrl' => $this->qrCodes->urlFor($store),
             // Generated from our own URL by the QR library, so it is safe to
             // render inline rather than fetched as a second request.
@@ -45,7 +60,18 @@ class StoreController extends Controller
 
     public function update(UpdateStoreRequest $request): RedirectResponse
     {
-        $this->currentStore()->update($request->validated());
+        $store = $this->currentStore();
+        $data = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            $this->logos->delete($store);
+            $data['logo_path'] = $this->logos->store($store, $request->file('logo'));
+        } elseif ($request->boolean('remove_logo')) {
+            $this->logos->delete($store);
+            $data['logo_path'] = null;
+        }
+
+        $store->update($data);
 
         return redirect()->route('store.edit')->with('success', 'Store settings saved.');
     }

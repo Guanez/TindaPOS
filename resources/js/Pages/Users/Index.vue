@@ -87,8 +87,8 @@ const roleClass = (role) => ({
         <div class="space-y-5">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Staff</h1>
-                    <p class="mt-0.5 text-[13px] text-slate-500">Who can sign in to this store</p>
+                    <h1 class="text-xl font-bold tracking-tight text-ink-1">Staff</h1>
+                    <p class="mt-0.5 text-ui text-ink-3">Who can sign in to this store</p>
                 </div>
 
                 <button class="btn-primary" @click="openCreate">
@@ -99,24 +99,24 @@ const roleClass = (role) => ({
 
             <div class="card overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50/80">
+                    <table class="min-w-full divide-y divide-line">
+                        <thead class="bg-surface-2/80">
                             <tr>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Name</th>
-                                <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Username</th>
-                                <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">Role</th>
-                                <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">Status</th>
-                                <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Name</th>
+                                <th class="px-4 py-3 text-left text-label font-semibold uppercase tracking-wider text-ink-3">Username</th>
+                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Role</th>
+                                <th class="px-4 py-3 text-center text-label font-semibold uppercase tracking-wider text-ink-3">Status</th>
+                                <th class="px-4 py-3 text-right text-label font-semibold uppercase tracking-wider text-ink-3">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <tr v-for="user in users" :key="user.id" :class="user.is_active ? '' : 'bg-slate-50/60'">
+                        <tbody class="divide-y divide-line">
+                            <tr v-for="user in users" :key="user.id" :class="user.is_active ? '' : 'bg-surface-2/60'">
                                 <td class="px-4 py-3">
-                                    <span class="text-[13px] font-semibold text-slate-800">{{ user.name }}</span>
-                                    <span v-if="user.is_self" class="ml-2 text-[11px] font-medium text-slate-400">you</span>
-                                    <span v-if="user.email" class="block text-[11px] text-slate-400">{{ user.email }}</span>
+                                    <span class="text-ui font-semibold text-ink-1">{{ user.name }}</span>
+                                    <span v-if="user.is_self" class="ml-2 text-meta font-medium text-ink-3">you</span>
+                                    <span v-if="user.email" class="block text-meta text-ink-3">{{ user.email }}</span>
                                 </td>
-                                <td class="px-4 py-3 font-mono text-[13px] text-slate-600">{{ user.username }}</td>
+                                <td class="px-4 py-3 font-mono text-ui text-ink-2">{{ user.username }}</td>
                                 <td class="px-4 py-3 text-center">
                                     <span class="badge" :class="roleClass(user.role)">{{ user.role_label }}</span>
                                 </td>
@@ -127,16 +127,16 @@ const roleClass = (role) => ({
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-end gap-1.5">
-                                        <button class="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
-                                            style="transition: background-color 0.15s;" @click="openEdit(user)">
+                                        <button class="flex items-center gap-1 rounded-control border border-line px-2.5 py-1.5 text-meta font-semibold text-ink-2 hover:bg-surface-2"
+                                            style="transition: background-color var(--t-fast);" @click="openEdit(user)">
                                             <PencilSquareIcon class="h-3.5 w-3.5" aria-hidden="true" /> Edit
                                         </button>
                                         <button v-if="user.is_active && !user.is_self"
-                                            class="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold"
+                                            class="flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-meta font-semibold"
                                             :class="confirmingDeactivate === user.id
-                                                ? 'border-red-500 bg-red-500 text-white'
-                                                : 'border-red-200 text-red-600 hover:bg-red-50'"
-                                            style="transition: background-color 0.15s;"
+                                                ? 'border-stop-mark bg-stop-solid text-on-solid'
+                                                : 'border-stop-tint text-stop-ink hover:bg-stop-tint'"
+                                            style="transition: background-color var(--t-fast);"
                                             @click="deactivate(user)">
                                             <NoSymbolIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                             {{ confirmingDeactivate === user.id ? 'Confirm' : 'Deactivate' }}
@@ -149,7 +149,7 @@ const roleClass = (role) => ({
                 </div>
             </div>
 
-            <p class="text-[12px] text-slate-400">
+            <p class="text-meta text-ink-3">
                 Accounts are deactivated rather than deleted, so past sales keep showing who rang them up.
                 A deactivated person is signed out on their next action.
             </p>
@@ -157,74 +157,74 @@ const roleClass = (role) => ({
 
         <!-- ADD / EDIT -->
         <Teleport to="body">
-            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-sm"
                 role="dialog" aria-modal="true" :aria-label="editing ? 'Edit account' : 'Add account'">
-                <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
+                <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-slate-900">{{ editing ? 'Edit account' : 'Add account' }}</h3>
-                        <button class="rounded-lg p-1 text-slate-400 hover:bg-slate-50" aria-label="Close" @click="showModal = false">
+                        <h3 class="text-lg font-bold text-ink-1">{{ editing ? 'Edit account' : 'Add account' }}</h3>
+                        <button class="rounded-control p-1 text-ink-3 hover:bg-surface-2" aria-label="Close" @click="showModal = false">
                             <XMarkIcon class="h-5 w-5" aria-hidden="true" />
                         </button>
                     </div>
 
                     <form class="mt-5 space-y-4" @submit.prevent="save">
                         <div>
-                            <label class="block text-[13px] font-semibold text-slate-700">Full name <span class="text-red-400">*</span></label>
+                            <label class="block text-ui font-semibold text-ink-2">Full name <span class="text-stop-ink">*</span></label>
                             <input v-model="form.name" type="text" required class="input-field mt-1.5 w-full" />
-                            <p v-if="form.errors.name" class="mt-1 text-[12px] text-red-500">{{ form.errors.name }}</p>
+                            <p v-if="form.errors.name" class="mt-1 text-meta text-stop-ink">{{ form.errors.name }}</p>
                         </div>
 
                         <div>
-                            <label class="block text-[13px] font-semibold text-slate-700">Username <span class="text-red-400">*</span></label>
+                            <label class="block text-ui font-semibold text-ink-2">Username <span class="text-stop-ink">*</span></label>
                             <input v-model="form.username" type="text" required autocomplete="off" class="input-field mt-1.5 w-full font-mono" />
-                            <p v-if="form.errors.username" class="mt-1 text-[12px] text-red-500">{{ form.errors.username }}</p>
+                            <p v-if="form.errors.username" class="mt-1 text-meta text-stop-ink">{{ form.errors.username }}</p>
                         </div>
 
                         <div>
-                            <label class="block text-[13px] font-semibold text-slate-700">Email</label>
+                            <label class="block text-ui font-semibold text-ink-2">Email</label>
                             <input v-model="form.email" type="email" class="input-field mt-1.5 w-full" placeholder="Optional" />
-                            <p v-if="form.errors.email" class="mt-1 text-[12px] text-red-500">{{ form.errors.email }}</p>
+                            <p v-if="form.errors.email" class="mt-1 text-meta text-stop-ink">{{ form.errors.email }}</p>
                         </div>
 
                         <fieldset>
-                            <legend class="text-[13px] font-semibold text-slate-700">Role</legend>
+                            <legend class="text-ui font-semibold text-ink-2">Role</legend>
                             <div class="mt-2 space-y-1.5">
                                 <label v-for="role in availableRoles()" :key="role.value"
-                                    class="flex cursor-pointer items-start gap-3 rounded-xl border p-3"
-                                    :class="form.role === role.value ? 'border-brand-500 bg-brand-50/60' : 'border-slate-200 hover:bg-slate-50'"
-                                    style="transition: background-color 0.15s, border-color 0.15s;">
+                                    class="flex cursor-pointer items-start gap-3 rounded-control border p-3"
+                                    :class="form.role === role.value ? 'border-accent bg-accent-tint/60' : 'border-line hover:bg-surface-2'"
+                                    style="transition: background-color var(--t-fast), border-color var(--t-fast);">
                                     <input v-model="form.role" :value="role.value" type="radio" name="role"
-                                        class="mt-0.5 border-slate-300 text-brand-600 focus:ring-brand-500" />
+                                        class="mt-0.5 border-line-strong text-accent-ink focus:ring-accent" />
                                     <span>
-                                        <span class="block text-[13px] font-semibold text-slate-800">{{ role.label }}</span>
-                                        <span class="block text-[11px] text-slate-500">{{ role.hint }}</span>
+                                        <span class="block text-ui font-semibold text-ink-1">{{ role.label }}</span>
+                                        <span class="block text-meta text-ink-3">{{ role.hint }}</span>
                                     </span>
                                 </label>
                             </div>
-                            <p v-if="form.errors.role" class="mt-1 text-[12px] text-red-500">{{ form.errors.role }}</p>
+                            <p v-if="form.errors.role" class="mt-1 text-meta text-stop-ink">{{ form.errors.role }}</p>
                         </fieldset>
 
                         <div>
-                            <label class="block text-[13px] font-semibold text-slate-700">
+                            <label class="block text-ui font-semibold text-ink-2">
                                 {{ editing ? 'New password' : 'Password' }}
-                                <span v-if="!editing" class="text-red-400">*</span>
+                                <span v-if="!editing" class="text-stop-ink">*</span>
                             </label>
                             <input v-model="form.password" type="password" autocomplete="new-password"
                                 :required="!editing" class="input-field mt-1.5 w-full"
                                 :placeholder="editing ? 'Leave blank to keep the current one' : 'At least 8 characters'" />
-                            <p v-if="form.errors.password" class="mt-1 text-[12px] text-red-500">{{ form.errors.password }}</p>
+                            <p v-if="form.errors.password" class="mt-1 text-meta text-stop-ink">{{ form.errors.password }}</p>
                         </div>
 
                         <div v-if="form.password">
-                            <label class="block text-[13px] font-semibold text-slate-700">Confirm password</label>
+                            <label class="block text-ui font-semibold text-ink-2">Confirm password</label>
                             <input v-model="form.password_confirmation" type="password" autocomplete="new-password"
                                 class="input-field mt-1.5 w-full" />
                         </div>
 
                         <label v-if="editing && !editing.is_self" class="flex items-center gap-2.5">
                             <input v-model="form.is_active" type="checkbox"
-                                class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                            <span class="text-[13px] text-slate-600">Account is active</span>
+                                class="rounded border-line-strong text-accent-ink focus:ring-accent" />
+                            <span class="text-ui text-ink-2">Account is active</span>
                         </label>
 
                         <div class="flex gap-3 pt-1">

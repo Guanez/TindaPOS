@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { useCurrency } from '@/Composables/currency';
 
 import { XMarkIcon, PlusIcon } from '@heroicons/vue/24/outline';
@@ -13,6 +14,14 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'confirm']);
+
+// This component is shared by the till and the customer's phone, and the two
+// want different things from a dialog. A centred box is right with a mouse;
+// on a phone it lands mid-screen with its actions furthest from the thumb.
+// The density prop already says which surface this is, so nothing here needs
+// a new flag — and the POS is untouched by the change.
+const page = usePage();
+const isSheet = computed(() => page.props.density === 'touch');
 
 const selectedVariantId = ref(null);
 const selectedModifierIds = ref([]);
@@ -97,22 +106,32 @@ const confirm = () => {
     <Teleport to="body">
         <div
             v-if="show && product"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+            :class="[
+                'fixed inset-0 z-50 flex bg-scrim/50 backdrop-blur-sm',
+                isSheet ? 'items-end' : 'items-center justify-center p-4',
+            ]"
             role="dialog"
             aria-modal="true"
             :aria-label="`Options for ${product.name}`"
             @click.self="emit('close')"
         >
-            <div class="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-elevated animate-scale-in">
+            <div
+                :class="[
+                    'flex w-full max-w-md flex-col overflow-hidden bg-surface-1 shadow-overlay',
+                    isSheet
+                        ? 'mx-auto max-h-[88vh] rounded-t-sheet animate-sheet-up'
+                        : 'max-h-[90vh] rounded-card animate-scale-in',
+                ]"
+            >
                 <!-- Header -->
-                <div class="flex items-start justify-between border-b border-slate-100 px-6 py-4">
+                <div class="flex items-start justify-between border-b border-line px-6 py-4">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900">{{ product.name }}</h3>
-                        <p class="mt-0.5 text-[12px] text-slate-400">Choose options to add this to the cart</p>
+                        <h3 class="text-lg font-bold text-ink-1">{{ product.name }}</h3>
+                        <p class="mt-0.5 text-meta text-ink-3">Choose options to add this to the cart</p>
                     </div>
                     <button
-                        class="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                        style="transition: background-color 0.15s, color 0.15s;"
+                        class="rounded-control p-1 text-ink-3 hover:bg-surface-2 hover:text-ink-2"
+                        style="transition: background-color var(--t-fast), color var(--t-fast);"
                         aria-label="Close"
                         @click="emit('close')"
                     >
@@ -124,7 +143,7 @@ const confirm = () => {
                 <div class="flex-1 space-y-5 overflow-y-auto px-6 py-5" style="overscroll-behavior: contain;">
                     <!-- Sizes -->
                     <fieldset v-if="variants.length > 0">
-                        <legend class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Size</legend>
+                        <legend class="text-label font-semibold uppercase tracking-wider text-ink-3">Size</legend>
                         <div class="mt-2 flex flex-wrap gap-2">
                             <button
                                 v-for="variant in variants"
@@ -132,15 +151,15 @@ const confirm = () => {
                                 type="button"
                                 :aria-pressed="selectedVariantId === variant.id"
                                 :class="[
-                                    'rounded-xl border px-3.5 py-2 text-left transition-all',
+                                    'rounded-control border px-3.5 py-2 text-left transition-all',
                                     selectedVariantId === variant.id
-                                        ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm'
-                                        : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50',
+                                        ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
+                                        : 'border-line text-ink-2 hover:border-line-strong hover:bg-surface-2',
                                 ]"
                                 @click="selectedVariantId = variant.id"
                             >
-                                <span class="block text-[13px] font-semibold">{{ variant.name }}</span>
-                                <span class="block text-[12px] tabular-nums opacity-70">{{ money(variant.selling_price) }}</span>
+                                <span class="block text-ui font-semibold">{{ variant.name }}</span>
+                                <span class="block text-meta tabular-nums opacity-70">{{ money(variant.selling_price) }}</span>
                             </button>
                         </div>
                     </fieldset>
@@ -148,9 +167,9 @@ const confirm = () => {
                     <!-- Add-on groups -->
                     <fieldset v-for="group in groups" :key="group.id">
                         <legend class="flex items-baseline gap-2">
-                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ group.name }}</span>
-                            <span v-if="group.min_select > 0" class="text-[11px] font-medium text-red-500">Required</span>
-                            <span v-else-if="group.max_select > 1" class="text-[11px] text-slate-400">up to {{ group.max_select }}</span>
+                            <span class="text-label font-semibold uppercase tracking-wider text-ink-3">{{ group.name }}</span>
+                            <span v-if="group.min_select > 0" class="text-meta font-medium text-stop-ink">Required</span>
+                            <span v-else-if="group.max_select > 1" class="text-meta text-ink-3">up to {{ group.max_select }}</span>
                         </legend>
 
                         <div class="mt-2 space-y-1.5">
@@ -160,10 +179,10 @@ const confirm = () => {
                                 type="button"
                                 :aria-pressed="isChosen(modifier)"
                                 :class="[
-                                    'flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all',
+                                    'flex w-full items-center gap-3 rounded-control border px-3.5 py-2.5 text-left transition-all',
                                     isChosen(modifier)
-                                        ? 'border-brand-500 bg-brand-50'
-                                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                                        ? 'border-accent bg-accent-tint'
+                                        : 'border-line hover:border-line-strong hover:bg-surface-2',
                                 ]"
                                 @click="toggleModifier(group, modifier)"
                             >
@@ -171,17 +190,17 @@ const confirm = () => {
                                     :class="[
                                         'flex h-4 w-4 shrink-0 items-center justify-center border',
                                         group.max_select === 1 ? 'rounded-full' : 'rounded',
-                                        isChosen(modifier) ? 'border-brand-600 bg-brand-600' : 'border-slate-300',
+                                        isChosen(modifier) ? 'border-accent bg-accent' : 'border-line-strong',
                                     ]"
                                 >
-                                    <span v-if="isChosen(modifier)" class="block h-1.5 w-1.5 rounded-full bg-white" />
+                                    <span v-if="isChosen(modifier)" class="block h-1.5 w-1.5 rounded-full bg-surface-1" />
                                 </span>
 
-                                <span class="flex-1 text-[13px] font-medium text-slate-700">{{ modifier.name }}</span>
+                                <span class="flex-1 text-ui font-medium text-ink-2">{{ modifier.name }}</span>
 
                                 <span
                                     v-if="parseFloat(modifier.price_delta) > 0"
-                                    class="text-[12px] font-semibold tabular-nums text-slate-500"
+                                    class="text-meta font-semibold tabular-nums text-ink-3"
                                 >
                                     +{{ money(modifier.price_delta) }}
                                 </span>
@@ -191,15 +210,15 @@ const confirm = () => {
                 </div>
 
                 <!-- Footer -->
-                <div class="border-t border-slate-100 bg-slate-50/60 px-6 py-4">
-                    <p v-if="unmetGroup" class="mb-2 text-[12px] font-medium text-red-600">
+                <div class="border-t border-line bg-surface-2/60 px-6 py-4">
+                    <p v-if="unmetGroup" class="mb-2 text-meta font-medium text-stop-ink">
                         Choose at least {{ unmetGroup.min_select }} from {{ unmetGroup.name }}.
                     </p>
 
                     <button
                         type="button"
                         :disabled="!canAdd"
-                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-50"
+                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg shadow-rest transition-colors hover:bg-accent-hover disabled:opacity-50"
                         @click="confirm"
                     >
                         <PlusIcon class="h-4 w-4" aria-hidden="true" />

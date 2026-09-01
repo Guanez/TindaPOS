@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useCurrency } from '@/Composables/currency';
 import ProductOptionsModal from '@/Components/ProductOptionsModal.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 
 import {
     MagnifyingGlassIcon,
@@ -52,6 +52,11 @@ const showCheckout = ref(false);
 const showReceipt = ref(false);
 const lastSale = ref(null);
 const processing = ref(false);
+
+// Whether the cart sheet is up. Only consulted below `lg`, where the cart is
+// a sheet rather than a column — above it the panel is always on screen and
+// this is ignored.
+const cartOpen = ref(false);
 
 // Cart with localStorage persistence
 const CART_KEY = 'tindapos_cart';
@@ -194,11 +199,47 @@ const canCheckout = computed(() => {
     return true;
 });
 
+/*
+ * What the customer is actually likely to hand over.
+ *
+ * The old six buttons were fixed notes — 20, 50, 100, 200, 500, 1000 — which
+ * on a ₱237 total are all either useless or wrong, so the cashier typed the
+ * amount every time. These are derived from the total instead: the exact
+ * money, the next round 50 and 100, and the notes above that. For ₱237 it
+ * offers 237, 250, 300, 500, 1000, which is the real set.
+ */
+const PESO_NOTES = [20, 50, 100, 200, 500, 1000];
+
+const quickCash = computed(() => {
+    const due = total.value;
+    if (due <= 0) return [];
+
+    const amounts = new Set([
+        due,
+        Math.ceil(due / 50) * 50,
+        Math.ceil(due / 100) * 100,
+        Math.ceil(due / 500) * 500,
+        ...PESO_NOTES.filter((note) => note >= due),
+    ]);
+
+    return [...amounts]
+        .filter((amount) => amount >= due)
+        .sort((a, b) => a - b)
+        .slice(0, 5);
+});
+
 // Checkout
+const cashInput = ref(null);
+
 const openCheckout = () => {
     if (cart.value.length === 0) return;
     cashReceived.value = '';
+    cartOpen.value = false;
     showCheckout.value = true;
+
+    // The field this dialog exists for. Focused on open so the common path is
+    // F9, type, Enter — without a trip to the mouse in the middle of it.
+    nextTick(() => cashInput.value?.focus());
 };
 
 const processCheckout = () => {
@@ -257,11 +298,12 @@ const handleKeydown = (e) => {
     if (e.key === 'F2') { e.preventDefault(); searchInput.value?.focus(); }
     // F9: Open checkout
     if (e.key === 'F9' && cart.value.length > 0 && !showCheckout.value) { e.preventDefault(); openCheckout(); }
-    // Escape: Close modals
+    // Escape: close whatever is on top, innermost first
     if (e.key === 'Escape') {
         if (showReceipt.value) closeReceipt();
         else if (optionsProduct.value) optionsProduct.value = null;
         else if (showCheckout.value) showCheckout.value = false;
+        else if (cartOpen.value) cartOpen.value = false;
     }
 };
 
@@ -273,13 +315,19 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
     <AppLayout>
         <Head title="POS Terminal" />
 
+        <!--
+            Two panes side by side at the counter; one pane and a sheet on a
+            tablet held in one hand. The cart markup is the same in both — only
+            its box changes — because a second copy of it would be a second
+            place for the quantity controls to drift.
+        -->
         <div class="flex h-[calc(100vh-5.5rem)] gap-4 lg:h-[calc(100vh-6.5rem)]">
             <!-- LEFT: Product Grid -->
             <div class="flex flex-1 flex-col overflow-hidden card">
                 <!-- Search & Category Filter -->
-                <div class="border-b border-slate-100 p-4">
+                <div class="border-b border-line p-4">
                     <div class="relative">
-                        <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                        <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden="true" />
                         <input
                             ref="searchInput"
                             v-model="search"
@@ -294,10 +342,10 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         <button
                             @click="selectedCategory = null"
                             :class="[
-                                'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all',
+                                'rounded-control px-3 py-1.5 text-meta font-semibold transition-all',
                                 !selectedCategory
-                                    ? 'bg-brand-600 text-white shadow-sm'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                                    ? 'bg-accent text-accent-fg shadow-rest'
+                                    : 'bg-surface-3 text-ink-3 hover:bg-line-strong hover:text-ink-2'
                             ]"
                         >
                             All
@@ -307,10 +355,10 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             :key="cat.id"
                             @click="selectedCategory = cat.id"
                             :class="[
-                                'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all',
+                                'rounded-control px-3 py-1.5 text-meta font-semibold transition-all',
                                 selectedCategory === cat.id
-                                    ? 'bg-brand-600 text-white shadow-sm'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                                    ? 'bg-accent text-accent-fg shadow-rest'
+                                    : 'bg-surface-3 text-ink-3 hover:bg-line-strong hover:text-ink-2'
                             ]"
                         >
                             {{ cat.name }}
@@ -321,10 +369,10 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 <!-- Product Grid -->
                 <div class="flex-1 overflow-y-auto p-4">
                     <div v-if="filteredProducts.length === 0" class="flex h-full flex-col items-center justify-center">
-                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
-                            <MagnifyingGlassIcon class="h-7 w-7 text-slate-300" />
+                        <div class="flex h-14 w-14 items-center justify-center rounded-card bg-surface-2">
+                            <MagnifyingGlassIcon class="h-7 w-7 text-ink-3" />
                         </div>
-                        <p class="mt-3 text-sm font-medium text-slate-400">No products found</p>
+                        <p class="mt-3 text-sm font-medium text-ink-3">No products found</p>
                     </div>
 
                     <div v-else class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -338,32 +386,45 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                                 'pos-grid-item relative',
                                 isSoldOut(product)
                                     ? 'cursor-not-allowed opacity-50'
-                                    : 'hover:border-brand-200'
+                                    : 'hover:border-accent-line'
                             ]"
                         >
-                            <StarIcon v-if="product.is_favorite" class="absolute right-2 top-2 h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+                            <StarIcon v-if="product.is_favorite" class="absolute right-2 top-2 z-10 h-3.5 w-3.5 text-wait-mark" aria-hidden="true" />
 
-                            <p class="text-[13px] font-semibold leading-tight text-slate-800">{{ product.name }}</p>
-                            <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-brand-600">
-                                <span v-if="product.variants?.length" class="text-[11px] font-semibold text-slate-400">from </span>{{ money(product.selling_price) }}
+                            <!--
+                                Only rendered when there is a photo. An empty
+                                grey placeholder on every tile would cost the
+                                cashier a third of the screen to say nothing.
+                            -->
+                            <img
+                                v-if="product.image_thumb_url"
+                                :src="product.image_thumb_url"
+                                alt=""
+                                loading="lazy"
+                                class="mb-2 aspect-square w-full rounded-control bg-surface-2 object-cover"
+                            />
+
+                            <p class="text-ui font-semibold leading-tight text-ink-1">{{ product.name }}</p>
+                            <p class="mt-1.5 text-lg font-bold tabular-nums tracking-tight text-ink-1">
+                                <span v-if="product.variants?.length" class="text-meta font-semibold text-ink-3">from </span>{{ money(product.selling_price) }}
                             </p>
 
                             <p
                                 v-if="product.is_available === false"
-                                class="mt-1.5 text-[11px] font-medium text-red-500"
+                                class="mt-1.5 text-meta font-medium text-stop-ink"
                             >
                                 Sold out
                             </p>
                             <p
                                 v-else-if="product.track_stock === false"
-                                class="mt-1.5 text-[11px] font-medium text-slate-400"
+                                class="mt-1.5 text-meta font-medium text-ink-3"
                             >
                                 {{ product.modifier_groups?.length ? 'Made to order' : 'Available' }}
                             </p>
                             <p
                                 v-else
-                                class="mt-1.5 text-[11px] font-medium"
-                                :class="product.stock_quantity <= 0 ? 'text-red-500' : product.stock_quantity <= product.low_stock_threshold ? 'text-amber-500' : 'text-slate-400'"
+                                class="mt-1.5 text-meta font-medium"
+                                :class="product.stock_quantity <= 0 ? 'text-stop-ink' : product.stock_quantity <= product.low_stock_threshold ? 'text-wait-ink' : 'text-ink-3'"
                             >
                                 {{ product.stock_quantity <= 0 ? 'Out of stock' : `${product.stock_quantity} in stock` }}
                             </p>
@@ -371,7 +432,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                             <!-- Cart quantity indicator -->
                             <span
                                 v-if="inCartCount(product) > 0"
-                                class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white shadow-sm"
+                                class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-label font-bold text-accent-fg shadow-rest"
                             >
                                 {{ inCartCount(product) }}
                             </span>
@@ -380,13 +441,35 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 </div>
             </div>
 
-            <!-- RIGHT: Cart Panel -->
-            <div class="flex w-80 flex-col overflow-hidden card xl:w-96">
+            <!-- Scrim, phone and tablet only -->
+            <div
+                v-if="cartOpen"
+                class="fixed inset-0 z-30 bg-ink-1/40 backdrop-blur-sm lg:hidden"
+                aria-hidden="true"
+                @click="cartOpen = false"
+            />
+
+            <!-- RIGHT: Cart Panel — a sheet below lg, a column above it -->
+            <div
+                class="z-40 flex-col overflow-hidden card
+                       fixed inset-x-0 bottom-0 max-h-[85vh] rounded-b-none rounded-t-sheet
+                       lg:static lg:z-auto lg:max-h-none lg:w-80 lg:rounded-card xl:w-96"
+                :class="cartOpen ? 'flex animate-sheet-up' : 'hidden lg:flex'"
+            >
+                <!-- Sheet grabber, phone and tablet only -->
+                <button
+                    class="flex w-full justify-center py-2 lg:hidden"
+                    aria-label="Close cart"
+                    @click="cartOpen = false"
+                >
+                    <span class="h-1 w-9 rounded-full bg-line-strong" />
+                </button>
+
                 <!-- Cart Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                <div class="flex items-center justify-between border-b border-line px-4 py-3">
                     <div class="flex items-center gap-2">
-                        <ShoppingCartIcon class="h-5 w-5 text-slate-400" aria-hidden="true" />
-                        <h2 class="text-[15px] font-bold text-slate-900">Cart</h2>
+                        <ShoppingCartIcon class="h-5 w-5 text-ink-3" aria-hidden="true" />
+                        <h2 class="text-body font-bold text-ink-1">Cart</h2>
                         <span v-if="cartItemCount > 0" class="badge badge-info">
                             {{ cartItemCount }}
                         </span>
@@ -395,7 +478,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                         v-if="cart.length > 0"
                         @click="clearCart"
                         aria-label="Clear cart"
-                        class="flex items-center gap-1 text-[12px] font-medium text-red-500 hover:text-red-700" style="transition: color 0.15s;"
+                        class="flex items-center gap-1 text-meta font-medium text-stop-ink hover:text-stop-mark" style="transition: color var(--t-fast);"
                     >
                         <TrashIcon class="h-3.5 w-3.5" aria-hidden="true" />
                         Clear
@@ -405,47 +488,47 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 <!-- Cart Items -->
                 <div class="flex-1 overflow-y-auto" style="overscroll-behavior: contain;">
                     <div v-if="cart.length === 0" class="flex h-full flex-col items-center justify-center">
-                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
-                            <ShoppingCartIcon class="h-7 w-7 text-slate-300" />
+                        <div class="flex h-14 w-14 items-center justify-center rounded-card bg-surface-2">
+                            <ShoppingCartIcon class="h-7 w-7 text-ink-3" />
                         </div>
-                        <p class="mt-3 text-[13px] font-medium text-slate-400">Select products to add</p>
+                        <p class="mt-3 text-ui font-medium text-ink-3">Select products to add</p>
                     </div>
 
-                    <div v-else class="divide-y divide-slate-100 px-4">
+                    <div v-else class="divide-y divide-line px-4">
                         <div v-for="(item, index) in cart" :key="item.key ?? item.product_id" class="flex items-center gap-3 py-3">
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-[13px] font-semibold text-slate-800">
-                                    {{ item.name }}<span v-if="item.variant_name" class="text-slate-500"> ({{ item.variant_name }})</span>
+                                <p class="truncate text-ui font-semibold text-ink-1">
+                                    {{ item.name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
                                 </p>
-                                <p v-if="item.modifier_names?.length" class="truncate text-[11px] text-brand-600">
+                                <p v-if="item.modifier_names?.length" class="truncate text-meta text-accent-ink">
                                     + {{ item.modifier_names.join(', ') }}
                                 </p>
-                                <p class="text-[11px] text-slate-400">{{ money(item.selling_price) }} each</p>
+                                <p class="text-meta text-ink-3">{{ money(item.selling_price) }} each</p>
                             </div>
 
                             <!-- Quantity Controls -->
                             <div class="flex items-center gap-0.5">
-                                <button @click="decrementQty(item)" :aria-label="`Decrease ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50" style="transition: background-color 0.15s;">
+                                <button @click="decrementQty(item)" :aria-label="`Decrease ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-control border border-line text-ink-3 hover:bg-surface-2" style="transition: background-color var(--t-fast);">
                                     <MinusIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
                                 <input
                                     :value="item.quantity"
                                     @change="updateQuantity(item, $event.target.value)"
                                     type="number" min="1" :max="item.stock ?? undefined"
-                                    class="h-7 w-9 rounded-lg border-slate-200 text-center text-[12px] font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    class="h-7 w-9 rounded-control border-line text-center text-meta font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 />
-                                <button @click="incrementQty(item)" :disabled="item.stock !== null && item.quantity >= item.stock" :aria-label="`Increase ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40" style="transition: background-color 0.15s;">
+                                <button @click="incrementQty(item)" :disabled="item.stock !== null && item.quantity >= item.stock" :aria-label="`Increase ${item.name} quantity`" class="flex h-7 w-7 items-center justify-center rounded-control border border-line text-ink-3 hover:bg-surface-2 disabled:opacity-40" style="transition: background-color var(--t-fast);">
                                     <PlusIcon class="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
                             </div>
 
                             <!-- Line Total -->
-                            <p class="w-[72px] text-right text-[13px] font-bold tabular-nums text-slate-900">
+                            <p class="w-[72px] text-right text-ui font-bold tabular-nums text-ink-1">
                                 {{ money(item.selling_price * item.quantity) }}
                             </p>
 
                             <!-- Remove -->
-                            <button @click="removeFromCart(index)" :aria-label="`Remove ${item.name} from cart`" class="text-slate-300 hover:text-red-500" style="transition: color 0.15s;">
+                            <button @click="removeFromCart(index)" :aria-label="`Remove ${item.name} from cart`" class="text-ink-3 hover:text-stop-ink" style="transition: color var(--t-fast);">
                                 <XMarkIcon class="h-4 w-4" aria-hidden="true" />
                             </button>
                         </div>
@@ -453,28 +536,28 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                 </div>
 
                 <!-- Cart Footer / Totals -->
-                <div v-if="cart.length > 0" class="border-t border-slate-100 bg-slate-50/50 p-4 space-y-3">
+                <div v-if="cart.length > 0" class="border-t border-line bg-surface-2/50 p-4 space-y-3">
                     <div class="flex items-center gap-2">
-                        <label class="text-[12px] font-semibold text-slate-500">Discount</label>
+                        <label class="text-meta font-semibold text-ink-3">Discount</label>
                         <div class="relative">
-                            <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-[12px] text-slate-400">&#8369;</span>
+                            <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-meta text-ink-3">&#8369;</span>
                             <input
                                 v-model="discount" type="number" min="0" step="0.01"
-                                class="h-8 w-24 rounded-lg border-slate-200 pl-6 pr-2 text-right text-[12px] font-semibold focus:border-brand-500 focus:ring-brand-500/20"
+                                class="h-8 w-24 rounded-control border-line pl-6 pr-2 text-right text-meta font-semibold focus:border-accent focus:ring-accent/20"
                             />
                         </div>
                     </div>
 
-                    <div class="space-y-1 text-[13px]">
-                        <div class="flex justify-between text-slate-500">
+                    <div class="space-y-1 text-ui">
+                        <div class="flex justify-between text-ink-3">
                             <span>Subtotal</span>
                             <span>{{ money(subtotal) }}</span>
                         </div>
-                        <div v-if="discountAmount > 0" class="flex justify-between text-emerald-600">
+                        <div v-if="discountAmount > 0" class="flex justify-between text-ready-ink">
                             <span>Discount</span>
                             <span>-{{ money(discountAmount) }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-slate-200 pt-2 text-lg font-bold text-slate-900">
+                        <div class="flex justify-between border-t border-line pt-2 text-lg font-bold text-ink-1">
                             <span>Total</span>
                             <span>{{ money(total) }}</span>
                         </div>
@@ -482,14 +565,37 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                     <button
                         @click="openCheckout"
-                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700 active:scale-[0.98]" style="transition: background-color 0.15s, transform 0.1s;"
+                        class="flex w-full items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg shadow-rest hover:bg-accent-hover active:scale-[0.98]" style="transition: background-color var(--t-fast), transform var(--t-fast);"
                     >
                         <CreditCardIcon class="h-4 w-4" aria-hidden="true" />
                         Checkout &mdash; {{ money(total) }}
-                        <kbd class="ml-1 hidden rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium sm:inline">F9</kbd>
+                        <kbd class="ml-1 hidden rounded bg-surface-1/20 px-1.5 py-0.5 text-label font-medium sm:inline">F9</kbd>
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!--
+            The cart's stand-in while it is a sheet. Mirrors the customer
+            menu's basket bar deliberately: it is the same gesture on the same
+            size of screen, and staff who have used the customer side already
+            know what it does.
+        -->
+        <div
+            v-if="cart.length > 0 && !cartOpen"
+            class="fixed inset-x-0 bottom-0 z-30 p-3 lg:hidden"
+        >
+            <button
+                class="flex w-full items-center gap-3 rounded-card bg-accent px-4 py-3.5 text-accent-fg shadow-overlay active:scale-[0.99]"
+                style="transition: transform var(--t-fast);"
+                @click="cartOpen = true"
+            >
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-1/20 text-ui font-bold tabular-nums">
+                    {{ cartItemCount }}
+                </span>
+                <span class="flex-1 text-left text-body font-bold">View cart</span>
+                <span class="text-body font-bold tabular-nums">{{ money(total) }}</span>
+            </button>
         </div>
 
         <!-- PRODUCT OPTIONS -->
@@ -502,24 +608,24 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
         <!-- CHECKOUT MODAL -->
         <Teleport to="body">
-            <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checkout">
-                <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-elevated" style="overscroll-behavior: contain;">
+            <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checkout">
+                <div class="w-full max-w-md rounded-card bg-surface-1 p-6 shadow-overlay" style="overscroll-behavior: contain;">
                     <div class="flex items-center gap-2">
-                        <CreditCardIcon class="h-5 w-5 text-brand-600" aria-hidden="true" />
-                        <h3 class="text-lg font-bold text-slate-900">Checkout</h3>
+                        <CreditCardIcon class="h-5 w-5 text-accent-ink" aria-hidden="true" />
+                        <h3 class="text-lg font-bold text-ink-1">Checkout</h3>
                     </div>
 
                     <!-- Order Summary -->
-                    <div class="mt-4 rounded-xl bg-slate-50 p-3 space-y-1 text-[13px]">
-                        <div class="flex justify-between text-slate-500">
+                    <div class="mt-4 rounded-control bg-surface-2 p-3 space-y-1 text-ui">
+                        <div class="flex justify-between text-ink-3">
                             <span>{{ cartItemCount }} item{{ cartItemCount !== 1 ? 's' : '' }}</span>
                             <span>{{ money(subtotal) }}</span>
                         </div>
-                        <div v-if="discountAmount > 0" class="flex justify-between text-emerald-600">
+                        <div v-if="discountAmount > 0" class="flex justify-between text-ready-ink">
                             <span>Discount</span>
                             <span>-{{ money(discountAmount) }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-slate-200 pt-1.5 text-lg font-bold tabular-nums text-slate-900">
+                        <div class="flex justify-between border-t border-line pt-1.5 text-lg font-bold tabular-nums text-ink-1">
                             <span>Total</span>
                             <span>{{ money(total) }}</span>
                         </div>
@@ -527,17 +633,17 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                     <!-- Payment Method -->
                     <div class="mt-5">
-                        <label class="text-[13px] font-semibold text-slate-700">Payment Method</label>
+                        <label class="text-ui font-semibold text-ink-2">Payment Method</label>
                         <div class="mt-2 grid grid-cols-5 gap-1.5">
                             <button
                                 v-for="pm in paymentMethods"
                                 :key="pm.value"
                                 @click="paymentMethod = pm.value"
                                 :class="[
-                                    'flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-semibold transition-all',
+                                    'flex flex-col items-center gap-1 rounded-control border py-2.5 text-meta font-semibold transition-all',
                                     paymentMethod === pm.value
-                                        ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm'
-                                        : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                                        ? 'border-accent bg-accent-tint text-accent-ink shadow-rest'
+                                        : 'border-line text-ink-3 hover:border-line-strong hover:bg-surface-2'
                                 ]"
                             >
                                 <component :is="pm.icon" class="h-4 w-4" />
@@ -548,38 +654,40 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
                     <!-- Cash Received -->
                     <div v-if="paymentMethod === 'cash'" class="mt-5">
-                        <label class="text-[13px] font-semibold text-slate-700">Cash Received</label>
+                        <label class="text-ui font-semibold text-ink-2">Cash Received</label>
                         <div class="relative mt-1.5">
-                            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">&#8369;</span>
+                            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">&#8369;</span>
                             <input
+                                ref="cashInput"
                                 v-model="cashReceived"
                                 type="number" min="0" step="0.01"
                                 :placeholder="`Min: ${money(total)}`"
-                                class="w-full rounded-xl border-slate-200 py-2.5 pl-8 pr-4 text-right text-lg font-bold text-slate-800 focus:border-brand-500 focus:ring-brand-500/20"
+                                class="w-full rounded-control border-line py-2.5 pl-8 pr-4 text-right text-lg font-bold text-ink-1 focus:border-accent focus:ring-accent/20"
+                                @keyup.enter="processCheckout"
                             />
                         </div>
 
-                        <!-- Quick cash buttons -->
+                        <!-- Quick cash — derived from the total, not fixed notes -->
                         <div class="mt-2 flex flex-wrap gap-1.5">
                             <button
-                                v-for="amount in [20, 50, 100, 200, 500, 1000]"
+                                v-for="(amount, index) in quickCash"
                                 :key="amount"
                                 @click="cashReceived = amount"
                                 :class="[
-                                    'rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-all',
+                                    'rounded-control border px-3 py-1.5 text-meta font-semibold transition-all',
                                     cashReceivedNum === amount
-                                        ? 'border-brand-500 bg-brand-50 text-brand-700'
-                                        : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                                        ? 'border-accent bg-accent-tint text-accent-ink'
+                                        : 'border-line text-ink-3 hover:bg-surface-2'
                                 ]"
                             >
-                                &#8369;{{ amount }}
+                                {{ index === 0 ? 'Exact' : `₱${amount.toLocaleString('en-PH')}` }}
                             </button>
                         </div>
 
                         <!-- Change display -->
-                        <div v-if="cashReceivedNum >= total" class="mt-3 rounded-xl bg-emerald-50 p-3 text-center">
-                            <p class="text-[12px] font-medium text-emerald-600">Change</p>
-                            <p class="text-2xl font-bold tabular-nums text-emerald-700">{{ money(change) }}</p>
+                        <div v-if="cashReceivedNum >= total" class="mt-3 rounded-control bg-ready-tint p-3 text-center">
+                            <p class="text-meta font-medium text-ready-ink">Change</p>
+                            <p class="text-2xl font-bold tabular-nums text-ready-ink">{{ money(change) }}</p>
                         </div>
                     </div>
 
@@ -587,14 +695,14 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
                     <div class="mt-6 flex gap-3">
                         <button
                             @click="showCheckout = false"
-                            class="flex-1 rounded-xl border border-slate-200 py-2.5 text-[13px] font-semibold text-slate-600 transition-all hover:bg-slate-50"
+                            class="flex-1 rounded-control border border-line py-2.5 text-ui font-semibold text-ink-2 transition-all hover:bg-surface-2"
                         >
                             Cancel
                         </button>
                         <button
                             @click="processCheckout"
                             :disabled="!canCheckout || processing"
-                            class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 py-2.5 text-[13px] font-bold text-white transition-all hover:bg-brand-700 disabled:opacity-50"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-control bg-accent py-2.5 text-ui font-bold text-accent-fg transition-all hover:bg-accent-hover disabled:opacity-50"
                         >
                             <svg v-if="processing" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -609,85 +717,85 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown));
 
         <!-- RECEIPT MODAL -->
         <Teleport to="body">
-            <div v-if="showReceipt && lastSale" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale complete">
-                <div id="receipt" class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated animate-scale-in">
+            <div v-if="showReceipt && lastSale" class="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Sale complete">
+                <div id="receipt" class="w-full max-w-sm rounded-card bg-surface-1 p-6 shadow-overlay animate-scale-in">
                     <div class="text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 print:hidden">
-                            <CheckCircleIcon class="h-7 w-7 text-emerald-600" aria-hidden="true" />
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ready-tint print:hidden">
+                            <CheckCircleIcon class="h-7 w-7 text-ready-ink" aria-hidden="true" />
                         </div>
-                        <h3 class="mt-3 text-lg font-bold text-slate-900 print:mt-0 print:text-xl">
+                        <h3 class="mt-3 text-lg font-bold text-ink-1 print:mt-0 print:text-xl">
                             {{ store.name || 'Sale Complete' }}
                         </h3>
-                        <p v-if="store.address" class="text-[11px] leading-snug text-slate-500">{{ store.address }}</p>
-                        <p v-if="store.phone" class="text-[11px] text-slate-500">{{ store.phone }}</p>
+                        <p v-if="store.address" class="text-meta leading-snug text-ink-3">{{ store.address }}</p>
+                        <p v-if="store.phone" class="text-meta text-ink-3">{{ store.phone }}</p>
 
-                        <p class="mt-2 font-mono text-[13px] text-slate-500">{{ lastSale.receipt_number }}</p>
-                        <p class="text-[11px] text-slate-400">
+                        <p class="mt-2 font-mono text-ui text-ink-3">{{ lastSale.receipt_number }}</p>
+                        <p class="text-meta text-ink-3">
                             {{ receiptPrintedAt }}<span v-if="page.props.auth?.user"> &middot; {{ page.props.auth.user.name }}</span>
                         </p>
                     </div>
 
                     <!-- What was actually sold -->
-                    <ul v-if="lastSale.items?.length" class="mt-4 space-y-1.5 border-t border-slate-100 pt-3">
-                        <li v-for="item in lastSale.items" :key="item.id" class="flex items-start gap-2 text-[12px]">
-                            <span class="font-semibold tabular-nums text-slate-400">{{ item.quantity }}&times;</span>
-                            <span class="min-w-0 flex-1 text-slate-700">
-                                {{ item.product_name }}<span v-if="item.variant_name" class="text-slate-500"> ({{ item.variant_name }})</span>
-                                <span v-if="item.modifiers?.length" class="block text-[11px] text-slate-400">
+                    <ul v-if="lastSale.items?.length" class="mt-4 space-y-1.5 border-t border-line pt-3">
+                        <li v-for="item in lastSale.items" :key="item.id" class="flex items-start gap-2 text-meta">
+                            <span class="font-semibold tabular-nums text-ink-3">{{ item.quantity }}&times;</span>
+                            <span class="min-w-0 flex-1 text-ink-2">
+                                {{ item.product_name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
+                                <span v-if="item.modifiers?.length" class="block text-meta text-ink-3">
                                     + {{ item.modifiers.map(m => m.name).join(', ') }}
                                 </span>
                             </span>
-                            <span class="tabular-nums text-slate-600">{{ money(item.line_total) }}</span>
+                            <span class="tabular-nums text-ink-2">{{ money(item.line_total) }}</span>
                         </li>
                     </ul>
 
-                    <div class="mt-5 space-y-2 rounded-xl bg-slate-50 p-4 text-[13px]">
-                        <div class="flex justify-between text-slate-500">
+                    <div class="mt-5 space-y-2 rounded-control bg-surface-2 p-4 text-ui">
+                        <div class="flex justify-between text-ink-3">
                             <span>Items</span>
-                            <span class="font-medium text-slate-700">{{ lastSale.item_count }}</span>
+                            <span class="font-medium text-ink-2">{{ lastSale.item_count }}</span>
                         </div>
-                        <div class="flex justify-between text-slate-500">
+                        <div class="flex justify-between text-ink-3">
                             <span>Subtotal</span>
-                            <span class="text-slate-700">{{ money(lastSale.subtotal) }}</span>
+                            <span class="text-ink-2">{{ money(lastSale.subtotal) }}</span>
                         </div>
-                        <div v-if="parseFloat(lastSale.discount) > 0" class="flex justify-between text-emerald-600">
+                        <div v-if="parseFloat(lastSale.discount) > 0" class="flex justify-between text-ready-ink">
                             <span>Discount</span>
                             <span>-{{ money(lastSale.discount) }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-slate-200 pt-2 text-lg font-bold text-slate-900">
+                        <div class="flex justify-between border-t border-line pt-2 text-lg font-bold text-ink-1">
                             <span>Total</span>
                             <span>{{ money(lastSale.total) }}</span>
                         </div>
-                        <div class="flex justify-between text-slate-500">
+                        <div class="flex justify-between text-ink-3">
                             <span>Payment</span>
-                            <span class="font-medium text-slate-700">{{ lastSale.payment_method?.toUpperCase() }}</span>
+                            <span class="font-medium text-ink-2">{{ lastSale.payment_method?.toUpperCase() }}</span>
                         </div>
-                        <div v-if="lastSale.cash_received" class="flex justify-between text-slate-500">
+                        <div v-if="lastSale.cash_received" class="flex justify-between text-ink-3">
                             <span>Cash Received</span>
-                            <span class="text-slate-700">{{ money(lastSale.cash_received) }}</span>
+                            <span class="text-ink-2">{{ money(lastSale.cash_received) }}</span>
                         </div>
-                        <div v-if="lastSale.change_amount" class="flex justify-between font-bold text-emerald-700">
+                        <div v-if="lastSale.change_amount" class="flex justify-between font-bold text-ready-ink">
                             <span>Change</span>
                             <span>{{ money(lastSale.change_amount) }}</span>
                         </div>
                     </div>
 
-                    <p v-if="store.receipt_footer" class="mt-4 text-center text-[12px] italic text-slate-500">
+                    <p v-if="store.receipt_footer" class="mt-4 text-center text-meta italic text-ink-3">
                         {{ store.receipt_footer }}
                     </p>
 
                     <div class="mt-5 flex gap-2 print:hidden">
                         <button
                             @click="printReceipt"
-                            class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                            style="transition: background-color 0.15s;"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-control border border-line py-3 text-sm font-semibold text-ink-2 hover:bg-surface-2"
+                            style="transition: background-color var(--t-fast);"
                         >
                             <PrinterIcon class="h-4 w-4" aria-hidden="true" />
                             Print
                         </button>
                         <button
                             @click="closeReceipt"
-                            class="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-all hover:bg-brand-700"
+                            class="flex flex-[2] items-center justify-center gap-2 rounded-control bg-accent py-3 text-sm font-bold text-accent-fg transition-all hover:bg-accent-hover"
                         >
                             <PlusIcon class="h-4 w-4" />
                             New Transaction

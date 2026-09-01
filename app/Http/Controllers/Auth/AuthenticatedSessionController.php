@@ -21,7 +21,25 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('Auth/Login', [
             'status' => session('status'),
+            'demoCredentials' => $this->demoCredentials(),
         ]);
+    }
+
+    /**
+     * The seeder's account, printed under the form so a new developer can get
+     * in without reading the README.
+     *
+     * Decided here rather than in the page, because a `v-if` in the template
+     * only hides it — the password still ships inside the bundle for anyone
+     * who opens the network tab. Sent as null in every other environment, so
+     * the string never leaves the server.
+     *
+     * Keyed off APP_ENV rather than the build mode: `npm run build` on a
+     * developer's own machine should not take the hint away from them.
+     */
+    private function demoCredentials(): ?string
+    {
+        return app()->environment('local') ? 'owner / owner123' : null;
     }
 
     /**

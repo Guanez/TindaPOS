@@ -117,39 +117,36 @@ const subline = computed(() => {
 <template>
     <div
         class="min-h-screen px-5 py-10"
-        :class="isReady ? 'bg-emerald-600' : isRejected ? 'bg-slate-100' : 'bg-slate-50'"
-        style="transition: background-color 0.4s;"
+        :class="isReady ? 'bg-ready-solid' : isRejected ? 'bg-surface-3' : 'bg-surface-2'"
+        style="transition: background-color var(--t-slow);"
     >
         <Head :title="`Order #${order.queue_number} · ${store.name}`" />
 
         <div class="mx-auto max-w-md">
             <!-- Queue number -->
-            <div
-                class="rounded-3xl p-8 text-center shadow-card"
-                :class="isReady ? 'bg-white' : 'bg-white'"
-            >
-                <p class="text-[11px] font-semibold uppercase tracking-widest" :class="isReady ? 'text-emerald-600' : 'text-slate-400'">
+            <div class="rounded-sheet bg-surface-1 p-8 text-center shadow-rest">
+                <p class="text-label font-semibold uppercase tracking-widest" :class="isReady ? 'text-ready-ink' : 'text-ink-3'">
                     {{ store.name }}
                 </p>
 
-                <p class="mt-3 text-[13px] font-medium text-slate-500">Your number</p>
+                <p class="mt-3 text-ui font-medium text-ink-3">Your number</p>
                 <p
-                    class="text-[80px] font-bold leading-none tabular-nums tracking-tight"
-                    :class="isReady ? 'text-emerald-600' : 'text-slate-900'"
+                    class="text-hero font-bold leading-none tabular-nums tracking-tight"
+                    :class="isReady ? 'text-ready-ink' : 'text-ink-1'"
                 >{{ order.queue_number }}</p>
 
                 <div class="mt-5 flex flex-col items-center gap-2">
-                    <CheckCircleIcon v-if="isReady" class="h-9 w-9 text-emerald-600" aria-hidden="true" />
-                    <XCircleIcon v-else-if="isRejected" class="h-9 w-9 text-slate-400" aria-hidden="true" />
-                    <ClockIcon v-else class="h-9 w-9 text-brand-500" aria-hidden="true" />
+                    <CheckCircleIcon v-if="isReady" class="h-9 w-9 text-ready-ink" aria-hidden="true" />
+                    <XCircleIcon v-else-if="isRejected" class="h-9 w-9 text-ink-3" aria-hidden="true" />
+                    <ClockIcon v-else class="h-9 w-9 text-accent-ink" aria-hidden="true" />
 
-                    <h1 class="text-xl font-bold text-slate-900">{{ headline }}</h1>
-                    <p class="text-[13px] leading-snug text-slate-500">{{ subline }}</p>
+                    <h1 class="text-xl font-bold text-ink-1">{{ headline }}</h1>
+                    <p class="text-ui leading-snug text-ink-3">{{ subline }}</p>
                 </div>
 
                 <p
                     v-if="order.reject_reason"
-                    class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700"
+                    class="mt-4 rounded-control bg-stop-tint px-4 py-3 text-ui font-medium text-stop-ink"
                 >
                     {{ order.reject_reason }}
                 </p>
@@ -160,58 +157,58 @@ const subline = computed(() => {
                 <li
                     v-for="(step, index) in steps"
                     :key="step.key"
-                    class="flex items-center gap-3 rounded-xl bg-white/90 px-4 py-3"
+                    class="flex items-center gap-3 rounded-control bg-surface-1/90 px-4 py-3"
                 >
                     <span
-                        class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                        :class="index <= stepIndex ? 'bg-emerald-600' : 'bg-slate-200'"
+                        class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-label font-bold text-on-solid"
+                        :class="index <= stepIndex ? 'bg-ready-solid' : 'bg-line-strong'"
                     >
                         <CheckCircleIcon v-if="index <= stepIndex" class="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     <span
-                        class="text-[13px] font-semibold"
-                        :class="index <= stepIndex ? 'text-slate-800' : 'text-slate-400'"
+                        class="text-ui font-semibold"
+                        :class="index <= stepIndex ? 'text-ink-1' : 'text-ink-3'"
                     >{{ step.label }}</span>
                 </li>
             </ol>
 
             <!-- Items -->
-            <div class="mt-5 rounded-2xl bg-white p-5 shadow-card">
-                <h2 class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Your order</h2>
+            <div class="mt-5 rounded-card bg-surface-1 p-5 shadow-rest">
+                <h2 class="text-label font-semibold uppercase tracking-wider text-ink-3">Your order</h2>
 
-                <ul class="mt-3 divide-y divide-slate-100">
+                <ul class="mt-3 divide-y divide-line">
                     <li v-for="item in order.items" :key="item.id" class="flex items-start gap-3 py-2.5">
-                        <span class="text-[13px] font-bold tabular-nums text-slate-400">{{ item.quantity }}&times;</span>
+                        <span class="text-ui font-bold tabular-nums text-ink-3">{{ item.quantity }}&times;</span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-[13px] font-semibold text-slate-800">
-                                {{ item.name }}<span v-if="item.variant_name" class="text-slate-500"> ({{ item.variant_name }})</span>
+                            <span class="block text-ui font-semibold text-ink-1">
+                                {{ item.name }}<span v-if="item.variant_name" class="text-ink-3"> ({{ item.variant_name }})</span>
                             </span>
-                            <span v-if="item.modifiers.length" class="block text-[12px] text-brand-600">
+                            <span v-if="item.modifiers.length" class="block text-meta text-accent-ink">
                                 + {{ item.modifiers.join(', ') }}
                             </span>
                         </span>
-                        <span class="text-[13px] font-semibold tabular-nums text-slate-700">{{ money(item.line_total) }}</span>
+                        <span class="text-ui font-semibold tabular-nums text-ink-2">{{ money(item.line_total) }}</span>
                     </li>
                 </ul>
 
-                <div class="mt-3 flex items-baseline justify-between border-t border-slate-100 pt-3">
-                    <span class="text-[13px] font-semibold text-slate-500">Total</span>
-                    <span class="text-xl font-bold tabular-nums text-slate-900">{{ money(order.total) }}</span>
+                <div class="mt-3 flex items-baseline justify-between border-t border-line pt-3">
+                    <span class="text-ui font-semibold text-ink-3">Total</span>
+                    <span class="text-xl font-bold tabular-nums text-ink-1">{{ money(order.total) }}</span>
                 </div>
 
-                <p v-if="order.note" class="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] italic text-slate-500">
+                <p v-if="order.note" class="mt-3 rounded-control bg-surface-2 px-3 py-2 text-meta italic text-ink-3">
                     &ldquo;{{ order.note }}&rdquo;
                 </p>
             </div>
 
             <Link
                 :href="`/s/${store.slug}`"
-                class="mt-5 block rounded-2xl bg-white py-3.5 text-center text-[13px] font-semibold text-slate-600 shadow-card"
+                class="mt-5 block rounded-card bg-surface-1 py-3.5 text-center text-ui font-semibold text-ink-2 shadow-rest"
             >
                 Back to the menu
             </Link>
 
-            <p v-if="store.receipt_footer" class="mt-6 text-center text-[12px]" :class="isReady ? 'text-white/80' : 'text-slate-400'">
+            <p v-if="store.receipt_footer" class="mt-6 text-center text-meta" :class="isReady ? 'text-on-solid/80' : 'text-ink-3'">
                 {{ store.receipt_footer }}
             </p>
         </div>

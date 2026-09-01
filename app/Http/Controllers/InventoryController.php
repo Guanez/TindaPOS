@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\StockLog;
 use App\Services\InventoryService;
 use App\Services\MenuService;
+use App\Services\ProductImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,6 +25,7 @@ class InventoryController extends Controller
     public function __construct(
         private readonly InventoryService $inventoryService,
         private readonly MenuService $menuService,
+        private readonly ProductImageService $productImages,
     ) {}
 
     /**
@@ -72,6 +74,11 @@ class InventoryController extends Controller
     public function store(StoreProductRequest $request): RedirectResponse
     {
         $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $this->productImages->store($request->file('image'));
+        }
+
         $product = Product::create($data);
         $this->saveMenu($product, $data);
 
@@ -85,6 +92,18 @@ class InventoryController extends Controller
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         $data = $request->validated();
+
+        // Three cases, and only the first two touch storage: a new file
+        // replaces whatever was there, an explicit removal clears it, and
+        // sending neither leaves the existing photo alone — which is what a
+        // form that only changed the price is doing.
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $this->productImages->replace($product, $request->file('image'));
+        } elseif ($request->boolean('remove_image')) {
+            $this->productImages->delete($product);
+            $data['image_path'] = null;
+        }
+
         $product->update($data);
         $this->saveMenu($product, $data);
 

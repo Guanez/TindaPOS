@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Services\ProductImageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,6 +27,7 @@ class PublicMenuResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
+            'image_url' => ProductImageService::url($this->image_path, 'card'),
             'category_id' => $this->category_id,
             'price_from' => $this->selling_price,
             'is_favorite' => $this->is_favorite,
