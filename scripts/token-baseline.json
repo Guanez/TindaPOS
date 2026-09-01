@@ -9,6 +9,7 @@
         "type-size": 2
     },
     "resources/js/Layouts/AppLayout.vue": {
+        "inert-shadow": 1,
         "type-size": 1
     },
     "resources/js/Pages/Inventory/Index.vue": {

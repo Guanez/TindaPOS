@@ -14,7 +14,7 @@ import ThemeToggle from '@/Components/ThemeToggle.vue'
         <div class="relative w-full max-w-[400px]">
             <!-- Brand Header -->
             <div class="mb-8 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-gradient-to-br from-accent to-accent-hover shadow-overlay shadow-rest/25">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-gradient-to-br from-accent to-accent-hover shadow-overlay">
                     <ShoppingCartIcon class="h-6 w-6 text-accent-fg" aria-hidden="true" />
                 </div>
                 <h1 class="mt-4 text-heading font-bold tracking-tight text-ink-1">TindaPOS</h1>

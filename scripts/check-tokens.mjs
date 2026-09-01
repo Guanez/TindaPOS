@@ -64,6 +64,15 @@ const RULES = [
         hint: 'use action-fg / accent-fg / on-solid, which flip with the theme',
     },
     {
+        id: 'inert-shadow',
+        // The elevation roles resolve to a `var()`, and Tailwind can only apply
+        // an opacity modifier to a shadow whose colour it can see. `/50` on one
+        // of these emits no rule at all — the class reads as intent and does
+        // nothing, which is worse than being absent.
+        pattern: /\bshadow-(?:rest|raised|overlay)\/\d{1,3}\b/g,
+        hint: 'drop the modifier, or set the alpha in the --e-* token itself',
+    },
+    {
         id: 'removed-alias',
         pattern: /\b(?:shadow-(?:card|card-hover|elevated|glow)|(?:bg|text|border|ring|from|via|to)-brand-\d{2,3})\b/g,
         hint: 'removed in the token pass — use shadow-rest/raised/overlay, or an accent token',
