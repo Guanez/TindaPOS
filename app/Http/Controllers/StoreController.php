@@ -38,9 +38,13 @@ class StoreController extends Controller
                 ...$store->only([
                     'id', 'name', 'slug', 'type', 'address', 'phone',
                     'receipt_footer', 'currency_symbol', 'online_ordering_enabled',
-                    'accent',
+                    'accent', 'hours',
                 ]),
                 'logo_url' => StoreLogoService::url($store->logo_path),
+                // So the form can show the shop what its own hours currently
+                // mean, rather than leaving them to work it out from a grid.
+                'is_open' => $store->isOpenNow(),
+                'next_opening' => $store->nextOpening(),
                 // So the form can say "this colour is too pale to read as
                 // text, we will darken it there" before they commit to it,
                 // rather than leaving them to discover it on the menu.

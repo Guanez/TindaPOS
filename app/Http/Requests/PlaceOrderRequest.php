@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\Store;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PlaceOrderRequest extends FormRequest
@@ -11,6 +13,31 @@ class PlaceOrderRequest extends FormRequest
     public function authorize(): bool
     {
         return true; // The store is resolved and validated by middleware.
+    }
+
+    /**
+     * A closed shop takes no orders.
+     *
+     * Checked here as well as hidden in the page, because the menu stays
+     * readable after closing time — which means the place button is one
+     * devtools edit and one stale tab away from being usable. The customer
+     * gets the same sentence either way rather than a bare 422.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            /** @var Store|null $store */
+            $store = $this->attributes->get('publicStore');
+
+            if ($store === null || $store->isOpenNow()) {
+                return;
+            }
+
+            $validator->errors()->add(
+                'items',
+                trim(($store->nextOpening() ?? 'We are closed right now.').' — nothing has been ordered.')
+            );
+        });
     }
 
     public function rules(): array
