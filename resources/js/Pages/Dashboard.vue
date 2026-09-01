@@ -80,7 +80,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager ?? false
         <div class="space-y-6">
             <!-- Page Header -->
             <div class="fade-in-up">
-                <h1 class="text-xl font-bold tracking-tight text-ink-1">Dashboard</h1>
+                <h1 class="text-heading font-bold tracking-tight text-ink-1">Dashboard</h1>
                 <p class="mt-0.5 text-ui text-ink-3">
                     {{ new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
                 </p>
@@ -198,7 +198,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager ?? false
                         <div class="flex h-12 w-12 items-center justify-center rounded-card bg-surface-2">
                             <ClipboardDocumentListIcon class="h-6 w-6 text-ink-3" aria-hidden="true" />
                         </div>
-                        <p class="mt-3 text-sm text-ink-3">No sales yet today</p>
+                        <p class="mt-3 text-ui text-ink-3">No sales yet today</p>
                         <Link :href="route('pos.index')" class="mt-2 text-ui font-medium text-accent-ink hover:underline">
                             Open POS to start selling
                         </Link>
@@ -253,7 +253,7 @@ const isManager = computed(() => usePage().props.auth?.user?.is_manager ?? false
                         <div class="flex h-12 w-12 items-center justify-center rounded-card bg-ready-tint">
                             <CubeIcon class="h-6 w-6 text-ready-mark" aria-hidden="true" />
                         </div>
-                        <p class="mt-3 text-sm text-ink-3">All products are well stocked</p>
+                        <p class="mt-3 text-ui text-ink-3">All products are well stocked</p>
                     </div>
 
                     <div v-else class="divide-y divide-line">

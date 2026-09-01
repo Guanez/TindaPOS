@@ -1,0 +1,25 @@
+# The token layer is only worth having if it is the only way to write a
+# colour or a size. A reviewer will not catch a `text-sm` in a forty-line
+# diff, so the check runs here instead.
+#
+# It fails on NEW violations only — the known ones are recorded in
+# scripts/token-baseline.json and are being swept in stages.
+name: Design tokens
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No install step: the check reads files and shells out to nothing.
+      - run: npm run lint:tokens

@@ -17,8 +17,8 @@ import ThemeToggle from '@/Components/ThemeToggle.vue'
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-gradient-to-br from-accent to-accent-hover shadow-overlay shadow-rest/25">
                     <ShoppingCartIcon class="h-6 w-6 text-accent-fg" aria-hidden="true" />
                 </div>
-                <h1 class="mt-4 text-2xl font-bold tracking-tight text-ink-1">TindaPOS</h1>
-                <p class="mt-1 text-sm text-ink-3">Point of Sale</p>
+                <h1 class="mt-4 text-heading font-bold tracking-tight text-ink-1">TindaPOS</h1>
+                <p class="mt-1 text-ui text-ink-3">Point of Sale</p>
             </div>
 
             <!-- Content Card -->

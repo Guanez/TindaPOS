@@ -32,7 +32,7 @@ onMounted(() => document.title = 'Order here');
         <div class="mx-auto flex max-w-[420px] flex-col items-center rounded-sheet bg-surface-1 px-8 py-10 text-center shadow-rest print:max-w-none print:rounded-none print:shadow-none">
             <p class="text-meta font-semibold uppercase tracking-[0.2em] text-accent-ink">Scan to order</p>
 
-            <h1 class="mt-2 text-3xl font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
+            <h1 class="mt-2 text-figure font-bold tracking-tight text-ink-1">{{ store.name }}</h1>
             <p v-if="store.address" class="mt-1 text-ui text-ink-3">{{ store.address }}</p>
 
             <div class="mt-7 w-full max-w-[300px]" v-html="qrSvg" />

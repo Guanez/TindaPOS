@@ -35,7 +35,7 @@ const valueClasses = {
             </div>
             <div class="min-w-0">
                 <p class="truncate text-meta font-medium text-ink-3">{{ label }}</p>
-                <p class="mt-0.5 text-xl font-bold tracking-tight tabular-nums" :class="valueClasses[color]">
+                <p class="mt-0.5 text-heading font-bold tracking-tight tabular-nums" :class="valueClasses[color]">
                     {{ value }}
                 </p>
             </div>

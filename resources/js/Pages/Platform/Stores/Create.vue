@@ -45,7 +45,7 @@ const submit = () => form.post(route('platform.stores.store'));
                 >
                     &larr; Back to stores
                 </Link>
-                <h2 class="mt-2 text-xl font-bold tracking-tight text-ink-1">New client store</h2>
+                <h2 class="mt-2 text-heading font-bold tracking-tight text-ink-1">New client store</h2>
                 <p class="mt-0.5 text-ui text-ink-3">
                     The shop and the person who runs it are created together.
                 </p>

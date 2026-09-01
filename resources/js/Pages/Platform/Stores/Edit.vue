@@ -31,7 +31,7 @@ const submit = () => form.put(route('platform.stores.update', props.store.id));
                 >
                     &larr; Back to stores
                 </Link>
-                <h2 class="mt-2 text-xl font-bold tracking-tight text-ink-1">{{ store.name }}</h2>
+                <h2 class="mt-2 text-heading font-bold tracking-tight text-ink-1">{{ store.name }}</h2>
                 <p class="mt-0.5 font-mono text-ui text-ink-3">/s/{{ store.slug }}</p>
             </div>
 

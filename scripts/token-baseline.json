@@ -1,0 +1,59 @@
+{
+    "resources/js/Components/InputError.vue": {
+        "type-size": 1
+    },
+    "resources/js/Components/InputLabel.vue": {
+        "type-size": 1
+    },
+    "resources/js/Components/ProductOptionsModal.vue": {
+        "type-size": 2
+    },
+    "resources/js/Layouts/AppLayout.vue": {
+        "type-size": 1
+    },
+    "resources/js/Pages/Inventory/Index.vue": {
+        "type-size": 4
+    },
+    "resources/js/Pages/Inventory/Logs.vue": {
+        "type-size": 2
+    },
+    "resources/js/Pages/Orders/Index.vue": {
+        "type-size": 9
+    },
+    "resources/js/Pages/Platform/Stores/Index.vue": {
+        "type-size": 5
+    },
+    "resources/js/Pages/POS/Index.vue": {
+        "type-size": 13
+    },
+    "resources/js/Pages/Profile/Edit.vue": {
+        "type-size": 1
+    },
+    "resources/js/Pages/Profile/Partials/DeleteUserForm.vue": {
+        "type-size": 4
+    },
+    "resources/js/Pages/Profile/Partials/UpdatePasswordForm.vue": {
+        "type-size": 3
+    },
+    "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.vue": {
+        "type-size": 3
+    },
+    "resources/js/Pages/Public/Menu.vue": {
+        "type-size": 3
+    },
+    "resources/js/Pages/Public/Status.vue": {
+        "type-size": 2
+    },
+    "resources/js/Pages/Reports/Index.vue": {
+        "type-size": 8
+    },
+    "resources/js/Pages/Sales/Index.vue": {
+        "type-size": 10
+    },
+    "resources/js/Pages/Store/Settings.vue": {
+        "type-size": 1
+    },
+    "resources/js/Pages/Users/Index.vue": {
+        "type-size": 2
+    }
+}

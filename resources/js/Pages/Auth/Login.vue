@@ -31,7 +31,7 @@ const submit = () => {
     <GuestLayout>
         <Head title="Sign In" />
 
-        <div v-if="status" class="mb-4 rounded-control bg-ready-tint px-4 py-3 text-sm font-medium text-ready-ink">
+        <div v-if="status" class="mb-4 rounded-control bg-ready-tint px-4 py-3 text-ui font-medium text-ready-ink">
             {{ status }}
         </div>
 
